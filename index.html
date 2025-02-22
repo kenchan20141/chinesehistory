@@ -252,6 +252,7 @@ let currentRoomId = null;
 let isHost = false;
 let timer;
 let timeLeft = 15;
+let gameOver = false; // 新增遊戲狀態變量
 
 const bgMusic = new Audio('https://freepd.com/music/Coy%20Koi.mp3');
 let isMusicPlaying = true;
@@ -338,13 +339,14 @@ function shuffleArray(array) {
 }
 
 function loadNewQuestion() {
+    if (gameOver) return; // 新增遊戲狀態檢查
+
     const questionsRef = database.ref('questions');
     questionsRef.once('value').then(snapshot => {
         const questions = snapshot.val();
         const randomIndex = Math.floor(Math.random() * questions.length);
         const originalQuestion = questions[randomIndex];
         
-        // 打亂選項並更新正確答案索引
         const optionsCopy = [...originalQuestion.options];
         const correctAnswer = optionsCopy[originalQuestion.correctIndex];
         const shuffledOptions = shuffleArray(optionsCopy);
@@ -375,6 +377,8 @@ function displayQuestion(question) {
 }
 
 function checkAnswer(isCorrect) {
+    if (gameOver) return; // 新增遊戲狀態檢查
+
     clearInterval(timer);
     const damage = Math.floor((timeLeft / 15) * 30);
     
@@ -395,8 +399,9 @@ function checkAnswer(isCorrect) {
     }
     
     database.ref('rooms/' + currentRoomId).update(updates, () => {
-        checkGameOver();
-        loadNewQuestion();
+        checkGameOver(() => {  // 修改為回調模式
+            if (!gameOver) loadNewQuestion();
+        });
     });
 
     setTimeout(() => {
@@ -415,19 +420,29 @@ function startTimer() {
     }, 1000);
 }
 
-function checkGameOver() {
+function checkGameOver(callback) {
     const roomRef = database.ref('rooms/' + currentRoomId);
     roomRef.once('value').then(snapshot => {
         const room = snapshot.val();
+        if (!room) return;
+
         const myHealth = isHost ? room.player1.health : room.player2.health;
-        
-        if (myHealth <= 0 || (isHost ? room.player2?.health : room.player1.health) <= 0) {
+        const opponentHealth = isHost ? (room.player2?.health || 100) : (room.player1?.health || 100);
+
+        if (myHealth <= 0 || opponentHealth <= 0) {
+            gameOver = true;
+            clearInterval(timer);
+            
+            // 禁用所有答題按鈕
+            document.querySelectorAll('#options button').forEach(option => {
+                option.style.pointerEvents = 'none';
+            });
+
             const victoryOverlay = document.querySelector('.victory-overlay');
             const victoryText = document.querySelector('.victory-text');
-            
             victoryOverlay.style.display = 'flex';
             victoryText.textContent = myHealth > 0 ? "武運昌隆！" : "雖敗猶榮";
-            
+
             const resultSound = myHealth > 0 ? soundEffects.victory : soundEffects.defeat;
             resultSound.play();
             
@@ -435,11 +450,9 @@ function checkGameOver() {
             setTimeout(() => victoryText.style.animation = 'victoryPulse 1s ease-out', 10);
 
             roomRef.remove();
-            setTimeout(() => {
-                victoryOverlay.style.display = 'none';
-                location.reload();
-            }, 3000);
+            setTimeout(() => location.reload(), 3000);
         }
+        if (callback) callback();
     });
 }
 
