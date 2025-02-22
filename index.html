@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>中史爭霸賽</title>
+    <title>基元中史爭霸賽</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
@@ -374,7 +374,9 @@ function loadNewQuestion() {
             correctIndex: newCorrectIndex
         };
 
-        database.ref('rooms/' + currentRoomId).update({ currentQuestion: processedQuestion });
+        database.ref('rooms/' + currentRoomId).update({ 
+            currentQuestion: processedQuestion 
+        });
         startTimer();
     });
 }
@@ -416,6 +418,10 @@ function checkAnswer(isCorrect) {
     
     database.ref('rooms/' + currentRoomId).update(updates, () => {
         checkGameOver();
+        if (!gameOver) {
+            database.ref('rooms/' + currentRoomId).update({ currentQuestion: null });
+            setTimeout(loadNewQuestion, 1500);
+        }
     });
 
     setTimeout(() => {
@@ -442,7 +448,8 @@ function checkGameOver() {
 
         const player1Health = room.player1?.health || 0;
         const player2Health = room.player2?.health || 0;
-        const amIWinner = (isHost && player1Health > 0) || (!isHost && player2Health > 0);
+        const amIWinner = (isHost && player1Health > 0 && player2Health <= 0) || 
+                        (!isHost && player2Health > 0 && player1Health <= 0);
 
         if ((player1Health <= 0 || player2Health <= 0) && !victoryLock) {
             victoryLock = true;
@@ -464,7 +471,11 @@ function showFinalResult(result) {
     const victoryText = document.querySelector('.victory-text');
     const returnMessage = document.querySelector('.return-message');
     
-    victoryText.textContent = result === 'win' ? '武運昌隆！' : '雖敗猶榮';
+    const isVictory = result === 'win';
+    victoryText.textContent = isVictory ? '武運昌隆！' : '雖敗猶榮';
+    victoryText.style.color = isVictory ? '#d4af37' : '#666';
+    victoryText.style.textShadow = isVictory ? '0 0 20px #c3272b' : '0 0 20px #333';
+    
     returnMessage.textContent = '五秒後返回主殿...';
     victoryOverlay.style.display = 'flex';
 
@@ -473,7 +484,7 @@ function showFinalResult(result) {
     });
     document.getElementById('gameArea').style.opacity = '0.3';
 
-    const resultSound = result === 'win' ? soundEffects.victory : soundEffects.defeat;
+    const resultSound = isVictory ? soundEffects.victory : soundEffects.defeat;
     resultSound.play();
 
     setTimeout(() => {
