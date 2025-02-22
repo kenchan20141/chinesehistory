@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>头脑王者</title>
+    <style>
+        body { font-family: Arial; padding: 20px; }
+        #room { width: 200px; padding: 10px; margin-bottom: 10px; }
+        .hp-bar { height: 20px; background: #ff0000; margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <input id="room" placeholder="输入房间号">
+    <button onclick="join()">开始游戏</button>
+    <div id="game" style="display:none;">
+        <div>你的HP: <div id="myHp" class="hp-bar" style="width:100%"></div></div>
+        <div>对手HP: <div id="enemyHp" class="hp-bar" style="width:100%"></div></div>
+        <div id="question"></div>
+    </div>
+
+    <!-- 替换下方firebaseConfig为你自己的配置 -->
+    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-database.js"></script>
+    <script>
+        const firebaseConfig = { /* 粘贴你的配置信息 */ };
+        firebase.initializeApp(firebaseConfig);
+
+        let roomId, me, enemy;
+
+        function join() {
+            roomId = document.getElementById('room').value;
+            document.getElementById('game').style.display = 'block';
+            
+            // 监听房间数据变化
+            firebase.database().ref('rooms/'+roomId).on('value', snapshot => {
+                const data = snapshot.val() || {};
+                if(!data.player1) initRoom();
+                updateGame(data);
+            });
+        }
+
+        function initRoom() {
+            me = { hp: 100, id: Date.now() };
+            firebase.database().ref('rooms/'+roomId).set({ player1: me });
+        }
+
+        function updateGame(data) {
+            // 血量更新
+            document.getElementById('myHp').style.width = data.player1.hp + '%';
+            if(data.player2) {
+                document.getElementById('enemyHp').style.width = data.player2.hp + '%';
+            }
+
+            // 自动开始游戏
+            if(data.player1 && data.player2) showQuestion();
+        }
+
+        function showQuestion() {
+            const questions = [
+                { q: "1+1=?", a: 2, options: [1,2,3] },
+                { q: "中国首都是?", a: 1, options: ["上海","北京","广州"] }
+            ];
+            const q = questions[Math.floor(Math.random()*questions.length)];
+            
+            document.getElementById('question').innerHTML = `
+                <h3>${q.q}</h3>
+                ${q.options.map((o,i)=>`<button onclick="answer(${i})">${o}</button>`).join('')}
+            `;
+        }
+
+        function answer(choice) {
+            const answerTime = 10; // 简单示例
+            firebase.database().ref('rooms/'+roomId).transaction(data => {
+                const target = data.player2 ? "player2" : "player1";
+                data[target].hp -= answerTime;
+                return data;
+            });
+        }
+    </script>
+</body>
+</html>
