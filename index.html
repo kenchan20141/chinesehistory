@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>基元中史爭霸賽</title>
+    <title>中史爭霸賽</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
@@ -154,6 +154,11 @@
             100% { transform: scale(1); }
         }
 
+        @keyframes defeatPulse {
+            0% { opacity: 0; transform: translateY(50px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+
         .damage-effect {
             animation: bloodHit 0.3s ease-in-out;
         }
@@ -178,9 +183,6 @@
 
         .victory-text {
             font-size: 5rem;
-            color: #d4af37;
-            text-shadow: 0 0 20px #c3272b;
-            animation: victoryPulse 1s ease-out;
             margin-bottom: 2rem;
         }
 
@@ -293,7 +295,9 @@ function createRoom() {
         player2: null,
         currentQuestion: null,
         gameStarted: false,
-        gameFinalized: false
+        gameFinalized: false,
+        player1Result: null,
+        player2Result: null
     });
     listenToRoomChanges();
 }
@@ -318,7 +322,8 @@ function listenToRoomChanges() {
         if (!room) return;
 
         if (room.gameFinalized) {
-            showFinalResult(room.finalResult);
+            const result = isHost ? room.player1Result : room.player2Result;
+            showFinalResult(result);
             return;
         }
 
@@ -448,20 +453,20 @@ function checkGameOver() {
 
         const player1Health = room.player1?.health || 0;
         const player2Health = room.player2?.health || 0;
-        const amIWinner = (isHost && player1Health > 0 && player2Health <= 0) || 
-                        (!isHost && player2Health > 0 && player1Health <= 0);
+        const p1Wins = player1Health > 0 && player2Health <= 0;
+        const p2Wins = player2Health > 0 && player1Health <= 0;
 
-        if ((player1Health <= 0 || player2Health <= 0) && !victoryLock) {
+        if ((p1Wins || p2Wins) && !victoryLock) {
             victoryLock = true;
             gameOver = true;
-            
-            const finalResult = amIWinner ? 'win' : 'lose';
-            database.ref('rooms/' + currentRoomId).update({
-                gameFinalized: true,
-                finalResult: finalResult
-            });
 
-            showFinalResult(finalResult);
+            const results = {
+                gameFinalized: true,
+                player1Result: p1Wins ? 'win' : 'lose',
+                player2Result: p2Wins ? 'win' : 'lose'
+            };
+
+            database.ref('rooms/' + currentRoomId).update(results);
         }
     });
 }
@@ -470,12 +475,26 @@ function showFinalResult(result) {
     const victoryOverlay = document.querySelector('.victory-overlay');
     const victoryText = document.querySelector('.victory-text');
     const returnMessage = document.querySelector('.return-message');
-    
-    const isVictory = result === 'win';
-    victoryText.textContent = isVictory ? '武運昌隆！' : '雖敗猶榮';
-    victoryText.style.color = isVictory ? '#d4af37' : '#666';
-    victoryText.style.textShadow = isVictory ? '0 0 20px #c3272b' : '0 0 20px #333';
-    
+
+    victoryText.style.cssText = '';
+    returnMessage.style.cssText = '';
+
+    if (result === 'win') {
+        victoryText.textContent = '武運昌隆！';
+        victoryText.style.cssText = `
+            color: #d4af37;
+            text-shadow: 0 0 20px #c3272b;
+            animation: victoryPulse 1s ease-out;
+        `;
+    } else {
+        victoryText.textContent = '雖敗猶榮';
+        victoryText.style.cssText = `
+            color: #666;
+            text-shadow: 0 0 20px #333;
+            animation: defeatPulse 1s ease-out;
+        `;
+    }
+
     returnMessage.textContent = '五秒後返回主殿...';
     victoryOverlay.style.display = 'flex';
 
@@ -484,7 +503,7 @@ function showFinalResult(result) {
     });
     document.getElementById('gameArea').style.opacity = '0.3';
 
-    const resultSound = isVictory ? soundEffects.victory : soundEffects.defeat;
+    const resultSound = result === 'win' ? soundEffects.victory : soundEffects.defeat;
     resultSound.play();
 
     setTimeout(() => {
