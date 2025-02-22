@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>頭腦王者 - 最終版</title>
+    <title>頭腦王者 - 正式版</title>
     <style>
         body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
-        #lobby, #battle, #result { margin: 20px 0; padding: 20px; border: 1px solid #ccc; border-radius: 10px; }
+        #lobby, #battle, #result, #waiting { margin: 20px 0; padding: 20px; border: 1px solid #ccc; border-radius: 10px; }
         .hidden { display: none; }
         .health-bar { height: 20px; background: #ddd; border-radius: 10px; margin: 10px 0; }
         .health-fill { height: 100%; background: #ff4444; border-radius: 10px; transition: width 0.3s; }
@@ -12,29 +12,31 @@
         #options { display: grid; gap: 10px; margin: 20px 0; }
         .option-btn { padding: 15px; background: #e9ecef; border: none; border-radius: 5px; cursor: pointer; }
         .option-btn:hover { background: #dee2e6; }
-        #waiting { text-align: center; padding: 20px; }
+        #waiting { text-align: center; }
+        .room-input { margin: 10px 0; padding: 8px; width: 200px; }
     </style>
 </head>
 <body>
     <div id="lobby">
         <h2>遊戲大廳</h2>
-        <button onclick="createRoom()">創建房間</button>
-        <div style="margin: 20px 0;">
-            <input type="text" id="roomCode" placeholder="輸入房間代碼">
+        <div>
+            <input type="text" id="createRoomCode" class="room-input" placeholder="輸入房間號碼(例:1)">
+            <button onclick="createRoom()">創建房間</button>
+        </div>
+        <div>
+            <input type="text" id="joinRoomCode" class="room-input" placeholder="輸入房間號碼">
             <button onclick="joinRoom()">加入房間</button>
         </div>
     </div>
 
     <div id="waiting" class="hidden">
         <h3>等待對手加入...</h3>
-        <p>房間代碼：<span id="displayRoomCode"></span></p>
+        <p>房間號碼：<span id="displayRoomCode"></span></p>
     </div>
 
     <div id="battle" class="hidden">
-        <div id="timer"></div>
         <div id="question"></div>
         <div id="options"></div>
-        
         <div style="margin-top: 30px;">
             <div>我方血量: <span id="myHealth">100</span></div>
             <div class="health-bar"><div class="health-fill" id="myHealthBar"></div></div>
@@ -65,17 +67,19 @@
         firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
         let roomId = null;
-        let isHost = false;
         let playerId = null;
+        let questionStartTime = 0;
 
-        // 創建房間
         async function createRoom() {
             try {
-                isHost = true;
-                playerId = 'player1';
-                roomId = Math.random().toString(36).substr(2, 6).toUpperCase();
+                roomId = document.getElementById('createRoomCode').value.trim();
+                if (!roomId) return alert('請輸入房間號碼');
                 
                 const roomRef = database.ref(`rooms/${roomId}`);
+                const snapshot = await roomRef.once('value');
+                if (snapshot.exists()) return alert('房間已存在');
+
+                playerId = 'player1';
                 await roomRef.set({
                     players: {
                         player1: { health: 100, answer: null },
@@ -88,8 +92,7 @@
                 document.getElementById('displayRoomCode').textContent = roomId;
                 toggleScreens('waiting');
                 setupRoomListeners(roomRef);
-                
-                // 監聽玩家加入
+
                 roomRef.child('players/player2').on('value', (snapshot) => {
                     if (snapshot.exists()) {
                         toggleScreens('battle');
@@ -102,11 +105,10 @@
             }
         }
 
-        // 加入房間
         async function joinRoom() {
             try {
-                roomId = document.getElementById('roomCode').value.trim().toUpperCase();
-                if (!roomId) return alert('請輸入房間代碼');
+                roomId = document.getElementById('joinRoomCode').value.trim();
+                if (!roomId) return alert('請輸入房間號碼');
                 
                 const roomRef = database.ref(`rooms/${roomId}`);
                 const snapshot = await roomRef.once('value');
@@ -126,27 +128,26 @@
                 loadNewQuestion();
 
             } catch (error) {
-                alert('加入失敗，請檢查代碼');
+                alert('加入失敗，請檢查房間號碼');
             }
         }
 
-        // 設置監聽器
         function setupRoomListeners(roomRef) {
             roomRef.on('value', (snapshot) => {
                 const room = snapshot.val();
-                if (!room) return;
+                if (!room) return location.reload();
 
                 updateHealthDisplay(room.players);
                 
                 if (room.currentQuestion && !room.currentQuestion.answered) {
                     showQuestion(room.currentQuestion);
+                    questionStartTime = Date.now();
                 }
 
                 checkGameResult(room.players);
             });
         }
 
-        // 加載題目
         async function loadNewQuestion() {
             try {
                 const questionsRef = database.ref('questions');
@@ -166,7 +167,6 @@
             }
         }
 
-        // 顯示題目與選項
         function showQuestion(question) {
             document.getElementById('question').textContent = question.question;
             const optionsContainer = document.getElementById('options');
@@ -181,10 +181,9 @@
             });
         }
 
-        // 提交答案
         async function submitAnswer(answer) {
             try {
-                const responseTime = Date.now() - startTime;
+                const responseTime = Date.now() - questionStartTime;
                 await database.ref(`rooms/${roomId}/players/${playerId}`).update({
                     answer: answer,
                     time: responseTime
@@ -195,11 +194,6 @@
             }
         }
 
-
-            checkAnswers();
-        }
-
-        // 檢查雙方答案
         async function checkAnswers() {
             const roomRef = database.ref(`rooms/${roomId}`);
             const snapshot = await roomRef.once('value');
@@ -219,7 +213,6 @@
             }
         }
 
-        // 計算傷害值
         function calculateDamage(players, correctAnswer) {
             const damage = { player1: 0, player2: 0 };
 
@@ -238,7 +231,6 @@
             return damage;
         }
 
-        // 更新血量顯示
         function updateHealthDisplay(players) {
             const myHealth = players[playerId].health;
             const enemyId = playerId === 'player1' ? 'player2' : 'player1';
@@ -250,7 +242,6 @@
             document.getElementById('enemyHealthBar').style.width = `${enemyHealth}%`;
         }
 
-        // 遊戲結果判斷
         function checkGameResult(players) {
             if (players.player1.health <= 0 || players.player2.health <= 0) {
                 const isWinner = players[playerId].health > 0;
@@ -258,22 +249,13 @@
             }
         }
 
-        // 顯示結果
         function showResult(result) {
             toggleScreens('result');
             document.getElementById('resultText').textContent = result;
         }
 
-        // 計時器
-        function startTimer() {
-            const timerBar = document.getElementById('timer');
-            timerBar.style.width = '100%';
-            setTimeout(() => timerBar.style.width = '0%', 1000);
-        }
-
-        // 切換畫面
         function toggleScreens(screen) {
-            ['lobby', 'battle', 'result'].forEach(id => {
+            ['lobby', 'waiting', 'battle', 'result'].forEach(id => {
                 document.getElementById(id).classList.toggle('hidden', id !== screen);
             });
         }
