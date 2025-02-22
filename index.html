@@ -1,196 +1,176 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset="UTF-8">
-    <title>中史問答對戰</title>
+    <title>Brain Duel</title>
     <style>
-        body { font-family: Arial; padding: 20px; }
-        #roomId { width: 200px; padding: 10px; }
-        .player { margin: 20px 0; padding: 10px; border: 1px solid #ccc; }
-        .question { background: #f0f0f0; padding: 15px; margin: 10px 0; }
-        .option { padding: 10px; margin: 5px; background: #e1e1e1; cursor: pointer; }
-        #status { color: #666; margin: 10px 0; font-size: 24px; font-weight: bold; }
-        #result { display: none; font-size: 48px; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); }
+        body {
+            background: #1a1a1a;
+            color: white;
+            font-family: Arial;
+            text-align: center;
+        }
+        .player-container {
+            display: flex;
+            justify-content: space-around;
+            margin: 20px;
+        }
+        .health-bar {
+            width: 300px;
+            height: 30px;
+            background: #333;
+            border-radius: 15px;
+            margin: 10px;
+        }
+        .health {
+            height: 100%;
+            background: #00ff00;
+            border-radius: 15px;
+            transition: width 0.3s;
+        }
+        .question-box {
+            background: #333;
+            padding: 20px;
+            margin: 20px;
+            border-radius: 10px;
+        }
+        .answer-btn {
+            background: #444;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin: 5px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .answer-btn:hover {
+            background: #555;
+        }
+        .status {
+            font-size: 24px;
+            font-weight: bold;
+            margin: 20px;
+        }
     </style>
 </head>
 <body>
-    <div>
-        <input type="text" id="roomId" placeholder="输入房间号">
-        <button onclick="createRoom()">创建房间</button>
-        <button onclick="joinRoom()">加入房间</button>
-        <div id="status">等待连接...</div>
-    </div>
-    <div id="gameArea" style="display:none;">
-        <div>你的HP: <span id="myHp">100</span></div>
-        <div>对手HP: <span id="enemyHp">100</span></div>
-        <div id="questionArea"></div>
-    </div>
-    <div id="result"></div>
-
-    <audio id="bgMusic" loop>
-        <source src="https://cdn.pixabay.com/download/audio/2022/11/14/audio_ff2b8a8e0f.mp3" type="audio/mpeg">
+    <audio id="bgm" loop>
+        <source src="https://assets.mixkit.co/active_storage/sfx/2593/2593-preview.mp3" type="audio/mpeg">
     </audio>
-
-    <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
     
+    <div class="player-container">
+        <div>
+            <div>Player 1</div>
+            <div class="health-bar"><div class="health" id="health1"></div></div>
+        </div>
+        <div>
+            <div>Player 2</div>
+            <div class="health-bar"><div class="health" id="health2"></div></div>
+        </div>
+    </div>
+
+    <div class="question-box" id="questionBox"></div>
+    <div class="status" id="status"></div>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
     <script>
-        let peer;
-        let conn;
-        let isHost = false;
-        let currentQuestion;
-        let questionStartTime;
-        let gameActive = true;
-
-        const peerConfig = {
-            host: '0.peerjs.com',
-            port: 443,
-            path: '/',
-            pingInterval: 5000
+        const firebaseConfig = {
+            apiKey: "AIzaSyBi9IEquAN1JPQTA2FVylSheVCtuAG8ZoY",
+  authDomain: "game-9e2a9.firebaseapp.com",
+  databaseURL: "https://game-9e2a9-default-rtdb.firebaseio.com",
+  projectId: "game-9e2a9",
+  storageBucket: "game-9e2a9.firebasestorage.app",
+  messagingSenderId: "567367988730",
+  appId: "1:567367988730:web:6ff2ee6e0cddecfaa9e043"
         };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
 
+        let gameData = {};
+        let startTime;
         const questions = [
             {
-                question: "1 + 1等于多少？",
-                options: ["1", "2", "3", "4"],
-                answer: 1
+                question: "What is 2+2?",
+                answers: ["3", "4", "5", "6"],
+                correct: 1
             },
             {
-                question: "中国的首都是哪里？",
-                options: ["上海", "广州", "北京", "深圳"],
-                answer: 2
+                question: "Capital of Japan?",
+                answers: ["Tokyo", "Osaka", "Kyoto", "Hiroshima"],
+                correct: 0
             }
         ];
 
-        function updateStatus(text) {
-            document.getElementById('status').textContent = text;
-        }
-
-        function createRoom() {
-            isHost = true;
-            const roomId = document.getElementById('roomId').value;
-            updateStatus('正在创建房间...');
+        document.addEventListener('click', () => document.getElementById('bgm').play());
+        
+        async function initGame() {
+            const roomId = prompt("Enter room ID:");
+            const gameRef = db.collection('games').doc(roomId);
             
-            peer = new Peer(roomId, peerConfig);
-            
-            peer.on('open', (id) => {
-                updateStatus(`房间已创建，ID: ${id}`);
+            gameRef.onSnapshot(doc => {
+                gameData = doc.data();
+                updateUI();
+                checkGameEnd();
             });
 
-            peer.on('connection', (connection) => {
-                conn = connection;
-                conn.on('open', () => {
-                    updateStatus('对手已连接！');
-                    document.getElementById('gameArea').style.display = 'block';
-                    showNextQuestion();
+            if (!gameData.players) {
+                await gameRef.set({
+                    players: [1],
+                    healths: [100, 100],
+                    currentQuestion: null,
+                    answers: []
                 });
-                setupConnection();
-            });
-
-            peer.on('error', (err) => updateStatus(`错误: ${err.type}`));
-        }
-
-        function joinRoom() {
-            const roomId = document.getElementById('roomId').value;
-            updateStatus('正在加入房间...');
-            
-            peer = new Peer(null, peerConfig);
-            conn = peer.connect(roomId);
-
-            peer.on('open', () => updateStatus(`已连接，等待主机...`));
-
-            conn.on('open', () => {
-                updateStatus('连接成功！');
-                document.getElementById('gameArea').style.display = 'block';
-                document.getElementById('bgMusic').play().catch(() => {});
-                setupConnection();
-            });
-
-            conn.on('error', (err) => updateStatus(`连接错误: ${err.message}`));
-        }
-
-        function setupConnection() {
-            conn.on('data', (data) => {
-                if(data.type === 'question') showQuestion(data.question);
-                if(data.type === 'hpUpdate') updateHP(data);
-                if(data.type === 'gameOver') handleGameOver(data);
-            });
-
-            conn.on('close', () => updateStatus('连接已断开'));
-        }
-
-        function showNextQuestion() {
-            currentQuestion = questions[Math.floor(Math.random() * questions.length)];
-            conn.send({ type: 'question', question: currentQuestion });
-            showQuestion(currentQuestion);
-            questionStartTime = Date.now();
-        }
-
-        function showQuestion(q) {
-            const questionArea = document.getElementById('questionArea');
-            questionArea.innerHTML = `
-                <div class="question">${q.question}</div>
-                ${q.options.map((opt, i) => `
-                    <div class="option" onclick="checkAnswer(${i})">${opt}</div>
-                `).join('')}
-            `;
-        }
-
-        function checkAnswer(selectedIndex) {
-            if (!gameActive) return;
-
-            const timeUsed = (Date.now() - questionStartTime) / 1000;
-            let hpChange = 0;
-
-            if (selectedIndex === currentQuestion.answer) {
-                hpChange = Math.max(20 - Math.floor(timeUsed), 10);
             } else {
-                hpChange = -30;
+                await gameRef.update({ players: [...gameData.players, 2] });
             }
 
-            const myHp = Math.max(0, parseInt(document.getElementById('myHp').textContent) + hpChange);
-            const enemyHp = parseInt(document.getElementById('enemyHp').textContent);
-            
-            conn.send({ 
-                type: 'hpUpdate',
-                myHp: enemyHp,
-                enemyHp: myHp
+            document.getElementById('questionBox').addEventListener('click', e => {
+                if (e.target.classList.contains('answer-btn')) handleAnswer(e.target.dataset.index);
             });
+        }
 
-            document.getElementById('myHp').textContent = myHp;
-            document.getElementById('enemyHp').textContent = enemyHp;
+        function handleAnswer(answerIndex) {
+            const answerTime = (Date.now() - startTime) / 1000;
+            const damage = Math.max(10, 100 - Math.floor(answerTime * 10));
+            
+            db.collection('games').doc(gameData.roomId).update({
+                answers: [...gameData.answers, answerIndex],
+                healths: calculateDamage(answerIndex, damage)
+            });
+        }
 
-            if (myHp <= 0) {
-                endGame('输了！', '赢了！');
-            } else if (enemyHp <= 0) {
-                endGame('赢了！', '输了！');
+        function calculateDamage(answerIndex, damage) {
+            const correctIndex = questions[gameData.currentQuestion].correct;
+            if (answerIndex == correctIndex) {
+                return [gameData.healths[0], gameData.healths[1] - damage];
             }
-
-            if (isHost) setTimeout(showNextQuestion, 1500);
+            return [gameData.healths[0] - damage, gameData.healths[1]];
         }
 
-        function updateHP(data) {
-            document.getElementById('myHp').textContent = data.myHp;
-            document.getElementById('enemyHp').textContent = data.enemyHp;
-
-            if (data.myHp <= 0) {
-                endGame('输了！', '赢了！');
+        function updateUI() {
+            document.getElementById('health1').style.width = `${gameData.healths[0]}%`;
+            document.getElementById('health2').style.width = `${gameData.healths[1]}%`;
+            
+            if (gameData.currentQuestion !== null) {
+                const q = questions[gameData.currentQuestion];
+                document.getElementById('questionBox').innerHTML = `
+                    <h3>${q.question}</h3>
+                    ${q.answers.map((a, i) => `
+                        <button class="answer-btn" data-index="${i}">${a}</button>
+                    `).join('')}
+                `;
+                startTime = Date.now();
             }
         }
 
-        function handleGameOver(data) {
-            document.getElementById('result').textContent = data.message;
-            document.getElementById('result').style.display = 'block';
-            document.getElementById('bgMusic').pause();
-            gameActive = false;
+        function checkGameEnd() {
+            if (gameData.healths[0] <= 0 || gameData.healths[1] <= 0) {
+                document.getElementById('status').textContent = 
+                    gameData.healths[0] > 0 ? "WIN" : "LOSE";
+            }
         }
 
-        function endGame(myResult, enemyResult) {
-            gameActive = false;
-            document.getElementById('result').textContent = myResult;
-            document.getElementById('result').style.display = 'block';
-            document.getElementById('bgMusic').pause();
-            conn.send({ type: 'gameOver', message: enemyResult });
-        }
+        initGame();
     </script>
 </body>
 </html>
