@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>基元中史爭霸賽</title>
+    <title>中史爭霸賽</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
@@ -168,11 +168,12 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0,0,0,0.8);
+            background: rgba(0,0,0,0.95) !important;
             display: none;
             justify-content: center;
             align-items: center;
             z-index: 9999;
+            flex-direction: column;
         }
 
         .victory-text {
@@ -180,6 +181,13 @@
             color: #d4af37;
             text-shadow: 0 0 20px #c3272b;
             animation: victoryPulse 1s ease-out;
+            margin-bottom: 2rem;
+        }
+
+        .return-message {
+            font-size: 1.5rem;
+            color: white;
+            opacity: 0.8;
         }
 
         @media (max-width: 768px) {
@@ -232,6 +240,7 @@
 
     <div class="victory-overlay">
         <div class="victory-text"></div>
+        <div class="return-message"></div>
     </div>
 
 <script>
@@ -284,7 +293,7 @@ function createRoom() {
         player2: null,
         currentQuestion: null,
         gameStarted: false,
-        gameTerminated: false
+        gameFinalized: false
     });
     listenToRoomChanges();
 }
@@ -308,8 +317,8 @@ function listenToRoomChanges() {
         const room = snapshot.val();
         if (!room) return;
 
-        if (room.gameTerminated) {
-            window.location.href = window.location.href.split('?')[0];
+        if (room.gameFinalized) {
+            showFinalResult(room.finalResult);
             return;
         }
 
@@ -406,9 +415,7 @@ function checkAnswer(isCorrect) {
     }
     
     database.ref('rooms/' + currentRoomId).update(updates, () => {
-        checkGameOver(() => {
-            if (!gameOver) loadNewQuestion();
-        });
+        checkGameOver();
     });
 
     setTimeout(() => {
@@ -427,7 +434,7 @@ function startTimer() {
     }, 1000);
 }
 
-function checkGameOver(callback) {
+function checkGameOver() {
     const roomRef = database.ref('rooms/' + currentRoomId);
     roomRef.once('value').then(snapshot => {
         const room = snapshot.val();
@@ -435,35 +442,43 @@ function checkGameOver(callback) {
 
         const player1Health = room.player1?.health || 0;
         const player2Health = room.player2?.health || 0;
-        const myHealth = isHost ? player1Health : player2Health;
-        const opponentHealth = isHost ? player2Health : player1Health;
+        const amIWinner = (isHost && player1Health > 0) || (!isHost && player2Health > 0);
 
         if ((player1Health <= 0 || player2Health <= 0) && !victoryLock) {
             victoryLock = true;
             gameOver = true;
             
-            const victoryOverlay = document.querySelector('.victory-overlay');
-            const victoryText = document.querySelector('.victory-text');
-            victoryOverlay.style.display = 'flex';
-            victoryText.textContent = myHealth > opponentHealth ? "武運昌隆！" : "雖敗猶榮";
-
-            const resultSound = myHealth > opponentHealth ? soundEffects.victory : soundEffects.defeat;
-            resultSound.play();
-
+            const finalResult = amIWinner ? 'win' : 'lose';
             database.ref('rooms/' + currentRoomId).update({
-                gameTerminated: true,
-                winner: myHealth > opponentHealth ? (isHost ? 'player1' : 'player2') : null
+                gameFinalized: true,
+                finalResult: finalResult
             });
 
-            document.querySelectorAll('button').forEach(btn => btn.disabled = true);
-            document.getElementById('gameArea').style.opacity = '0.3';
-
-            setTimeout(() => {
-                window.location.href = window.location.href.split('?')[0];
-            }, 4000);
+            showFinalResult(finalResult);
         }
-        if (callback) callback();
     });
+}
+
+function showFinalResult(result) {
+    const victoryOverlay = document.querySelector('.victory-overlay');
+    const victoryText = document.querySelector('.victory-text');
+    const returnMessage = document.querySelector('.return-message');
+    
+    victoryText.textContent = result === 'win' ? '武運昌隆！' : '雖敗猶榮';
+    returnMessage.textContent = '五秒後返回主殿...';
+    victoryOverlay.style.display = 'flex';
+
+    document.querySelectorAll('button').forEach(btn => {
+        btn.style.pointerEvents = 'none';
+    });
+    document.getElementById('gameArea').style.opacity = '0.3';
+
+    const resultSound = result === 'win' ? soundEffects.victory : soundEffects.defeat;
+    resultSound.play();
+
+    setTimeout(() => {
+        window.location.href = window.location.href.split('?')[0];
+    }, 5000);
 }
 </script>
 </body>
