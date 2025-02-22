@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>基元中史爭霸賽</title>
+    <title>華夏爭霸賽</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
@@ -151,7 +151,7 @@
     <button class="music-control" onclick="toggleMusic()">🎵 樂音</button>
 
     <div id="roomControl">
-        <h1 style="font-size:2.5rem; color:var(--gold); margin-bottom:1.5rem;">基元中史爭霸賽</h1>
+        <h1 style="font-size:2.5rem; color:var(--gold); margin-bottom:1.5rem;">華夏爭霸賽</h1>
         <input type="text" id="roomId" placeholder="輸入四位戰閣編號">
         <div style="margin:1.5rem 0;">
             <button onclick="createRoom()">⚔️ 創建戰閣</button>
@@ -198,7 +198,7 @@ let timer;
 let timeLeft = 15;
 
 // 音樂控制
-const bgMusic = new Audio('https://freepd.com/music/Coy%20Koi.mp3');
+const bgMusic = new Audio('https://cdn.pixabay.com/audio/2023/10/25/audio_3a5a5a5a5a.mp3');
 let isMusicPlaying = true;
 bgMusic.loop = true;
 bgMusic.volume = 0.3;
