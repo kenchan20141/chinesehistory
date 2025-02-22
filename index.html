@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>中史爭霸賽</title>
+    <title>基元中史爭霸賽</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
@@ -172,7 +172,7 @@
             display: none;
             justify-content: center;
             align-items: center;
-            z-index: 999;
+            z-index: 9999;
         }
 
         .victory-text {
@@ -252,7 +252,8 @@ let currentRoomId = null;
 let isHost = false;
 let timer;
 let timeLeft = 15;
-let gameOver = false; // 新增遊戲狀態變量
+let gameOver = false;
+let victoryLock = false;
 
 const bgMusic = new Audio('https://freepd.com/music/Coy%20Koi.mp3');
 let isMusicPlaying = true;
@@ -282,7 +283,8 @@ function createRoom() {
         player1: { health: 100 },
         player2: null,
         currentQuestion: null,
-        gameStarted: false
+        gameStarted: false,
+        gameTerminated: false
     });
     listenToRoomChanges();
 }
@@ -305,6 +307,11 @@ function listenToRoomChanges() {
     roomRef.on('value', (snapshot) => {
         const room = snapshot.val();
         if (!room) return;
+
+        if (room.gameTerminated) {
+            window.location.href = window.location.href.split('?')[0];
+            return;
+        }
 
         if (room.gameStarted) {
             document.getElementById('waitingArea').style.display = 'none';
@@ -339,7 +346,7 @@ function shuffleArray(array) {
 }
 
 function loadNewQuestion() {
-    if (gameOver) return; // 新增遊戲狀態檢查
+    if (gameOver) return;
 
     const questionsRef = database.ref('questions');
     questionsRef.once('value').then(snapshot => {
@@ -377,7 +384,7 @@ function displayQuestion(question) {
 }
 
 function checkAnswer(isCorrect) {
-    if (gameOver) return; // 新增遊戲狀態檢查
+    if (gameOver) return;
 
     clearInterval(timer);
     const damage = Math.floor((timeLeft / 15) * 30);
@@ -399,7 +406,7 @@ function checkAnswer(isCorrect) {
     }
     
     database.ref('rooms/' + currentRoomId).update(updates, () => {
-        checkGameOver(() => {  // 修改為回調模式
+        checkGameOver(() => {
             if (!gameOver) loadNewQuestion();
         });
     });
@@ -424,42 +431,39 @@ function checkGameOver(callback) {
     const roomRef = database.ref('rooms/' + currentRoomId);
     roomRef.once('value').then(snapshot => {
         const room = snapshot.val();
-        if (!room) return;
+        if (!room || victoryLock) return;
 
-        const myHealth = isHost ? room.player1.health : room.player2.health;
-        const opponentHealth = isHost ? (room.player2?.health || 100) : (room.player1?.health || 100);
+        const player1Health = room.player1?.health || 0;
+        const player2Health = room.player2?.health || 0;
+        const myHealth = isHost ? player1Health : player2Health;
+        const opponentHealth = isHost ? player2Health : player1Health;
 
-        if (myHealth <= 0 || opponentHealth <= 0) {
+        if ((player1Health <= 0 || player2Health <= 0) && !victoryLock) {
+            victoryLock = true;
             gameOver = true;
-            clearInterval(timer);
             
-            // 禁用所有答題按鈕
-            document.querySelectorAll('#options button').forEach(option => {
-                option.style.pointerEvents = 'none';
-            });
-
             const victoryOverlay = document.querySelector('.victory-overlay');
             const victoryText = document.querySelector('.victory-text');
             victoryOverlay.style.display = 'flex';
-            victoryText.textContent = myHealth > 0 ? "武運昌隆！" : "雖敗猶榮";
+            victoryText.textContent = myHealth > opponentHealth ? "武運昌隆！" : "雖敗猶榮";
 
-            const resultSound = myHealth > 0 ? soundEffects.victory : soundEffects.defeat;
+            const resultSound = myHealth > opponentHealth ? soundEffects.victory : soundEffects.defeat;
             resultSound.play();
-            
-            victoryText.style.animation = 'none';
-            setTimeout(() => victoryText.style.animation = 'victoryPulse 1s ease-out', 10);
 
-            roomRef.remove();
-            setTimeout(() => location.reload(), 3000);
+            database.ref('rooms/' + currentRoomId).update({
+                gameTerminated: true,
+                winner: myHealth > opponentHealth ? (isHost ? 'player1' : 'player2') : null
+            });
+
+            document.querySelectorAll('button').forEach(btn => btn.disabled = true);
+            document.getElementById('gameArea').style.opacity = '0.3';
+
+            setTimeout(() => {
+                window.location.href = window.location.href.split('?')[0];
+            }, 4000);
         }
         if (callback) callback();
     });
-}
-
-function playSoundEffect(url) {
-    const audio = new Audio(url);
-    audio.volume = 0.5;
-    audio.play();
 }
 </script>
 </body>
