@@ -484,6 +484,16 @@ function handleGameEnd(winnerType) {
         window.location.reload();
     }, 5000);
 }
+
+    document.addEventListener('DOMContentLoaded', () => {
+    bgMusic.play().catch(error => {
+        isMusicPlaying = false;
+        bgMusic.pause();
+        document.querySelector('.music-control').textContent = '🔇 靜默';
+    });
+});
+
+    
 </script>
 </body>
 </html>
