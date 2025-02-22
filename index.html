@@ -2,14 +2,15 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>P2P对战修复版</title>
+    <title>P2P对战最终版</title>
     <style>
         body { font-family: Arial; padding: 20px; }
         #roomId { width: 200px; padding: 10px; }
         .player { margin: 20px 0; padding: 10px; border: 1px solid #ccc; }
         .question { background: #f0f0f0; padding: 15px; margin: 10px 0; }
         .option { padding: 10px; margin: 5px; background: #e1e1e1; cursor: pointer; }
-        #status { color: #666; margin: 10px 0; }
+        #status { color: #666; margin: 10px 0; font-size: 24px; font-weight: bold; }
+        #result { display: none; font-size: 48px; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); }
     </style>
 </head>
 <body>
@@ -24,6 +25,11 @@
         <div>对手HP: <span id="enemyHp">100</span></div>
         <div id="questionArea"></div>
     </div>
+    <div id="result"></div>
+
+    <audio id="bgMusic" loop>
+        <source src="https://cdn.pixabay.com/download/audio/2022/11/14/audio_ff2b8a8e0f.mp3" type="audio/mpeg">
+    </audio>
 
     <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
     
@@ -33,6 +39,7 @@
         let isHost = false;
         let currentQuestion;
         let questionStartTime;
+        let gameActive = true;
 
         const peerConfig = {
             host: '0.peerjs.com',
@@ -94,12 +101,14 @@
             conn.on('open', () => {
                 updateStatus('连接成功！');
                 document.getElementById('gameArea').style.display = 'block';
+                document.getElementById('bgMusic').play().catch(() => {});
                 if (isHost) showNextQuestion();
             });
 
             conn.on('data', (data) => {
                 if(data.type === 'question') showQuestion(data.question);
                 if(data.type === 'hpUpdate') updateHP(data);
+                if(data.type === 'gameOver') handleGameOver(data);
             });
 
             conn.on('close', () => updateStatus('连接已断开'));
@@ -124,6 +133,8 @@
         }
 
         function checkAnswer(selectedIndex) {
+            if (!gameActive) return;
+
             const timeUsed = (Date.now() - questionStartTime) / 1000;
             let hpChange = 0;
 
@@ -145,12 +156,37 @@
             document.getElementById('myHp').textContent = myHp;
             document.getElementById('enemyHp').textContent = enemyHp;
 
+            if (myHp <= 0) {
+                endGame('输了！', '赢了！');
+            } else if (enemyHp <= 0) {
+                endGame('赢了！', '输了！');
+            }
+
             if (isHost) setTimeout(showNextQuestion, 1500);
         }
 
         function updateHP(data) {
             document.getElementById('myHp').textContent = data.myHp;
             document.getElementById('enemyHp').textContent = data.enemyHp;
+
+            if (data.myHp <= 0) {
+                endGame('输了！', '赢了！');
+            }
+        }
+
+        function handleGameOver(data) {
+            document.getElementById('result').textContent = data.message;
+            document.getElementById('result').style.display = 'block';
+            document.getElementById('bgMusic').pause();
+            gameActive = false;
+        }
+
+        function endGame(myResult, enemyResult) {
+            gameActive = false;
+            document.getElementById('result').textContent = myResult;
+            document.getElementById('result').style.display = 'block';
+            document.getElementById('bgMusic').pause();
+            conn.send({ type: 'gameOver', message: enemyResult });
         }
     </script>
 </body>
