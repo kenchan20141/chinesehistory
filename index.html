@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>頭腦王者 - 完整修正版</title>
+    <title>頭腦王者 - 完全修正版</title>
     <style>
         body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
         #lobby, #battle, #result, #waiting { margin: 20px 0; padding: 20px; border: 1px solid #ccc; border-radius: 10px; }
@@ -84,7 +84,7 @@
                 await roomRef.set({
                     players: {
                         player1: { health: 100, answer: null, time: 0 },
-                        player2: { health: 100, answer: null, time: 0 }
+                        player2: { health: 0, answer: null, time: 0 }
                     },
                     status: 'waiting',
                     currentQuestion: null
@@ -93,9 +93,9 @@
                 document.getElementById('displayRoomCode').textContent = roomId;
                 toggleScreens('waiting');
                 
-                roomRef.child('status').on('value', (snapshot) => {
-                    const status = snapshot.val();
-                    if (status === 'playing') {
+                roomRef.child('players/player2/health').on('value', (snapshot) => {
+                    if (snapshot.val() === 100) {
+                        roomRef.update({ status: 'playing' });
                         toggleScreens('battle');
                         setupRoomListeners(roomRef);
                         loadNewQuestion();
@@ -117,12 +117,14 @@
                 if (!snapshot.exists()) return alert('房間不存在');
                 
                 const roomData = snapshot.val();
-                if (roomData.status !== 'waiting') return alert('房間不可加入');
-                
+                if (roomData.players.player2.health !== 0) {
+                    return alert('房間已滿');
+                }
+
                 playerId = 'player2';
                 await roomRef.update({
-                    status: 'playing',
-                    [`players/${playerId}/health`]: 100
+                    [`players/${playerId}/health`]: 100,
+                    status: 'playing'
                 });
 
                 toggleScreens('battle');
