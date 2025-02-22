@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>P2P对战最终版</title>
+    <title>中史問答對戰</title>
     <style>
         body { font-family: Arial; padding: 20px; }
         #roomId { width: 200px; padding: 10px; }
@@ -74,13 +74,16 @@
             
             peer.on('open', (id) => {
                 updateStatus(`房间已创建，ID: ${id}`);
-                document.getElementById('gameArea').style.display = 'block';
             });
 
             peer.on('connection', (connection) => {
                 conn = connection;
+                conn.on('open', () => {
+                    updateStatus('对手已连接！');
+                    document.getElementById('gameArea').style.display = 'block';
+                    showNextQuestion();
+                });
                 setupConnection();
-                updateStatus('对手已连接！');
             });
 
             peer.on('error', (err) => updateStatus(`错误: ${err.type}`));
@@ -94,17 +97,18 @@
             conn = peer.connect(roomId);
 
             peer.on('open', () => updateStatus(`已连接，等待主机...`));
-            setupConnection();
-        }
 
-        function setupConnection() {
             conn.on('open', () => {
                 updateStatus('连接成功！');
                 document.getElementById('gameArea').style.display = 'block';
                 document.getElementById('bgMusic').play().catch(() => {});
-                if (isHost) showNextQuestion();
+                setupConnection();
             });
 
+            conn.on('error', (err) => updateStatus(`连接错误: ${err.message}`));
+        }
+
+        function setupConnection() {
             conn.on('data', (data) => {
                 if(data.type === 'question') showQuestion(data.question);
                 if(data.type === 'hpUpdate') updateHP(data);
@@ -112,7 +116,6 @@
             });
 
             conn.on('close', () => updateStatus('连接已断开'));
-            conn.on('error', (err) => updateStatus(`连接错误: ${err.message}`));
         }
 
         function showNextQuestion() {
