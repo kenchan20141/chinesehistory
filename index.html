@@ -1,287 +1,184 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>頭腦王者 - 中史版</title>
-    <style>
-        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
-        #lobby, #battle, #result, #waiting { margin: 20px 0; padding: 20px; border: 1px solid #ccc; border-radius: 10px; }
-        .hidden { display: none; }
-        .health-bar { height: 20px; background: #ddd; border-radius: 10px; margin: 10px 0; }
-        .health-fill { height: 100%; background: #ff4444; border-radius: 10px; transition: width 0.3s; }
-        #question { font-size: 1.2em; margin: 20px 0; padding: 15px; background: #f8f9fa; border-radius: 5px; }
-        #options { display: grid; gap: 10px; margin: 20px 0; }
-        .option-btn { padding: 15px; background: #e9ecef; border: none; border-radius: 5px; cursor: pointer; }
-        .option-btn:hover { background: #dee2e6; }
-        #waiting { text-align: center; }
-        .room-input { margin: 10px 0; padding: 8px; width: 200px; }
-    </style>
-</head>
-<body>
-    <div id="lobby">
-        <h2>遊戲大廳</h2>
-        <div>
-            <input type="text" id="createRoomCode" class="room-input" placeholder="輸入房間號碼(例:1)">
-            <button onclick="createRoom()">創建房間</button>
-        </div>
-        <div>
-            <input type="text" id="joinRoomCode" class="room-input" placeholder="輸入房間號碼">
-            <button onclick="joinRoom()">加入房間</button>
-        </div>
-    </div>
-
-    <div id="waiting" class="hidden">
-        <h3>等待對手加入...</h3>
-        <p>房間號碼：<span id="displayRoomCode"></span></p>
-    </div>
-
-    <div id="battle" class="hidden">
-        <div id="question"></div>
-        <div id="options"></div>
-        <div style="margin-top: 30px;">
-            <div>我方血量: <span id="myHealth">100</span></div>
-            <div class="health-bar"><div class="health-fill" id="myHealthBar"></div></div>
-            <div>對手血量: <span id="enemyHealth">100</span></div>
-            <div class="health-bar"><div class="health-fill" id="enemyHealthBar"></div></div>
-        </div>
-    </div>
-
-    <div id="result" class="hidden">
-        <h2 id="resultText"></h2>
-        <button onclick="location.reload()">再玩一次</button>
-    </div>
-
+    <title>頭腦王者</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+</head>
+<body>
+    <div id="roomControl">
+        <input type="text" id="roomId" placeholder="輸入房間號">
+        <button onclick="createRoom()">創建房間</button>
+        <button onclick="joinRoom()">加入房間</button>
+    </div>
 
-    <script>
-        const firebaseConfig = {
-            apiKey: "AIzaSyBi9IEquAN1JPQTA2FVylSheVCtuAG8ZoY",
-            authDomain: "game-9e2a9.firebaseapp.com",
-            databaseURL: "https://game-9e2a9-default-rtdb.firebaseio.com",
-            projectId: "game-9e2a9",
-            storageBucket: "game-9e2a9.firebasestorage.app",
-            messagingSenderId: "567367988730",
-            appId: "1:567367988730:web:6ff2ee6e0cddecfaa9e043"
-        };
+    <div id="gameArea" style="display:none;">
+        <div id="playerInfo">
+            <div>你的血量: <span id="myHealth">100</span></div>
+            <div>對手血量: <span id="opponentHealth">100</span></div>
+        </div>
+        <div id="question"></div>
+        <div id="options"></div>
+        <div id="timer">剩餘時間: 10秒</div>
+    </div>
 
-        firebase.initializeApp(firebaseConfig);
-        const database = firebase.database();
-        let roomId = null;
-        let playerId = null;
-        let questionStartTime = 0;
+<script>
+// Firebase配置
+const firebaseConfig = {
+  apiKey: "AIzaSyBi9IEquAN1JPQTA2FVylSheVCtuAG8ZoY",
+  authDomain: "game-9e2a9.firebaseapp.com",
+  databaseURL: "https://game-9e2a9-default-rtdb.firebaseio.com",
+  projectId: "game-9e2a9",
+  storageBucket: "game-9e2a9.appspot.com",
+  messagingSenderId: "567367988730",
+  appId: "1:567367988730:web:6ff2ee6e0cddecfaa9e043"
+};
 
-        async function createRoom() {
-            try {
-                roomId = document.getElementById('createRoomCode').value.trim();
-                if (!roomId) return alert('請輸入房間號碼');
-                if (!/^[a-zA-Z0-9]+$/.test(roomId)) return alert('房間號碼只能包含英數字');
-                
-                const roomRef = database.ref(`rooms/${roomId}`);
-                const snapshot = await roomRef.once('value');
-                if (snapshot.exists()) return alert('房間已存在');
+// 初始化Firebase
+firebase.initializeApp(firebaseConfig);
+const database = firebase.database();
 
-                playerId = 'player1';
-                await roomRef.set({
-                    players: {
-                        player1: { health: 100, answer: null, time: 0 },
-                        player2: { health: 0, answer: null, time: 0 }
-                    },
-                    status: 'waiting',
-                    currentQuestion: null
-                });
+let currentRoomId = null;
+let isHost = false;
+let timer;
+let timeLeft = 10;
 
-                document.getElementById('displayRoomCode').textContent = roomId;
-                toggleScreens('waiting');
-                
-                roomRef.child('players/player2').on('value', (snapshot) => {
-                    const player2 = snapshot.val();
-                    if (player2.health === 100) {
-                        roomRef.update({ status: 'playing' });
-                        toggleScreens('battle');
-                        setupRoomListeners(roomRef);
-                        loadNewQuestion();
-                    }
-                });
+// 創建房間
+function createRoom() {
+    currentRoomId = document.getElementById('roomId').value || Date.now().toString();
+    isHost = true;
+    
+    database.ref('rooms/' + currentRoomId).set({
+        player1: { health: 100 },
+        player2: null,
+        currentQuestion: null,
+        gameStarted: false
+    });
+    
+    listenToRoomChanges();
+}
 
-            } catch (error) {
-                alert(`創建失敗：${error.message}`);
-            }
+// 加入房間
+function joinRoom() {
+    currentRoomId = document.getElementById('roomId').value;
+    database.ref('rooms/' + currentRoomId).transaction(room => {
+        if (room && !room.gameStarted) {
+            room.player2 = { health: 100 };
+            room.gameStarted = true;
         }
+        return room;
+    });
+    
+    listenToRoomChanges();
+}
 
-        async function joinRoom() {
-            try {
-                roomId = document.getElementById('joinRoomCode').value.trim();
-                if (!roomId) return alert('請輸入房間號碼');
-                
-                const roomRef = database.ref(`rooms/${roomId}`);
-                
-                const result = await roomRef.transaction(roomData => {
-                    if (!roomData || 
-                        roomData.status !== 'waiting' || 
-                        roomData.players.player2.health !== 0) {
-                        return;
-                    }
-                    
-                    roomData.players.player2 = { health: 100, answer: null, time: 0 };
-                    roomData.status = 'playing';
-                    return roomData;
-                });
+// 監聽房間變化
+function listenToRoomChanges() {
+    const roomRef = database.ref('rooms/' + currentRoomId);
+    
+    roomRef.on('value', (snapshot) => {
+        const room = snapshot.val();
+        if (!room) return;
 
-                if (!result.committed) throw new Error('加入失敗');
-                
-                playerId = 'player2';
-                toggleScreens('battle');
-                setupRoomListeners(roomRef);
-                loadNewQuestion();
-
-            } catch (error) {
-                console.error('加入錯誤:', error);
-                alert('加入失敗：房間已滿或遊戲已開始');
-            }
+        if (room.gameStarted) {
+            document.getElementById('roomControl').style.display = 'none';
+            document.getElementById('gameArea').style.display = 'block';
+            startGame(room);
         }
+    });
+}
 
-        function setupRoomListeners(roomRef) {
-            roomRef.on('value', (snapshot) => {
-                const room = snapshot.val();
-                if (!room) return location.reload();
+// 遊戲邏輯
+function startGame(room) {
+    // 血量顯示
+    document.getElementById('myHealth').textContent = 
+        isHost ? room.player1.health : room.player2.health;
+    document.getElementById('opponentHealth').textContent = 
+        isHost ? (room.player2?.health || 100) : room.player1.health;
 
-                updateHealthDisplay(room.players);
-                
-                if (room.currentQuestion && !room.currentQuestion.answered) {
-                    showQuestion(room.currentQuestion);
-                    questionStartTime = Date.now();
-                }
+    // 題目處理
+    if (!room.currentQuestion) {
+        loadNewQuestion();
+    } else {
+        displayQuestion(room.currentQuestion);
+    }
+}
 
-                checkGameResult(room.players);
-            });
+// 加載新題目
+function loadNewQuestion() {
+    const questionsRef = database.ref('questions');
+    questionsRef.once('value').then(snapshot => {
+        const questions = snapshot.val();
+        const randomIndex = Math.floor(Math.random() * questions.length);
+        const selectedQuestion = questions[randomIndex];
+        
+        database.ref('rooms/' + currentRoomId).update({
+            currentQuestion: selectedQuestion
+        });
+        
+        startTimer();
+    });
+}
+
+// 顯示題目
+function displayQuestion(question) {
+    document.getElementById('question').textContent = question.question;
+    const optionsDiv = document.getElementById('options');
+    optionsDiv.innerHTML = '';
+    
+    question.options.forEach((option, index) => {
+        const button = document.createElement('button');
+        button.textContent = option;
+        button.onclick = () => checkAnswer(index === question.correctIndex);
+        optionsDiv.appendChild(button);
+    });
+}
+
+// 檢查答案
+function checkAnswer(isCorrect) {
+    clearInterval(timer);
+    const damage = Math.floor((timeLeft / 10) * 20); // 根據剩餘時間計算傷害
+    
+    const updates = {};
+    const playerPath = isHost ? 'player1' : 'player2';
+    const opponentPath = isHost ? 'player2' : 'player1';
+    
+    if (isCorrect) {
+        updates[`${opponentPath}/health`] = firebase.database.ServerValue.increment(-damage);
+    } else {
+        updates[`${playerPath}/health`] = firebase.database.ServerValue.increment(-damage);
+    }
+    
+    database.ref('rooms/' + currentRoomId).update(updates, () => {
+        checkGameOver();
+        loadNewQuestion();
+    });
+}
+
+// 計時器
+function startTimer() {
+    timeLeft = 10;
+    timer = setInterval(() => {
+        timeLeft--;
+        document.getElementById('timer').textContent = `剩餘時間: ${timeLeft}秒`;
+        if (timeLeft <= 0) checkAnswer(false);
+    }, 1000);
+}
+
+// 檢查遊戲結束
+function checkGameOver() {
+    const roomRef = database.ref('rooms/' + currentRoomId);
+    roomRef.once('value').then(snapshot => {
+        const room = snapshot.val();
+        const myHealth = isHost ? room.player1.health : room.player2.health;
+        const opponentHealth = isHost ? room.player2.health : room.player1.health;
+        
+        if (myHealth <= 0 || opponentHealth <= 0) {
+            alert(myHealth > 0 ? "YOU WIN!" : "YOU LOSE!");
+            roomRef.remove();
         }
-
-        async function loadNewQuestion() {
-            try {
-                const questionsRef = database.ref('questions');
-                const snapshot = await questionsRef.once('value');
-                if (!snapshot.exists()) throw new Error('題庫為空');
-
-                const questions = snapshot.val();
-                const questionKeys = Object.keys(questions);
-                const validQuestions = questionKeys.filter(key => 
-                    questions[key].question && 
-                    Array.isArray(questions[key].options) &&
-                    questions[key].options.length >= 2 &&
-                    questions[key].correctAnswer
-                );
-
-                if (validQuestions.length === 0) throw new Error('無有效題目');
-                
-                const randomKey = validQuestions[Math.floor(Math.random() * validQuestions.length)];
-                const question = questions[randomKey];
-                
-                await database.ref(`rooms/${roomId}/currentQuestion`).set({
-                    text: question.question,
-                    options: question.options,
-                    correctAnswer: question.correctAnswer,
-                    answered: false,
-                    startTime: Date.now()
-                });
-
-            } catch (error) {
-                console.error('題目加載錯誤:', error);
-                alert('題目加載失敗：請檢查題庫格式');
-            }
-        }
-
-        function showQuestion(question) {
-            document.getElementById('question').textContent = question.text;
-            const optionsContainer = document.getElementById('options');
-            optionsContainer.innerHTML = '';
-            
-            question.options.forEach((option, index) => {
-                const button = document.createElement('button');
-                button.className = 'option-btn';
-                button.textContent = `${String.fromCharCode(65 + index)}. ${option}`;
-                button.onclick = () => submitAnswer(option);
-                optionsContainer.appendChild(button);
-            });
-        }
-
-        async function submitAnswer(answer) {
-            try {
-                const responseTime = Date.now() - questionStartTime;
-                await database.ref(`rooms/${roomId}/players/${playerId}`).update({
-                    answer: answer,
-                    time: responseTime
-                });
-                checkAnswers();
-            } catch (error) {
-                alert('提交答案失敗');
-            }
-        }
-
-        async function checkAnswers() {
-            const roomRef = database.ref(`rooms/${roomId}`);
-            const snapshot = await roomRef.once('value');
-            const room = snapshot.val();
-            
-            if (room.players.player1.answer && room.players.player2.answer) {
-                const correctAnswer = room.currentQuestion.correctAnswer;
-                const damage = calculateDamage(room.players, correctAnswer);
-                
-                await roomRef.update({
-                    'players/player1/health': room.players.player1.health - damage.player1,
-                    'players/player2/health': room.players.player2.health - damage.player2,
-                    'currentQuestion/answered': true
-                });
-
-                setTimeout(loadNewQuestion, 2000);
-            }
-        }
-
-        function calculateDamage(players, correctAnswer) {
-            const damage = { player1: 0, player2: 0 };
-
-            ['player1', 'player2'].forEach(player => {
-                const isCorrect = players[player].answer === correctAnswer;
-                const timeFactor = Math.max(0, (10000 - players[player].time) / 10000);
-                
-                if (isCorrect) {
-                    const opponent = player === 'player1' ? 'player2' : 'player1';
-                    damage[opponent] += Math.floor(20 * timeFactor);
-                } else {
-                    damage[player] += 10;
-                }
-            });
-
-            return damage;
-        }
-
-        function updateHealthDisplay(players) {
-            const myHealth = players[playerId].health;
-            const enemyId = playerId === 'player1' ? 'player2' : 'player1';
-            const enemyHealth = players[enemyId]?.health || 0;
-
-            document.getElementById('myHealth').textContent = myHealth;
-            document.getElementById('enemyHealth').textContent = enemyHealth;
-            document.getElementById('myHealthBar').style.width = `${myHealth}%`;
-            document.getElementById('enemyHealthBar').style.width = `${enemyHealth}%`;
-        }
-
-        function checkGameResult(players) {
-            if ((players.player1?.health || 0) <= 0 || (players.player2?.health || 0) <= 0) {
-                const isWinner = players[playerId]?.health > 0;
-                showResult(isWinner ? 'WIN' : 'LOSE');
-            }
-        }
-
-        function showResult(result) {
-            toggleScreens('result');
-            document.getElementById('resultText').textContent = result;
-        }
-
-        function toggleScreens(screen) {
-            ['lobby', 'waiting', 'battle', 'result'].forEach(id => {
-                document.getElementById(id).classList.toggle('hidden', id !== screen);
-            });
-        }
-    </script>
+    });
+}
+</script>
 </body>
 </html>
