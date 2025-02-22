@@ -133,17 +133,6 @@
             display: none;
         }
 
-        #reconnectAlert {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: var(--dark-bg);
-            padding: 15px;
-            border-radius: 8px;
-            display: none;
-            z-index: 1000;
-        }
-
         @media (max-width: 768px) {
             #options {
                 grid-template-columns: 1fr;
@@ -160,10 +149,6 @@
 </head>
 <body>
     <button class="music-control" onclick="toggleMusic()">🎵 樂音</button>
-    <div id="reconnectAlert">
-        <p>⚠ 連接異常，請嘗試：</p>
-        <button onclick="location.reload()">刷新頁面</button>
-    </div>
 
     <div id="roomControl">
         <h1 style="font-size:2.5rem; color:var(--gold); margin-bottom:1.5rem;">基元中史爭霸賽</h1>
@@ -211,26 +196,6 @@ let currentRoomId = null;
 let isHost = false;
 let timer;
 let timeLeft = 15;
-let roomRef = null;
-
-// 初始化題庫
-const questions = [
-    {
-        question: "秦始皇統一六國後推行什麼文字？",
-        options: ["甲骨文", "小篆", "隸書", "金文"],
-        correct: "小篆"
-    },
-    {
-        question: "三國時期火燒連營的戰役是？",
-        options: ["官渡之戰", "赤壁之戰", "夷陵之戰", "合肥之戰"],
-        correct: "夷陵之戰"
-    },
-    {
-        question: "明朝鄭和下西洋最遠到達哪裡？",
-        options: ["印度", "阿拉伯半島", "非洲東海岸", "美洲"],
-        correct: "非洲東海岸"
-    }
-];
 
 // 音樂控制
 const bgMusic = new Audio('https://freepd.com/music/Coy%20Koi.mp3');
@@ -244,62 +209,54 @@ function toggleMusic() {
     document.querySelector('.music-control').textContent = isMusicPlaying ? '🎵 樂音' : '🔇 靜默';
 }
 
-// 房間控制
+// 遊戲邏輯
 function createRoom() {
-    currentRoomId = 'room_' + Date.now() + Math.floor(Math.random() * 1000);
+    currentRoomId = document.getElementById('roomId').value || Math.floor(1000 + Math.random() * 9000);
     isHost = true;
     document.getElementById('roomControl').style.display = 'none';
     document.getElementById('waitingArea').style.display = 'block';
     document.getElementById('displayRoomId').textContent = currentRoomId;
 
     database.ref('rooms/' + currentRoomId).set({
-        player1: { health: 100, ready: true },
-        player2: { health: 100, ready: false },
-        questions: questions,
-        status: 'waiting',
-        currentQuestion: null
+        player1: { health: 100 },
+        player2: null,
+        currentQuestion: null,
+        gameStarted: false
     });
-
-    setupRoomListener();
+    listenToRoomChanges();
 }
 
 function joinRoom() {
     currentRoomId = document.getElementById('roomId').value;
     database.ref('rooms/' + currentRoomId).transaction(room => {
-        if (room && room.status === 'waiting') {
-            room.player2.ready = true;
-            room.status = 'playing';
+        if (room && !room.gameStarted) {
+            room.player2 = { health: 100 };
+            room.gameStarted = true;
         }
         return room;
     });
     document.getElementById('roomControl').style.display = 'none';
-    setupRoomListener();
+    listenToRoomChanges();
 }
 
-function setupRoomListener() {
-    if(roomRef) roomRef.off();
-    
-    roomRef = database.ref('rooms/' + currentRoomId);
+function listenToRoomChanges() {
+    const roomRef = database.ref('rooms/' + currentRoomId);
     roomRef.on('value', (snapshot) => {
         const room = snapshot.val();
-        if (!room) {
-            document.getElementById('reconnectAlert').style.display = 'block';
-            return;
-        }
+        if (!room) return;
 
-        if (room.status === 'playing') {
+        if (room.gameStarted) {
             document.getElementById('waitingArea').style.display = 'none';
             document.getElementById('gameArea').style.display = 'block';
-            if (room.currentQuestion) displayQuestion(room.currentQuestion);
-            updateHealthDisplay(room);
+            startGame(room);
         }
+        updateHealthDisplay(room);
     });
 }
 
-// 遊戲邏輯
 function updateHealthDisplay(room) {
-    const myHealth = isHost ? room.player1.health : room.player2.health;
-    const opponentHealth = isHost ? room.player2.health : room.player1.health;
+    const myHealth = isHost ? room.player1.health : (room.player2?.health || 100);
+    const opponentHealth = isHost ? (room.player2?.health || 100) : room.player1.health;
     
     document.getElementById('myHealth').textContent = myHealth;
     document.getElementById('opponentHealth').textContent = opponentHealth;
@@ -307,31 +264,19 @@ function updateHealthDisplay(room) {
     document.getElementById('opponentHealthBar').style.width = opponentHealth + '%';
 }
 
+function startGame(room) {
+    if (!room.currentQuestion) loadNewQuestion();
+    else displayQuestion(room.currentQuestion);
+}
+
 function loadNewQuestion() {
-    roomRef.once('value').then(snapshot => {
-        const room = snapshot.val();
-        const availableQuestions = room.questions.filter(q => 
-            !room.usedQuestions || !room.usedQuestions.includes(q.question)
-        );
+    const questionsRef = database.ref('questions');
+    questionsRef.once('value').then(snapshot => {
+        const questions = snapshot.val();
+        const randomIndex = Math.floor(Math.random() * questions.length);
+        const selectedQuestion = questions[randomIndex];
         
-        const selectedQuestion = availableQuestions[Math.floor(Math.random() * availableQuestions.length)];
-        const shuffledOptions = [...selectedQuestion.options];
-        for (let i = shuffledOptions.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [shuffledOptions[i], shuffledOptions[j]] = [shuffledOptions[j], shuffledOptions[i]];
-        }
-        const correctIndex = shuffledOptions.indexOf(selectedQuestion.correct);
-        
-        const finalQuestion = {
-            question: selectedQuestion.question,
-            options: shuffledOptions,
-            correctIndex: correctIndex
-        };
-        
-        roomRef.update({ 
-            currentQuestion: finalQuestion,
-            usedQuestions: [...(room.usedQuestions || []), selectedQuestion.question]
-        });
+        database.ref('rooms/' + currentRoomId).update({ currentQuestion: selectedQuestion });
         startTimer();
     });
 }
@@ -365,14 +310,9 @@ function checkAnswer(isCorrect) {
         playSoundEffect('https://cdn.pixabay.com/audio/2024/05/25/audio_0a5a0a0a5a.mp3');
     }
     
-    roomRef.update(updates, (error) => {
-        if (error) {
-            console.error('更新數據失敗:', error);
-            document.getElementById('reconnectAlert').style.display = 'block';
-        } else {
-            checkGameOver();
-            loadNewQuestion();
-        }
+    database.ref('rooms/' + currentRoomId).update(updates, () => {
+        checkGameOver();
+        loadNewQuestion();
     });
 }
 
@@ -387,30 +327,17 @@ function startTimer() {
 }
 
 function checkGameOver() {
+    const roomRef = database.ref('rooms/' + currentRoomId);
     roomRef.once('value').then(snapshot => {
         const room = snapshot.val();
-        if (!room) return;
-
         const myHealth = isHost ? room.player1.health : room.player2.health;
-        const opponentHealth = isHost ? room.player2.health : room.player1.health;
         
-        if (myHealth <= 0 || opponentHealth <= 0) {
+        if (myHealth <= 0 || (isHost ? room.player2?.health : room.player1.health) <= 0) {
             alert(myHealth > 0 ? "🎉 武道巔峰！" : "💀 兵敗垂成...");
-            cleanupRoom();
+            roomRef.remove();
+            setTimeout(() => location.reload(), 3000);
         }
     });
-}
-
-function cleanupRoom() {
-    if(roomRef) {
-        roomRef.off();
-        roomRef.remove().catch(error => {
-            console.error('刪除房間失敗:', error);
-        });
-    }
-    currentRoomId = null;
-    isHost = false;
-    setTimeout(() => location.reload(), 3000);
 }
 
 function playSoundEffect(url) {
@@ -418,13 +345,6 @@ function playSoundEffect(url) {
     audio.volume = 0.5;
     audio.play();
 }
-
-// 網絡狀態監聽
-database.ref('.info/connected').on('value', (snapshot) => {
-    if (snapshot.val() === false) {
-        document.getElementById('reconnectAlert').style.display = 'block';
-    }
-});
 </script>
 </body>
 </html>
