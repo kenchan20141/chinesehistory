@@ -1,19 +1,21 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>头脑王者</title>
+    <title>中史問答</title>
     <style>
         body { font-family: Arial; padding: 20px; }
         #room { width: 200px; padding: 10px; margin-bottom: 10px; }
-        .hp-bar { height: 20px; background: #ff0000; margin: 10px 0; }
+        .hp-bar { height: 20px; background: #ff0000; margin: 10px 0; transition: width 0.3s; }
+        .question { margin: 20px 0; }
+        button { padding: 8px 15px; margin: 5px; }
     </style>
 </head>
 <body>
-    <input id="room" placeholder="输入房间号">
-    <button onclick="join()">开始游戏</button>
+    <input id="room" placeholder="輸入房間號">
+    <button onclick="join()">開始遊戲</button>
     <div id="game" style="display:none;">
         <div>你的HP: <div id="myHp" class="hp-bar" style="width:100%"></div></div>
-        <div>对手HP: <div id="enemyHp" class="hp-bar" style="width:100%"></div></div>
+        <div>對手HP: <div id="enemyHp" class="hp-bar" style="width:100%"></div></div>
         <div id="question"></div>
     </div>
 
@@ -21,59 +23,129 @@
     <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-database.js"></script>
     <script>
-        const firebaseConfig = { /* 粘贴你的配置信息 */ };
+        const firebaseConfig = { /* 粘贴你的Firebase配置 */ };
         firebase.initializeApp(firebaseConfig);
 
-        let roomId, me, enemy;
+        let roomId, me, enemy, currentQuestion;
 
         function join() {
             roomId = document.getElementById('room').value;
             document.getElementById('game').style.display = 'block';
             
+            const roomRef = firebase.database().ref('rooms/' + roomId);
+            
             // 监听房间数据变化
-            firebase.database().ref('rooms/'+roomId).on('value', snapshot => {
+            roomRef.on('value', snapshot => {
                 const data = snapshot.val() || {};
-                if(!data.player1) initRoom();
+                console.log('房间数据更新:', data); // 调试日志
+                
+                if (!data.player1) {
+                    initRoom(roomRef);
+                } else if (!data.player2 && !me) {
+                    joinRoom(roomRef);
+                }
+                
                 updateGame(data);
             });
         }
 
-        function initRoom() {
-            me = { hp: 100, id: Date.now() };
-            firebase.database().ref('rooms/'+roomId).set({ player1: me });
+        function initRoom(roomRef) {
+            me = { hp: 100, id: 'player1' };
+            roomRef.set({ 
+                player1: me,
+                currentQuestion: null,
+                status: 'waiting'
+            });
+        }
+
+        function joinRoom(roomRef) {
+            me = { hp: 100, id: 'player2' };
+            roomRef.update({ 
+                player2: me,
+                status: 'playing'
+            });
         }
 
         function updateGame(data) {
-            // 血量更新
-            document.getElementById('myHp').style.width = data.player1.hp + '%';
-            if(data.player2) {
-                document.getElementById('enemyHp').style.width = data.player2.hp + '%';
-            }
+            // 更新血量显示
+            document.getElementById('myHp').style.width = data.player1?.hp + '%';
+            document.getElementById('enemyHp').style.width = data.player2?.hp + '%';
 
-            // 自动开始游戏
-            if(data.player1 && data.player2) showQuestion();
+            // 显示题目逻辑
+            if (data.status === 'playing' && !data.currentQuestion) {
+                showQuestion(data);
+            } else if (data.currentQuestion) {
+                displayQuestion(data.currentQuestion);
+            }
         }
 
-        function showQuestion() {
+        function showQuestion(data) {
             const questions = [
-                { q: "1+1=?", a: 2, options: [1,2,3] },
-                { q: "中国首都是?", a: 1, options: ["上海","北京","广州"] }
+                { 
+                    q: "1+1=?", 
+                    a: 1, 
+                    options: ["1", "2", "3"],
+                    answerTime: Date.now()
+                },
+                { 
+                    q: "中国首都是?", 
+                    a: 1, 
+                    options: ["上海","北京","广州"],
+                    answerTime: Date.now()
+                }
             ];
-            const q = questions[Math.floor(Math.random()*questions.length)];
             
-            document.getElementById('question').innerHTML = `
-                <h3>${q.q}</h3>
-                ${q.options.map((o,i)=>`<button onclick="answer(${i})">${o}</button>`).join('')}
+            const q = questions[Math.floor(Math.random()*questions.length)];
+            const updates = {
+                currentQuestion: q,
+                status: 'answering'
+            };
+            
+            firebase.database().ref('rooms/'+roomId).update(updates);
+        }
+
+        function displayQuestion(q) {
+            if (!q || currentQuestion?.answerTime === q.answerTime) return;
+            
+            currentQuestion = q;
+            const html = `
+                <div class="question">
+                    <h3>${q.q}</h3>
+                    ${q.options.map((o,i) => `
+                        <button onclick="answer(${i})">${o}</button>
+                    `).join('')}
+                </div>
             `;
+            
+            document.getElementById('question').innerHTML = html;
+            setTimeout(checkTimeout, 15000); // 15秒未回答自动扣血
         }
 
         function answer(choice) {
-            const answerTime = 10; // 简单示例
-            firebase.database().ref('rooms/'+roomId).transaction(data => {
-                const target = data.player2 ? "player2" : "player1";
-                data[target].hp -= answerTime;
-                return data;
-            });
+            const isCorrect = (choice === currentQuestion.a);
+            const answerTime = Date.now() - currentQuestion.answerTime;
+            const damage = isCorrect ? 
+                Math.max(10, 50 - Math.floor(answerTime/100)) : 
+                20;
+
+            const updates = {};
+            const target = me.id === 'player1' ? 'player2' : 'player1';
+            updates[`${me.id}.hp`] = firebase.database.ServerValue.increment(
+                isCorrect ? 0 : -damage
+            );
+            updates[`${target}.hp`] = firebase.database.ServerValue.increment(
+                isCorrect ? -damage : 0
+            );
+            updates.currentQuestion = null;
+            updates.status = 'playing';
+
+            firebase.database().ref('rooms/'+roomId).update(updates);
+        }
+
+        function checkTimeout() {
+            if (document.getElementById('question').innerHTML.includes(currentQuestion.q)) {
+                answer(-1); // 强制扣血
+            }
         }
     </script>
 </body>
