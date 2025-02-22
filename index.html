@@ -1,12 +1,11 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>基元中史爭霸賽</title>
+    <title>中史爭霸賽</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
     <style>
-        /* 保持原有CSS樣式不變 */
         :root {
             --main-red: #c3272b;
             --gold: #d4af37;
@@ -205,7 +204,7 @@
 
     <div id="roomControl">
         <h1 style="font-size:2.5rem; color:var(--gold); margin-bottom:1.5rem;">基元中史爭霸賽</h1>
-        <input type="text" id="roomId" placeholder="輸入四位戰閣編號">
+        <input type="text" id="roomId" placeholder="輸入四位戰閣編號" maxlength="4">
         <div style="margin:1.5rem 0;">
             <button onclick="createRoom()">⚔️ 創建戰閣</button>
             <button onclick="joinRoom()">🛡️ 加入征伐</button>
@@ -273,8 +272,11 @@ function toggleMusic() {
 }
 
 function createRoom() {
-    currentRoomId = document.getElementById('roomId').value || Math.floor(1000 + Math.random() * 9000).toString().padStart(4, '0');
+    const inputRoomId = document.getElementById('roomId').value;
+    currentRoomId = inputRoomId ? inputRoomId.padStart(4, '0') : 
+                 Math.floor(1000 + Math.random() * 9000).toString();
     isHost = true;
+    
     document.getElementById('roomControl').style.display = 'none';
     document.getElementById('waitingArea').style.display = 'block';
     document.getElementById('displayRoomId').textContent = currentRoomId;
@@ -284,13 +286,17 @@ function createRoom() {
         player2: null,
         currentQuestion: null,
         gameStarted: false
+    }).then(() => {
+        listenToRoomChanges();
+        database.ref('rooms/' + currentRoomId).onDisconnect().remove();
     });
-    listenToRoomChanges();
 }
 
 function joinRoom() {
-    currentRoomId = document.getElementById('roomId').value;
-    database.ref('rooms/' + currentRoomId).transaction(room => {
+    currentRoomId = document.getElementById('roomId').value.padStart(4, '0');
+    const roomRef = database.ref('rooms/' + currentRoomId);
+    
+    roomRef.transaction(room => {
         if (room) {
             if (!room.player2 && !room.gameStarted) {
                 room.player2 = { health: 100 };
@@ -298,10 +304,15 @@ function joinRoom() {
                 return room;
             }
         }
-        return;
-    }).then(() => {
-        document.getElementById('roomControl').style.display = 'none';
-        listenToRoomChanges();
+        return room;
+    }).then(result => {
+        if (result.committed) {
+            document.getElementById('roomControl').style.display = 'none';
+            listenToRoomChanges();
+        } else {
+            alert("戰閣已滿或不存在！");
+            location.reload();
+        }
     });
 }
 
@@ -315,28 +326,35 @@ function listenToRoomChanges() {
             return;
         }
 
+        updateHealthDisplay(room);
+
         if (room.gameStarted) {
             document.getElementById('waitingArea').style.display = 'none';
             document.getElementById('gameArea').style.display = 'block';
-            startGame(room);
+            
+            if (!document.querySelector('#options button')) {
+                startGame(room);
+            }
         }
-        updateHealthDisplay(room);
     });
 }
 
 function updateHealthDisplay(room) {
-    const myHealth = isHost ? room.player1.health : (room.player2?.health || 100);
-    const opponentHealth = isHost ? (room.player2?.health || 100) : room.player1.health;
+    const myHealth = isHost ? (room.player1?.health || 0) : (room.player2?.health || 0);
+    const opponentHealth = isHost ? (room.player2?.health || 0) : (room.player1?.health || 0);
     
-    document.getElementById('myHealth').textContent = myHealth;
-    document.getElementById('opponentHealth').textContent = opponentHealth;
-    document.getElementById('myHealthBar').style.width = myHealth + '%';
-    document.getElementById('opponentHealthBar').style.width = opponentHealth + '%';
+    document.getElementById('myHealth').textContent = Math.max(myHealth, 0);
+    document.getElementById('opponentHealth').textContent = Math.max(opponentHealth, 0);
+    document.getElementById('myHealthBar').style.width = Math.max(myHealth, 0) + '%';
+    document.getElementById('opponentHealthBar').style.width = Math.max(opponentHealth, 0) + '%';
 }
 
 function startGame(room) {
-    if (!room.currentQuestion) loadNewQuestion();
-    else displayQuestion(room.currentQuestion);
+    if (!room.currentQuestion) {
+        loadNewQuestion();
+    } else {
+        displayQuestion(room.currentQuestion);
+    }
 }
 
 function shuffleArray(array) {
@@ -409,7 +427,11 @@ function checkAnswer(isCorrect) {
         updates[`${playerPath}/health`] = firebase.database.ServerValue.increment(-damage);
     }
     
-    database.ref('rooms/' + currentRoomId).update(updates, () => {
+    database.ref('rooms/' + currentRoomId).update(updates, (error) => {
+        if (error) {
+            console.error('更新數據失敗:', error);
+            return;
+        }
         checkGameOver();
     });
 
@@ -435,8 +457,8 @@ function checkGameOver() {
         const room = snapshot.val();
         if (!room) return;
 
-        const myHealth = isHost ? room.player1.health : (room.player2?.health || 0);
-        const opponentHealth = isHost ? (room.player2?.health || 0) : room.player1.health;
+        const myHealth = isHost ? (room.player1?.health || 0) : (room.player2?.health || 0);
+        const opponentHealth = isHost ? (room.player2?.health || 0) : (room.player1?.health || 0);
 
         if (myHealth <= 0 || opponentHealth <= 0) {
             gameOver = true;
@@ -466,12 +488,6 @@ function checkGameOver() {
             loadNewQuestion();
         }
     });
-}
-
-function playSoundEffect(url) {
-    const audio = new Audio(url);
-    audio.volume = 0.5;
-    audio.play();
 }
 </script>
 </body>
