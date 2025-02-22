@@ -449,5 +449,111 @@ function playSoundEffect(url) {
     audio.play();
 }
 </script>
+
+<script>
+// 在全局變量中添加遊戲結束標記
+let gameOver = false;
+
+function checkGameOver() {
+    const roomRef = database.ref('rooms/' + currentRoomId);
+    roomRef.once('value').then(snapshot => {
+        const room = snapshot.val();
+        if (!room) return;
+
+        const myHealth = isHost ? room.player1.health : (room.player2?.health || 0);
+        const opponentHealth = isHost ? (room.player2?.health || 0) : room.player1.health;
+
+        // 精確判斷勝負條件
+        const isVictory = (myHealth > 0 && opponentHealth <= 0);
+        const isDefeat = (myHealth <= 0 && opponentHealth > 0);
+        const isDraw = (myHealth <= 0 && opponentHealth <= 0);
+
+        if (isVictory || isDefeat || isDraw) {
+            gameOver = true; // 鎖定遊戲狀態
+            clearInterval(timer); // 停止計時器
+            document.querySelectorAll('#options button').forEach(btn => btn.disabled = true); // 禁用按鈕
+
+            const victoryOverlay = document.querySelector('.victory-overlay');
+            const victoryText = document.querySelector('.victory-text');
+            
+            victoryOverlay.style.display = 'flex';
+            // 根據不同狀態顯示不同文字
+            if (isDraw) {
+                victoryText.textContent = "平分秋色！";
+            } else {
+                victoryText.textContent = isVictory ? "武道昌隆！" : "雖敗猶榮";
+            }
+
+            const resultSound = isVictory ? soundEffects.victory : soundEffects.defeat;
+            resultSound.play();
+
+            victoryText.style.animation = 'none';
+            setTimeout(() => victoryText.style.animation = 'victoryPulse 1s ease-out', 10);
+
+            // 5秒後自動返回並移除房間
+            setTimeout(() => {
+                victoryOverlay.style.display = 'none';
+                roomRef.remove();
+                window.location.href = window.location.href; // 返回主頁
+            }, 5000);
+        }
+    });
+}
+
+// 修改檢查答案函數
+function checkAnswer(isCorrect) {
+    if (gameOver) return; // 遊戲結束後不再處理
+
+    clearInterval(timer);
+    const damage = Math.floor((timeLeft / 15) * 30);
+
+    // 添加震動反饋
+    navigator.vibrate = navigator.vibrate || navigator.webkitVibrate || navigator.mozVibrate || navigator.msVibrate;
+    if (navigator.vibrate) navigator.vibrate(200);
+
+    document.getElementById('gameArea').classList.add('screen-shake');
+    document.querySelectorAll('.health-fill').forEach(bar => bar.classList.add('damage-effect'));
+
+    soundEffects.attack.currentTime = 0;
+    soundEffects.attack.play();
+
+    const updates = {};
+    const playerPath = isHost ? 'player1' : 'player2';
+    const opponentPath = isHost ? 'player2' : 'player1';
+    
+    if (isCorrect) {
+        updates[`${opponentPath}/health`] = firebase.database.ServerValue.increment(-damage);
+    } else {
+        updates[`${playerPath}/health`] = firebase.database.ServerValue.increment(-damage);
+    }
+    
+    database.ref('rooms/' + currentRoomId).update(updates, () => {
+        checkGameOver();
+        if (!gameOver) loadNewQuestion(); // 只有遊戲未結束才載入新題目
+    });
+
+    setTimeout(() => {
+        document.getElementById('gameArea').classList.remove('screen-shake');
+        document.querySelectorAll('.health-fill').forEach(bar => bar.classList.remove('damage-effect'));
+    }, 500);
+}
+
+// 在加入房間時添加遊戲狀態檢查
+function listenToRoomChanges() {
+    const roomRef = database.ref('rooms/' + currentRoomId);
+    roomRef.on('value', (snapshot) => {
+        const room = snapshot.val();
+        if (!room) return;
+
+        if (room.gameStarted) {
+            document.getElementById('waitingArea').style.display = 'none';
+            document.getElementById('gameArea').style.display = 'block';
+            if (!gameOver) startGame(room); // 只有遊戲未結束才開始
+        }
+        updateHealthDisplay(room);
+    });
+}
+</script>
+    
 </body>
 </html>
