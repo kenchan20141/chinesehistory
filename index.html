@@ -1,25 +1,40 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>頭腦王者</title>
+    <title>中史頭腦王者</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <style>
+        .waiting { color: #666; font-size: 24px; padding: 20px; }
+        #gameArea { display: none; }
+        #waitingArea { display: none; }
+        .health-bar { width: 200px; height: 20px; background: #ccc; }
+        .health-fill { height: 100%; background: #ff4444; }
+    </style>
 </head>
 <body>
     <div id="roomControl">
-        <input type="text" id="roomId" placeholder="輸入房間號">
+        <input type="text" id="roomId" placeholder="輸入4位數房間號">
         <button onclick="createRoom()">創建房間</button>
         <button onclick="joinRoom()">加入房間</button>
     </div>
 
-    <div id="gameArea" style="display:none;">
+    <div id="waitingArea" class="waiting">
+        已創建房間 <span id="displayRoomId"></span>，等待對手加入...
+    </div>
+
+    <div id="gameArea">
         <div id="playerInfo">
-            <div>你的血量: <span id="myHealth">100</span></div>
-            <div>對手血量: <span id="opponentHealth">100</span></div>
+            <div>你的血量: <span id="myHealth">100</span>
+                <div class="health-bar"><div class="health-fill" id="myHealthBar"></div></div>
+            </div>
+            <div>對手血量: <span id="opponentHealth">100</span>
+                <div class="health-bar"><div class="health-fill" id="opponentHealthBar"></div></div>
+            </div>
         </div>
-        <div id="question"></div>
-        <div id="options"></div>
-        <div id="timer">剩餘時間: 10秒</div>
+        <div id="question" style="font-size:24px; margin:20px 0;"></div>
+        <div id="options" style="display:grid; gap:10px;"></div>
+        <div id="timer" style="font-size:20px; margin-top:20px;"></div>
     </div>
 
 <script>
@@ -34,20 +49,23 @@ const firebaseConfig = {
   appId: "1:567367988730:web:6ff2ee6e0cddecfaa9e043"
 };
 
-// 初始化Firebase
 firebase.initializeApp(firebaseConfig);
 const database = firebase.database();
 
 let currentRoomId = null;
 let isHost = false;
 let timer;
-let timeLeft = 10;
+let timeLeft = 15;
 
 // 創建房間
 function createRoom() {
-    currentRoomId = document.getElementById('roomId').value || Date.now().toString();
+    currentRoomId = document.getElementById('roomId').value || Math.floor(1000 + Math.random() * 9000);
     isHost = true;
     
+    document.getElementById('roomControl').style.display = 'none';
+    document.getElementById('waitingArea').style.display = 'block';
+    document.getElementById('displayRoomId').textContent = currentRoomId;
+
     database.ref('rooms/' + currentRoomId).set({
         player1: { health: 100 },
         player2: null,
@@ -69,6 +87,7 @@ function joinRoom() {
         return room;
     });
     
+    document.getElementById('roomControl').style.display = 'none';
     listenToRoomChanges();
 }
 
@@ -81,22 +100,28 @@ function listenToRoomChanges() {
         if (!room) return;
 
         if (room.gameStarted) {
-            document.getElementById('roomControl').style.display = 'none';
+            document.getElementById('waitingArea').style.display = 'none';
             document.getElementById('gameArea').style.display = 'block';
             startGame(room);
         }
+        
+        updateHealthDisplay(room);
     });
+}
+
+// 更新血量顯示
+function updateHealthDisplay(room) {
+    const myHealth = isHost ? room.player1.health : (room.player2?.health || 100);
+    const opponentHealth = isHost ? (room.player2?.health || 100) : room.player1.health;
+    
+    document.getElementById('myHealth').textContent = myHealth;
+    document.getElementById('opponentHealth').textContent = opponentHealth;
+    document.getElementById('myHealthBar').style.width = myHealth + '%';
+    document.getElementById('opponentHealthBar').style.width = opponentHealth + '%';
 }
 
 // 遊戲邏輯
 function startGame(room) {
-    // 血量顯示
-    document.getElementById('myHealth').textContent = 
-        isHost ? room.player1.health : room.player2.health;
-    document.getElementById('opponentHealth').textContent = 
-        isHost ? (room.player2?.health || 100) : room.player1.health;
-
-    // 題目處理
     if (!room.currentQuestion) {
         loadNewQuestion();
     } else {
@@ -128,6 +153,8 @@ function displayQuestion(question) {
     
     question.options.forEach((option, index) => {
         const button = document.createElement('button');
+        button.style.padding = '10px';
+        button.style.fontSize = '18px';
         button.textContent = option;
         button.onclick = () => checkAnswer(index === question.correctIndex);
         optionsDiv.appendChild(button);
@@ -137,7 +164,7 @@ function displayQuestion(question) {
 // 檢查答案
 function checkAnswer(isCorrect) {
     clearInterval(timer);
-    const damage = Math.floor((timeLeft / 10) * 20); // 根據剩餘時間計算傷害
+    const damage = Math.floor((timeLeft / 15) * 30); // 根據剩餘時間計算傷害
     
     const updates = {};
     const playerPath = isHost ? 'player1' : 'player2';
@@ -157,7 +184,8 @@ function checkAnswer(isCorrect) {
 
 // 計時器
 function startTimer() {
-    timeLeft = 10;
+    timeLeft = 15;
+    document.getElementById('timer').textContent = `剩餘時間: ${timeLeft}秒`;
     timer = setInterval(() => {
         timeLeft--;
         document.getElementById('timer').textContent = `剩餘時間: ${timeLeft}秒`;
@@ -171,11 +199,11 @@ function checkGameOver() {
     roomRef.once('value').then(snapshot => {
         const room = snapshot.val();
         const myHealth = isHost ? room.player1.health : room.player2.health;
-        const opponentHealth = isHost ? room.player2.health : room.player1.health;
         
-        if (myHealth <= 0 || opponentHealth <= 0) {
+        if (myHealth <= 0 || (isHost ? room.player2?.health : room.player1.health) <= 0) {
             alert(myHealth > 0 ? "YOU WIN!" : "YOU LOSE!");
             roomRef.remove();
+            location.reload();
         }
     });
 }
