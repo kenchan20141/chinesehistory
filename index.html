@@ -1,11 +1,12 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>中史爭霸賽</title>
+    <title>基元中史爭霸賽</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
     <style>
+        /* 保持原有CSS樣式不變 */
         :root {
             --main-red: #c3272b;
             --gold: #d4af37;
@@ -272,7 +273,7 @@ function toggleMusic() {
 }
 
 function createRoom() {
-    currentRoomId = document.getElementById('roomId').value || Math.floor(1000 + Math.random() * 9000);
+    currentRoomId = document.getElementById('roomId').value || Math.floor(1000 + Math.random() * 9000).toString().padStart(4, '0');
     isHost = true;
     document.getElementById('roomControl').style.display = 'none';
     document.getElementById('waitingArea').style.display = 'block';
@@ -290,21 +291,29 @@ function createRoom() {
 function joinRoom() {
     currentRoomId = document.getElementById('roomId').value;
     database.ref('rooms/' + currentRoomId).transaction(room => {
-        if (room && !room.gameStarted) {
-            room.player2 = { health: 100 };
-            room.gameStarted = true;
+        if (room) {
+            if (!room.player2 && !room.gameStarted) {
+                room.player2 = { health: 100 };
+                room.gameStarted = true;
+                return room;
+            }
         }
-        return room;
+        return;
+    }).then(() => {
+        document.getElementById('roomControl').style.display = 'none';
+        listenToRoomChanges();
     });
-    document.getElementById('roomControl').style.display = 'none';
-    listenToRoomChanges();
 }
 
 function listenToRoomChanges() {
     const roomRef = database.ref('rooms/' + currentRoomId);
     roomRef.on('value', (snapshot) => {
         const room = snapshot.val();
-        if (!room) return;
+        if (!room) {
+            alert("戰閣已消散！");
+            location.reload();
+            return;
+        }
 
         if (room.gameStarted) {
             document.getElementById('waitingArea').style.display = 'none';
@@ -343,7 +352,9 @@ function loadNewQuestion() {
     
     const questionsRef = database.ref('questions');
     questionsRef.once('value').then(snapshot => {
-        const questions = snapshot.val();
+        const questions = snapshot.val() || [];
+        if (questions.length === 0) return;
+
         const randomIndex = Math.floor(Math.random() * questions.length);
         const originalQuestion = questions[randomIndex];
         
