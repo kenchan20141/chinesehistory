@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>頭腦王者 - 最終修正版</title>
+    <title>頭腦王者 - 完全修正版</title>
     <style>
         body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
         #lobby, #battle, #result, #waiting { margin: 20px 0; padding: 20px; border: 1px solid #ccc; border-radius: 10px; }
@@ -74,6 +74,7 @@
             try {
                 roomId = document.getElementById('createRoomCode').value.trim();
                 if (!roomId) return alert('請輸入房間號碼');
+                if (!/^[a-zA-Z0-9]+$/.test(roomId)) return alert('房間號碼只能包含英數字');
                 
                 const roomRef = database.ref(`rooms/${roomId}`);
                 const snapshot = await roomRef.once('value');
@@ -83,7 +84,7 @@
                 await roomRef.set({
                     players: {
                         player1: { health: 100, answer: null },
-                        player2: { health: 100, answer: null }
+                        player2: null
                     },
                     status: 'waiting',
                     currentQuestion: null
@@ -91,8 +92,7 @@
 
                 document.getElementById('displayRoomCode').textContent = roomId;
                 toggleScreens('waiting');
-                setupRoomListeners(roomRef);
-
+                
                 // 監聽玩家加入
                 roomRef.child('players/player2').on('value', (snapshot) => {
                     if (snapshot.exists()) {
@@ -113,25 +113,25 @@
                 if (!roomId) return alert('請輸入房間號碼');
                 
                 const roomRef = database.ref(`rooms/${roomId}`);
-                const snapshot = await roomRef.once('value');
-                if (!snapshot.exists()) return alert('房間不存在');
-
-                const roomData = snapshot.val();
-                if (roomData.status !== 'waiting') return alert('房間已滿或遊戲已開始');
-
-                playerId = 'player2';
-                await roomRef.update({
-                    'players/player2': { health: 100, answer: null },
-                    status: 'playing'
+                const result = await roomRef.transaction(roomData => {
+                    if (!roomData || roomData.status !== 'waiting') return;
+                    if (roomData.players.player2 !== null) return;
+                    
+                    roomData.players.player2 = { health: 100, answer: null };
+                    roomData.status = 'playing';
+                    return roomData;
                 });
 
+                if (!result.committed) throw new Error('加入失敗');
+                
+                playerId = 'player2';
                 toggleScreens('battle');
                 setupRoomListeners(roomRef);
                 loadNewQuestion();
 
             } catch (error) {
                 console.error('加入錯誤:', error);
-                alert('加入失敗，請確認：\n1. 房間號碼正確\n2. 房間尚未開始遊戲');
+                alert('加入失敗：房間已滿或遊戲已開始');
             }
         }
 
@@ -161,7 +161,8 @@
                 const questionKeys = Object.keys(questions);
                 const validQuestions = questionKeys.filter(key => 
                     questions[key].question && 
-                    questions[key].options && 
+                    Array.isArray(questions[key].options) &&
+                    questions[key].options.length >= 2 &&
                     questions[key].correctAnswer
                 );
 
@@ -180,7 +181,7 @@
 
             } catch (error) {
                 console.error('題目加載錯誤:', error);
-                alert('題目加載失敗：請檢查題庫數據格式');
+                alert('題目加載失敗：請檢查題庫格式');
             }
         }
 
@@ -251,7 +252,7 @@
         function updateHealthDisplay(players) {
             const myHealth = players[playerId].health;
             const enemyId = playerId === 'player1' ? 'player2' : 'player1';
-            const enemyHealth = players[enemyId].health;
+            const enemyHealth = players[enemyId]?.health || 0;
 
             document.getElementById('myHealth').textContent = myHealth;
             document.getElementById('enemyHealth').textContent = enemyHealth;
@@ -260,8 +261,8 @@
         }
 
         function checkGameResult(players) {
-            if (players.player1.health <= 0 || players.player2.health <= 0) {
-                const isWinner = players[playerId].health > 0;
+            if ((players.player1?.health || 0) <= 0 || (players.player2?.health || 0) <= 0) {
+                const isWinner = players[playerId]?.health > 0;
                 showResult(isWinner ? 'WIN' : 'LOSE');
             }
         }
