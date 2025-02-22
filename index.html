@@ -493,6 +493,59 @@ function handleGameEnd(winnerType) {
     });
 });
 
+ <style>
+        :root {
+            --main-red: #c3272b;
+            --gold: #d4af37;
+            --dark-bg: #2d2926;
+        }
+
+        /* 主要書法字體設定 */
+        body {
+            font-family: 'Noto Serif TC', serif; /* 主要繁體字體 */
+            background: url('https://i.imgur.com/3tnkX7k.png') center/cover fixed;
+            color: white;
+            min-height: 100vh;
+            padding: 20px;
+            margin: 0;
+            position: relative;
+        }
+
+        /* 標題使用手寫書法體 */
+        h1 {
+            font-family: 'Ma Shan Zheng', cursive;
+            font-weight: 400;
+            letter-spacing: 2px;
+        }
+
+        /* 按鈕特殊書法效果 */
+        button, input {
+            font-family: 'ZCOOL XiaoWei', cursive;
+            font-size: 1.3rem;
+            text-shadow: 2px 2px 3px rgba(0, 0, 0, 0.5);
+        }
+
+        /* 戰鬥數值保留清晰字體 */
+        #playerInfo {
+            font-family: 'Noto Serif TC', serif;
+            font-weight: 700;
+        }
+
+        /* 題目顯示特殊排版 */
+        #question {
+            font-family: 'Ma Shan Zheng', cursive;
+            font-size: 2.2rem;
+            letter-spacing: 1.5px;
+            line-height: 1.6;
+        }
+
+        /* 計時器書法數字 */
+        #timer {
+            font-family: 'ZCOOL XiaoWei', cursive;
+            font-size: 2.5rem;
+        }
+    </style>
+    
     
 </script>
 </body>
