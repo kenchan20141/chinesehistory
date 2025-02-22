@@ -14,7 +14,7 @@
 
         body {
             font-family: 'ZCOOL XiaoWei', cursive;
-            background: url('https://c-ssl.dtstatic.com/uploads/item/201711/13/20171113131235_YwU2t.thumb.700_0.jpeg_webp') center/cover fixed;
+            background: url('https://i.imgur.com/3tnkX7k.png') center/cover fixed;
             color: white;
             min-height: 100vh;
             padding: 20px;
@@ -123,7 +123,7 @@
             width: 100%;
             height: 100%;
             pointer-events: none;
-            background: url('https://c-ssl.dtstatic.com/uploads/item/201711/13/20171113131235_YwU2t.thumb.700_0.jpeg_webp') repeat;
+            background: url('https://i.imgur.com/6QJbQ0a.png') repeat;
             opacity: 0.1;
         }
 
@@ -329,14 +329,34 @@ function startGame(room) {
     else displayQuestion(room.currentQuestion);
 }
 
+function shuffleArray(array) {
+    for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+    }
+    return array;
+}
+
 function loadNewQuestion() {
     const questionsRef = database.ref('questions');
     questionsRef.once('value').then(snapshot => {
         const questions = snapshot.val();
         const randomIndex = Math.floor(Math.random() * questions.length);
-        const selectedQuestion = questions[randomIndex];
+        const originalQuestion = questions[randomIndex];
         
-        database.ref('rooms/' + currentRoomId).update({ currentQuestion: selectedQuestion });
+        // 打亂選項並更新正確答案索引
+        const optionsCopy = [...originalQuestion.options];
+        const correctAnswer = optionsCopy[originalQuestion.correctIndex];
+        const shuffledOptions = shuffleArray(optionsCopy);
+        const newCorrectIndex = shuffledOptions.indexOf(correctAnswer);
+
+        const processedQuestion = {
+            question: originalQuestion.question,
+            options: shuffledOptions,
+            correctIndex: newCorrectIndex
+        };
+
+        database.ref('rooms/' + currentRoomId).update({ currentQuestion: processedQuestion });
         startTimer();
     });
 }
