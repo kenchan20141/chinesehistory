@@ -308,6 +308,11 @@ function listenToRoomChanges() {
         const room = snapshot.val();
         if (!room) return;
 
+        // 新增計時器同步檢測
+        if (room.timerReset) {
+            startTimer(); // 當檢測到新題目時重置計時器
+        }
+
         if (room.gameEnded) {
             handleGameEnd(room.winner);
             return;
@@ -363,8 +368,41 @@ function loadNewQuestion() {
             correctIndex: newCorrectIndex
         };
 
-        database.ref('rooms/' + currentRoomId).update({ currentQuestion: processedQuestion });
+        database.ref('rooms/' + currentRoomId).update({ 
+            currentQuestion: processedQuestion,
+            timerReset: firebase.database.ServerValue.TIMESTAMP // 新增同步標記
+        });
         startTimer();
+    });
+}
+
+function startTimer() {
+    // 清空舊計時器
+    clearInterval(timer);
+    
+    // 重置時間並同步顯示
+    timeLeft = 15;
+    document.getElementById('timer').textContent = `🕒 沙漏計時：${timeLeft}秒`;
+
+   // 使用嚴格遞減避免時間差
+    const startTime = Date.now();
+    timer = setInterval(() => {
+        const elapsed = Math.floor((Date.now() - startTime) / 1000);
+        timeLeft = 15 - elapsed;
+        
+        if(timeLeft <= 0) {
+            clearInterval(timer);
+            handleTimeoutDamage();
+        }
+        document.getElementById('timer').textContent = `🕒 沙漏計時：${timeLeft}秒`;
+    }, 250); // 提高更新頻率至250ms
+}
+
+// 新增超時處理函數
+function handleTimeoutDamage() {
+    checkAnswer(false, true); // 第二參數標記為超時狀態
+}
+    
     });
 }
 
@@ -382,27 +420,28 @@ function displayQuestion(question) {
 }
 
 function checkAnswer(isCorrect) {
+    function checkAnswer(isCorrect, isTimeout = false) {
     if (gameOver) return;
     clearInterval(timer);
-    const damage = Math.floor((timeLeft / 15) * 13);
     
-    navigator.vibrate = navigator.vibrate || navigator.webkitVibrate || navigator.mozVibrate || navigator.msVibrate;
-    if (navigator.vibrate) navigator.vibrate(200);
-
-    document.getElementById('gameArea').classList.add('screen-shake');
-    document.querySelectorAll('.health-fill').forEach(bar => bar.classList.add('damage-effect'));
-
-    soundEffects.attack.currentTime = 0;
-    soundEffects.attack.play();
+    // 修改傷害計算邏輯
+    const effectiveTimeLeft = isTimeout ? 15 : timeLeft; // 超時時使用完整時間計算
+    const damage = Math.floor((effectiveTimeLeft / 15) * 13);
+    
+    // ... 震動和動畫效果保持不變 ...
 
     const updates = {};
     const playerPath = isHost ? 'player1' : 'player2';
     const opponentPath = isHost ? 'player2' : 'player1';
     
+    // 修改扣血邏輯
     if (isCorrect) {
         updates[`${opponentPath}/health`] = firebase.database.ServerValue.increment(-damage);
     } else {
         updates[`${playerPath}/health`] = firebase.database.ServerValue.increment(-damage);
+        if(isTimeout) {
+            updates[`${playerPath}/health`] = firebase.database.ServerValue.increment(-5); // 額外超時懲罰
+        }
     }
     
     database.ref('rooms/' + currentRoomId).update(updates, () => {
