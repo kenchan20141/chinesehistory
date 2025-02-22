@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <title>P2P对战修复版</title>
     <style>
-        /* 保持原有样式不变 */
         body { font-family: Arial; padding: 20px; }
         #roomId { width: 200px; padding: 10px; }
         .player { margin: 20px 0; padding: 10px; border: 1px solid #ccc; }
@@ -26,7 +25,6 @@
         <div id="questionArea"></div>
     </div>
 
-    <!-- 使用最新版PeerJS -->
     <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
     
     <script>
@@ -36,7 +34,6 @@
         let currentQuestion;
         let questionStartTime;
 
-        // 配置PeerJS服务器（使用免费公共服务器）
         const peerConfig = {
             host: '0.peerjs.com',
             port: 443,
@@ -44,8 +41,18 @@
             pingInterval: 5000
         };
 
-        // 题库保持不变
-        const questions = [/* 保持原有题库 */];
+        const questions = [
+            {
+                question: "1 + 1等于多少？",
+                options: ["1", "2", "3", "4"],
+                answer: 1
+            },
+            {
+                question: "中国的首都是哪里？",
+                options: ["上海", "广州", "北京", "深圳"],
+                answer: 2
+            }
+        ];
 
         function updateStatus(text) {
             document.getElementById('status').textContent = text;
@@ -67,26 +74,19 @@
                 conn = connection;
                 setupConnection();
                 updateStatus('对手已连接！');
-                showNextQuestion();
             });
 
-            peer.on('error', (err) => {
-                console.error('PeerJS错误:', err);
-                updateStatus(`错误: ${err.type}`);
-            });
+            peer.on('error', (err) => updateStatus(`错误: ${err.type}`));
         }
 
         function joinRoom() {
             const roomId = document.getElementById('roomId').value;
             updateStatus('正在加入房间...');
             
-            peer = new Peer(null, peerConfig); // 自动生成ID
+            peer = new Peer(null, peerConfig);
             conn = peer.connect(roomId);
 
-            peer.on('open', (id) => {
-                updateStatus(`已连接，等待主机...`);
-            });
-
+            peer.on('open', () => updateStatus(`已连接，等待主机...`));
             setupConnection();
         }
 
@@ -94,24 +94,64 @@
             conn.on('open', () => {
                 updateStatus('连接成功！');
                 document.getElementById('gameArea').style.display = 'block';
+                if (isHost) showNextQuestion();
             });
 
             conn.on('data', (data) => {
-                if(data.type === 'question') {
-                    showQuestion(data.question);
-                }
-                if(data.type === 'hpUpdate') {
-                    document.getElementById('enemyHp').textContent = data.enemyHp;
-                    document.getElementById('myHp').textContent = data.myHp;
-                }
+                if(data.type === 'question') showQuestion(data.question);
+                if(data.type === 'hpUpdate') updateHP(data);
             });
 
             conn.on('close', () => updateStatus('连接已断开'));
             conn.on('error', (err) => updateStatus(`连接错误: ${err.message}`));
         }
 
-        // 保持其他函数不变（showQuestion、checkAnswer等）
-        // ... 保持原有游戏逻辑函数不变 ...
+        function showNextQuestion() {
+            currentQuestion = questions[Math.floor(Math.random() * questions.length)];
+            conn.send({ type: 'question', question: currentQuestion });
+            showQuestion(currentQuestion);
+            questionStartTime = Date.now();
+        }
+
+        function showQuestion(q) {
+            const questionArea = document.getElementById('questionArea');
+            questionArea.innerHTML = `
+                <div class="question">${q.question}</div>
+                ${q.options.map((opt, i) => `
+                    <div class="option" onclick="checkAnswer(${i})">${opt}</div>
+                `).join('')}
+            `;
+        }
+
+        function checkAnswer(selectedIndex) {
+            const timeUsed = (Date.now() - questionStartTime) / 1000;
+            let hpChange = 0;
+
+            if (selectedIndex === currentQuestion.answer) {
+                hpChange = Math.max(20 - Math.floor(timeUsed), 10);
+            } else {
+                hpChange = -30;
+            }
+
+            const myHp = Math.max(0, parseInt(document.getElementById('myHp').textContent) + hpChange);
+            const enemyHp = parseInt(document.getElementById('enemyHp').textContent);
+            
+            conn.send({ 
+                type: 'hpUpdate',
+                myHp: enemyHp,
+                enemyHp: myHp
+            });
+
+            document.getElementById('myHp').textContent = myHp;
+            document.getElementById('enemyHp').textContent = enemyHp;
+
+            if (isHost) setTimeout(showNextQuestion, 1500);
+        }
+
+        function updateHP(data) {
+            document.getElementById('myHp').textContent = data.myHp;
+            document.getElementById('enemyHp').textContent = data.enemyHp;
+        }
     </script>
 </body>
 </html>
