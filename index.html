@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>頭腦王者 - 完全修正版</title>
+    <title>頭腦王者 - 完整修正版</title>
     <style>
         body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
         #lobby, #battle, #result, #waiting { margin: 20px 0; padding: 20px; border: 1px solid #ccc; border-radius: 10px; }
@@ -83,8 +83,8 @@
                 playerId = 'player1';
                 await roomRef.set({
                     players: {
-                        player1: { health: 100, answer: null },
-                        player2: null
+                        player1: { health: 100, answer: null, time: 0 },
+                        player2: { health: 100, answer: null, time: 0 }
                     },
                     status: 'waiting',
                     currentQuestion: null
@@ -93,11 +93,11 @@
                 document.getElementById('displayRoomCode').textContent = roomId;
                 toggleScreens('waiting');
                 
-                // 監聽玩家加入
-                roomRef.child('players/player2').on('value', (snapshot) => {
-                    if (snapshot.exists()) {
-                        roomRef.update({ status: 'playing' });
+                roomRef.child('status').on('value', (snapshot) => {
+                    const status = snapshot.val();
+                    if (status === 'playing') {
                         toggleScreens('battle');
+                        setupRoomListeners(roomRef);
                         loadNewQuestion();
                     }
                 });
@@ -113,18 +113,18 @@
                 if (!roomId) return alert('請輸入房間號碼');
                 
                 const roomRef = database.ref(`rooms/${roomId}`);
-                const result = await roomRef.transaction(roomData => {
-                    if (!roomData || roomData.status !== 'waiting') return;
-                    if (roomData.players.player2 !== null) return;
-                    
-                    roomData.players.player2 = { health: 100, answer: null };
-                    roomData.status = 'playing';
-                    return roomData;
-                });
-
-                if (!result.committed) throw new Error('加入失敗');
+                const snapshot = await roomRef.once('value');
+                if (!snapshot.exists()) return alert('房間不存在');
+                
+                const roomData = snapshot.val();
+                if (roomData.status !== 'waiting') return alert('房間不可加入');
                 
                 playerId = 'player2';
+                await roomRef.update({
+                    status: 'playing',
+                    [`players/${playerId}/health`]: 100
+                });
+
                 toggleScreens('battle');
                 setupRoomListeners(roomRef);
                 loadNewQuestion();
