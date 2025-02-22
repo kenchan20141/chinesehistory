@@ -384,7 +384,7 @@ function displayQuestion(question) {
 function checkAnswer(isCorrect) {
     if (gameOver) return;
     clearInterval(timer);
-    const damage = Math.floor((timeLeft / 15) * 18);
+    const damage = Math.floor((timeLeft / 15) * 13);
     
     navigator.vibrate = navigator.vibrate || navigator.webkitVibrate || navigator.mozVibrate || navigator.msVibrate;
     if (navigator.vibrate) navigator.vibrate(200);
