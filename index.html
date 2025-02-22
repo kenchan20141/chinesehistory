@@ -1,153 +1,205 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Brain Duel</title>
-    <!-- 保持CSS樣式不變 -->
-</head>
-<body>
-    <!-- 保持HTML結構不變 -->
+<div id="game">
+  <div id="lobby">
+    <button onclick="createRoom()">創建房間</button>
+    <input type="text" id="roomId" placeholder="輸入房間ID">
+    <button onclick="joinRoom()">加入房間</button>
+  </div>
 
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
-    <script>
-        const firebaseConfig = {
-            apiKey: "AIzaSyBi9IEquAN1JPQTA2FVylSheVCtuAG8ZoY",
-            authDomain: "game-9e2a9.firebaseapp.com",
-            projectId: "game-9e2a9",
-            storageBucket: "game-9e2a9.appspot.com",
-            messagingSenderId: "567367988730",
-            appId: "1:567367988730:web:6ff2ee6e0cddecfaa9e043"
-        };
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
+  <div id="battle" style="display:none;">
+    <div id="question"></div>
+    <input type="text" id="answer">
+    <button onclick="submitAnswer()">提交答案</button>
+    <div id="health">
+      我方血量：<span id="myHealth">100</span> 
+      敵方血量：<span id="enemyHealth">100</span>
+    </div>
+  </div>
+</div>
 
-        let gameData = { roomId: null, playerNumber: null };
-        let startTime;
-        // 修復題目數據缺失問題
-        const questions = [
-            {
-                question: "What is 2+2?",
-                answers: ["3", "4", "5", "6"],
-                correct: 1
-            },
-            {
-                question: "Capital of Japan?",
-                answers: ["Tokyo", "Osaka", "Kyoto", "Hiroshima"],
-                correct: 0
-            }
-        ];
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js";
+  import { getDatabase, ref, set, onValue, push } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-database.js";
 
-        document.addEventListener('click', () => document.getElementById('bgm').play().catch(() => {}));
-        
-        async function initGame() {
-            try {
-                const roomId = prompt("Enter room ID:") || 'default-room';
-                gameData.roomId = roomId;
-                
-                const gameRef = db.collection('games').doc(roomId);
-                
-                // 添加錯誤處理的監聽器
-                const unsubscribe = gameRef.onSnapshot(
-                    doc => {
-                        if (!doc.exists) return;
-                        gameData = { ...doc.data(), roomId };
-                        updateUI();
-                        checkGameEnd();
-                    },
-                    error => {
-                        console.error('監聽錯誤:', error);
-                        alert('即時更新失敗，請檢查網路連線');
-                    }
-                );
+  const firebaseConfig = { /* 貼入你的配置 */ };
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase();
 
-                // 強化事務處理邏輯
-                await db.runTransaction(async (transaction) => {
-                    const doc = await transaction.get(gameRef).catch(error => {
-                        throw new Error(`取得文檔失敗: ${error}`);
-                    });
+  let currentRoomRef;
+  let isHost = false;
+  let startTime;
 
-                    if (!doc.exists) {
-                        transaction.set(gameRef, {
-                            players: [1],
-                            healths: [100, 100],
-                            currentQuestion: null,
-                            answers: [],
-                            questionActive: false
-                        });
-                        gameData.playerNumber = 1;
-                    } else {
-                        const existingPlayers = doc.data().players || [];
-                        if (existingPlayers.length >= 2) {
-                            throw new Error('房間已滿');
-                        }
-                        transaction.update(gameRef, {
-                            players: [...existingPlayers, 2]
-                        });
-                        gameData.playerNumber = 2;
-                    }
-                }).catch(error => {
-                    if (error.message.includes('房間已滿')) {
-                        alert(error.message);
-                        location.reload();
-                    } else {
-                        throw error; // 重新拋出其他錯誤
-                    }
-                });
+  function createRoom() {
+    isHost = true;
+    const roomId = Math.random().toString(36).substr(2, 6);
+    currentRoomRef = ref(db, `rooms/${roomId}`);
+    
+    set(currentRoomRef, {
+      players: { 
+        player1: { health: 100, answer: null },
+        player2: { health: 100, answer: null }
+      },
+      currentQuestion: null,
+      status: 'waiting'
+    }).then(() => {
+      monitorRoom();
+      document.getElementById('lobby').style.display = 'none';
+      document.getElementById('battle').style.display = 'block';
+    });
+  }
 
-                // 添加房主控制邏輯
-                if (gameData.playerNumber === 1) {
-                    document.addEventListener('keypress', (e) => {
-                        if (e.key === 's') {
-                            if (questions.length === 0) {
-                                alert('尚未設置題目！');
-                                return;
-                            }
-                            const nextQuestion = gameData.currentQuestion === null ? 0 : gameData.currentQuestion + 1;
-                            if (nextQuestion >= questions.length) {
-                                alert('所有題目已完成！');
-                                return;
-                            }
-                            startNewQuestion();
-                        }
-                    });
-                }
+  async function joinRoom() {
+    const roomId = document.getElementById('roomId').value;
+    currentRoomRef = ref(db, `rooms/${roomId}`);
+    
+    onValue(currentRoomRef, (snapshot) => {
+      const data = snapshot.val();
+      if (data.status === 'playing') {
+        startGame();
+      }
+    });
+    
+    await set(ref(db, `rooms/${roomId}/players/player2`), { 
+      health: 100, 
+      answer: null 
+    });
+    
+    monitorRoom();
+  }
+</script>
 
-            } catch (error) {
-                console.error('初始化錯誤:', error);
-                alert(`發生錯誤: ${error.message}, 請刷新頁面`);
-            }
-        }
+function monitorRoom() {
+  onValue(currentRoomRef, (snapshot) => {
+    const data = snapshot.val();
+    
+    // 更新血量顯示
+    document.getElementById('myHealth').textContent = 
+      isHost ? data.players.player1.health : data.players.player2.health;
+    document.getElementById('enemyHealth').textContent = 
+      isHost ? data.players.player2.health : data.players.player1.health;
+    
+    // 處理題目顯示
+    if (data.currentQuestion && !data.currentQuestion.answered) {
+      showQuestion(data.currentQuestion);
+    }
+    
+    // 勝負判斷
+    if (data.players.player1.health <= 0 || data.players.player2.health <= 0) {
+      showResult(data);
+    }
+  });
+}
 
-        // 添加缺失的calculateDamage函數
-        function calculateDamage(answerIndex, damage) {
-            if (!gameData.currentQuestion !== null && questions[gameData.currentQuestion]) {
-                const correctIndex = questions[gameData.currentQuestion].correct;
-                return answerIndex == correctIndex ? 
-                    [gameData.healths[0], gameData.healths[1] - damage] : 
-                    [gameData.healths[0] - damage, gameData.healths[1]];
-            }
-            return gameData.healths; // 返回原值防止錯誤
-        }
+function showQuestion(question) {
+  document.getElementById('question').textContent = question.text;
+  startTime = Date.now();
+}
 
-        // 保持其他函數不變（startNewQuestion, handleAnswer, updateUI, checkGameEnd）
-        
-        // 新增遊戲結束檢查
-        function checkGameEnd() {
-            if (gameData.healths?.some(h => h <= 0)) {
-                document.getElementById('status').textContent = 
-                    gameData.healths[0] > 0 ? "Player 1 WIN!" : "Player 2 WIN!";
-                setTimeout(() => location.reload(), 3000);
-            }
-        }
+async function submitAnswer() {
+  const answer = document.getElementById('answer').value;
+  const responseTime = Date.now() - startTime;
+  
+  const updates = {};
+  const playerPath = isHost ? 'player1' : 'player2';
+  
+  updates[`players/${playerPath}/answer`] = {
+    answer: answer,
+    time: responseTime
+  };
+  
+  await set(currentRoomRef, updates);
+  
+  checkAnswers();
+}
 
-        // 初始化事件監聽
-        document.getElementById('questionBox').addEventListener('click', e => {
-            if (e.target.classList.contains('answer-btn')) {
-                handleAnswer(parseInt(e.target.dataset.index));
-            }
+async function checkAnswers() {
+  const snapshot = await get(currentRoomRef);
+  const data = snapshot.val();
+  
+  if (data.players.player1.answer && data.players.player2.answer) {
+    const correctAnswer = data.currentQuestion.correctAnswer;
+    const p1 = calculateDamage(data.players.player1, correctAnswer);
+    const p2 = calculateDamage(data.players.player2, correctAnswer);
+    
+    await set(ref(db, `rooms/${roomId}/players`), {
+      player1: { health: data.players.player1.health - p1.selfDamage },
+      player2: { health: data.players.player2.health - p2.selfDamage }
+    });
+    
+    // 重置答案狀態
+    await set(ref(db, `rooms/${roomId}/currentQuestion/answered`), true);
+  }
+}
+
+function calculateDamage(playerAnswer, correct) {
+  const isCorrect = playerAnswer.answer === correct;
+  const timeFactor = Math.max(0, (10000 - playerAnswer.time) / 10000); // 10秒內答題
+  
+  return {
+    selfDamage: isCorrect ? 0 : 10,
+    enemyDamage: isCorrect ? Math.floor(20 * timeFactor) : 0
+  };
+}
+
+        // 題庫服務模塊 (獨立建立question.js文件)
+import { getDatabase, ref, child, get } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-database.js";
+
+const db = getDatabase();
+const questionsRef = ref(db, 'questions');
+
+// 題目數據結構驗證
+const validateQuestion = (question) => {
+  const requiredFields = ['question', 'options', 'correctAnswer', 'difficulty'];
+  return requiredFields.every(field => question.hasOwnProperty(field));
+};
+
+// 隨機加載題目
+export const loadRandomQuestion = async (roomId) => {
+  try {
+    const snapshot = await get(child(questionsRef, '/'));
+    if (!snapshot.exists()) {
+      throw new Error('題庫尚未初始化');
+    }
+
+    const questions = [];
+    snapshot.forEach((childSnapshot) => {
+      const q = childSnapshot.val();
+      if (validateQuestion(q)) {
+        questions.push({
+          id: childSnapshot.key,
+          ...q
         });
+      }
+    });
 
-        initGame();
-    </script>
-</body>
-</html>
+    if (questions.length === 0) {
+      throw new Error('沒有有效題目');
+    }
+
+    const randomIndex = Math.floor(Math.random() * questions.length);
+    const selectedQuestion = questions[randomIndex];
+
+    // 更新到房間狀態
+    const questionData = {
+      text: selectedQuestion.question,
+      options: selectedQuestion.options,
+      correctAnswer: selectedQuestion.correctAnswer,
+      difficulty: selectedQuestion.difficulty || 1,
+      answered: false
+    };
+
+    await set(ref(db, `rooms/${roomId}/currentQuestion`), questionData);
+    return questionData;
+
+  } catch (error) {
+    console.error('題目加載失敗:', error);
+    throw error;
+  }
+};
+
+// 題目生命周期管理
+export const resetQuestionState = async (roomId) => {
+  await update(ref(db, `rooms/${roomId}/currentQuestion`), {
+    answered: false,
+    startTime: Date.now()
+  });
+};
