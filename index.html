@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>基元之中史爭霸</title>
+    <title>基元中史爭霸賽</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
@@ -203,7 +203,7 @@
     <button class="music-control" onclick="toggleMusic()">🎵 樂音</button>
 
     <div id="roomControl">
-        <h1 style="font-size:2.5rem; color:var(--gold); margin-bottom:1.5rem;">基元中史爭霸</h1>
+        <h1 style="font-size:2.5rem; color:var(--gold); margin-bottom:1.5rem;">基元中史爭霸賽</h1>
         <input type="text" id="roomId" placeholder="輸入四位戰閣編號">
         <div style="margin:1.5rem 0;">
             <button onclick="createRoom()">⚔️ 創建戰閣</button>
@@ -231,17 +231,6 @@
     </div>
 
     <div class="victory-overlay">
-
-<!-- 新增重新对战面板 -->
-<div class="rematch-panel">
-    <div class="victory-text"></div>
-    <div class="rematch-buttons">
-        <button onclick="handleRematch(true)">⚔️ 再戰一場</button>
-        <button onclick="handleRematch(false)">🏠 返回主頁</button>
-    </div>
-    <div class="rematch-status" id="rematchStatus"></div>
-</div>
-        
         <div class="victory-text"></div>
     </div>
 
@@ -289,8 +278,8 @@ function createRoom() {
     document.getElementById('waitingArea').style.display = 'block';
     document.getElementById('displayRoomId').textContent = currentRoomId;
 
-   database.ref('rooms/' + currentRoomId).set({
-        player1: { health: 100, rematch: false }, // 添加rematch状态
+    database.ref('rooms/' + currentRoomId).set({
+        player1: { health: 100 },
         player2: null,
         currentQuestion: null,
         gameStarted: false,
@@ -495,230 +484,6 @@ function handleGameEnd(winnerType) {
         window.location.reload();
     }, 5000);
 }
-
-document.addEventListener('DOMContentLoaded', () => {
-    bgMusic.play().catch(error => {
-        isMusicPlaying = false;
-        bgMusic.pause();
-        document.querySelector('.music-control').textContent = '🔇 靜默';
-    });
-});
-
-/************** 新增重新对战功能 **************/
-let rematchTimeout;
-
-// 处理重新对战选择
-function handleRematch(isRematch) {
-    const playerPath = isHost ? 'player1' : 'player2';
-    database.ref(`rooms/${currentRoomId}/${playerPath}/rematch`).set(isRematch);
-
-    if (!isRematch) {
-        database.ref('rooms/' + currentRoomId).remove();
-        window.location.reload();
-    }
-}
-
-// 更新重新对战状态
-function updateRematchStatus() {
-    const roomRef = database.ref('rooms/' + currentRoomId);
-    roomRef.once('value').then(roomSnapshot => {
-        const room = roomSnapshot.val();
-        if (!room) return;
-
-        const p1 = room.player1 || {};
-        const p2 = room.player2 || {};
-        const bothReady = p1.rematch && p2.rematch;
-
-        // 更新状态显示
-        let statusText = '';
-        if (p1.rematch || p2.rematch) {
-            statusText = `等待對方回應...\n`;
-            statusText += p1.rematch ? '⚔️ 玩家1已準備\n' : '';
-            statusText += p2.rematch ? '🛡️ 玩家2已準備' : '';
-        }
-        document.getElementById('rematchStatus').textContent = statusText;
-
-        // 双方同意时重置游戏
-        if (bothReady) {
-            resetGame();
-        }
-    });
-}
-
-// 重置游戏
-function resetGame() {
-    clearTimeout(rematchTimeout);
-    gameOver = false;
-
-    const updates = {
-        'player1/health': 100,
-        'player2/health': 100,
-        'player1/rematch': false,
-        'player2/rematch': false,
-        gameEnded: false,
-        winner: null,
-        currentQuestion: null
-    };
-
-    database.ref('rooms/' + currentRoomId).update(updates, () => {
-        document.querySelector('.rematch-panel').style.display = 'none';
-        document.getElementById('gameArea').style.display = 'block';
-        startGame({ gameStarted: true });
-    });
-}
-
-// 修改原handleGameEnd函数
-function handleGameEnd(winnerType) {
-    if (gameOver) return;
-    gameOver = true;
-    
-    clearInterval(timer);
-    document.querySelectorAll('#options button').forEach(btn => btn.disabled = true);
-
-    // 隐藏原胜利界面，显示新面板
-    document.querySelector('.rematch-panel').style.display = 'block';
-    document.querySelector('.victory-text').textContent = winnerType === 'draw' ? 
-        "⚖️ 平分秋色！" : 
-        (isHost ? (winnerType === 'player1' ? "🏆 武道昌隆！" : "🍃 雖敗猶榮") : 
-                 (winnerType === 'player2' ? "🏆 武道昌隆！" : "🍃 雖敗猶榮"));
-
-    // 设置10秒超时
-    rematchTimeout = setTimeout(() => {
-        database.ref('rooms/' + currentRoomId).remove();
-        window.location.reload();
-    }, 10000);
-
-    // 监听状态变化
-    const roomRef = database.ref('rooms/' + currentRoomId);
-    roomRef.child('player1/rematch').on('value', () => updateRematchStatus());
-    roomRef.child('player2/rematch').on('value', () => updateRematchStatus());
-}
-
-// 修改原listenToRoomChanges函数
-function listenToRoomChanges() {
-    const roomRef = database.ref('rooms/' + currentRoomId);
-    roomRef.on('value', (snapshot) => {
-        const room = snapshot.val();
-        if (!room) {
-            alert('房間已被解散！');
-            window.location.reload();
-            return;
-        }
-
-        if (room.gameEnded) {
-            handleGameEnd(room.winner);
-            return;
-        }
-
-        if (room.gameStarted && !gameOver) {
-            document.getElementById('waitingArea').style.display = 'none';
-            document.getElementById('gameArea').style.display = 'block';
-            startGame(room);
-        }
-        updateHealthDisplay(room);
-    });
-}
-    
 </script>
 </body>
 </html>
-
-<!DOCTYPE html>
-<html>
-<head>
-    <!-- 保持原有樣式 -->
-    <style>
-        /* 新增重新對戰按鈕樣式 */
-        .rematch-panel {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(45, 41, 38, 0.95);
-            padding: 2rem;
-            border-radius: 15px;
-            text-align: center;
-            display: none;
-            z-index: 1000;
-        }
-
-        .rematch-buttons {
-            display: flex;
-            gap: 1rem;
-            justify-content: center;
-            margin-top: 2rem;
-        }
-
-        .rematch-buttons button {
-            font-family: 'Ma Shan Zheng', cursive;
-            font-size: 1.5rem;
-            padding: 1rem 2rem;
-            border: 2px solid var(--gold);
-            border-radius: 30px;
-            background: rgba(0,0,0,0.7);
-            color: white;
-            transition: all 0.3s;
-        }
-
-        .rematch-buttons button:hover {
-            background: var(--main-red);
-            transform: scale(1.05);
-        }
-
-        .rematch-status {
-            font-size: 1.2rem;
-            color: var(--gold);
-            margin-top: 1rem;
-        }
-
-/* 新增重新对战样式 */
-.rematch-panel {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background: rgba(45, 41, 38, 0.95);
-    padding: 2rem;
-    border-radius: 15px;
-    text-align: center;
-    display: none;
-    z-index: 1000;
-    border: 3px solid var(--gold);
-    box-shadow: 0 0 30px rgba(210, 167, 55, 0.5);
-}
-
-.rematch-buttons {
-    display: flex;
-    gap: 1.5rem;
-    justify-content: center;
-    margin-top: 2rem;
-}
-
-.rematch-buttons button {
-    font-family: 'Ma Shan Zheng', cursive;
-    font-size: 1.5rem;
-    padding: 1rem 2.5rem;
-    border: 2px solid var(--gold);
-    border-radius: 30px;
-    background: rgba(0,0,0,0.7);
-    color: white;
-    transition: all 0.3s;
-    backdrop-filter: blur(5px);
-}
-
-.rematch-buttons button:hover {
-    background: var(--main-red);
-    transform: scale(1.05);
-}
-
-.rematch-status {
-    font-size: 1.2rem;
-    color: var(--gold);
-    margin-top: 1.5rem;
-    text-shadow: 0 0 10px rgba(210, 167, 55, 0.8);
-}
-        
-    </style>
-</head>
-
-
