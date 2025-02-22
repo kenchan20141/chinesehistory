@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>頭腦王者 - 正式版</title>
+    <title>頭腦王者 - 最終修正版</title>
     <style>
         body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
         #lobby, #battle, #result, #waiting { margin: 20px 0; padding: 20px; border: 1px solid #ccc; border-radius: 10px; }
@@ -93,8 +93,10 @@
                 toggleScreens('waiting');
                 setupRoomListeners(roomRef);
 
+                // 監聽玩家加入
                 roomRef.child('players/player2').on('value', (snapshot) => {
                     if (snapshot.exists()) {
+                        roomRef.update({ status: 'playing' });
                         toggleScreens('battle');
                         loadNewQuestion();
                     }
@@ -115,7 +117,7 @@
                 if (!snapshot.exists()) return alert('房間不存在');
 
                 const roomData = snapshot.val();
-                if (roomData.status !== 'waiting') return alert('房間已滿');
+                if (roomData.status !== 'waiting') return alert('房間已滿或遊戲已開始');
 
                 playerId = 'player2';
                 await roomRef.update({
@@ -128,7 +130,8 @@
                 loadNewQuestion();
 
             } catch (error) {
-                alert('加入失敗，請檢查房間號碼');
+                console.error('加入錯誤:', error);
+                alert('加入失敗，請確認：\n1. 房間號碼正確\n2. 房間尚未開始遊戲');
             }
         }
 
@@ -152,23 +155,37 @@
             try {
                 const questionsRef = database.ref('questions');
                 const snapshot = await questionsRef.once('value');
+                if (!snapshot.exists()) throw new Error('題庫為空');
+
                 const questions = snapshot.val();
                 const questionKeys = Object.keys(questions);
-                const randomKey = questionKeys[Math.floor(Math.random() * questionKeys.length)];
+                const validQuestions = questionKeys.filter(key => 
+                    questions[key].question && 
+                    questions[key].options && 
+                    questions[key].correctAnswer
+                );
+
+                if (validQuestions.length === 0) throw new Error('無有效題目');
+                
+                const randomKey = validQuestions[Math.floor(Math.random() * validQuestions.length)];
+                const question = questions[randomKey];
                 
                 await database.ref(`rooms/${roomId}/currentQuestion`).set({
-                    ...questions[randomKey],
+                    text: question.question,
+                    options: question.options,
+                    correctAnswer: question.correctAnswer,
                     answered: false,
                     startTime: Date.now()
                 });
 
             } catch (error) {
-                alert('題目加載失敗');
+                console.error('題目加載錯誤:', error);
+                alert('題目加載失敗：請檢查題庫數據格式');
             }
         }
 
         function showQuestion(question) {
-            document.getElementById('question').textContent = question.question;
+            document.getElementById('question').textContent = question.text;
             const optionsContainer = document.getElementById('options');
             optionsContainer.innerHTML = '';
             
