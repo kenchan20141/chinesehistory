@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>基元中史爭霸賽</title>
+    <title>中史爭霸賽</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
@@ -133,29 +133,6 @@
             display: none;
         }
 
-        /* 新增動畫效果 */
-        @keyframes healthShake {
-            0% { transform: translateX(0); }
-            25% { transform: translateX(-5px); }
-            50% { transform: translateX(5px); }
-            75% { transform: translateX(-3px); }
-            100% { transform: translateX(0); }
-        }
-
-        .damage-animation {
-            animation: healthShake 0.4s ease-in-out;
-        }
-
-        @keyframes glow {
-            0% { box-shadow: 0 0 5px var(--main-red); }
-            50% { box-shadow: 0 0 20px var(--main-red); }
-            100% { box-shadow: 0 0 5px var(--main-red); }
-        }
-
-        .health-glow {
-            animation: glow 1s infinite;
-        }
-
         @media (max-width: 768px) {
             #options {
                 grid-template-columns: 1fr;
@@ -285,13 +262,6 @@ function updateHealthDisplay(room) {
     document.getElementById('opponentHealth').textContent = opponentHealth;
     document.getElementById('myHealthBar').style.width = myHealth + '%';
     document.getElementById('opponentHealthBar').style.width = opponentHealth + '%';
-
-    // 觸發動畫效果
-    if (myHealth < parseInt(document.getElementById('myHealth').dataset.prevHealth || 100)) {
-        document.getElementById('myHealthBar').classList.add('damage-animation');
-        setTimeout(() => document.getElementById('myHealthBar').classList.remove('damage-animation'), 400);
-    }
-    document.getElementById('myHealth').dataset.prevHealth = myHealth;
 }
 
 function startGame(room) {
@@ -315,19 +285,11 @@ function displayQuestion(question) {
     document.getElementById('question').textContent = question.question;
     const optionsDiv = document.getElementById('options');
     optionsDiv.innerHTML = '';
-
-    // 隨機打亂選項
-    const shuffledOptions = [...question.options];
-    for (let i = shuffledOptions.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [shuffledOptions[i], shuffledOptions[j]] = [shuffledOptions[j], shuffledOptions[i]];
-    }
-    const correctIndex = shuffledOptions.indexOf(question.options[question.correctIndex]);
-
-    shuffledOptions.forEach((option, index) => {
+    
+    question.options.forEach((option, index) => {
         const button = document.createElement('button');
         button.textContent = option;
-        button.onclick = () => checkAnswer(index === correctIndex);
+        button.onclick = () => checkAnswer(index === question.correctIndex);
         optionsDiv.appendChild(button);
     });
 }
@@ -343,13 +305,9 @@ function checkAnswer(isCorrect) {
     if (isCorrect) {
         updates[`${opponentPath}/health`] = firebase.database.ServerValue.increment(-damage);
         playSoundEffect('https://cdn.pixabay.com/audio/2024/05/25/audio_6d0d0c0c3a.mp3');
-        document.getElementById('opponentHealthBar').classList.add('health-glow');
-        setTimeout(() => document.getElementById('opponentHealthBar').classList.remove('health-glow'), 1000);
     } else {
         updates[`${playerPath}/health`] = firebase.database.ServerValue.increment(-damage);
         playSoundEffect('https://cdn.pixabay.com/audio/2024/05/25/audio_0a5a0a0a5a.mp3');
-        document.getElementById('myHealthBar').classList.add('health-glow');
-        setTimeout(() => document.getElementById('myHealthBar').classList.remove('health-glow'), 1000);
     }
     
     database.ref('rooms/' + currentRoomId).update(updates, () => {
