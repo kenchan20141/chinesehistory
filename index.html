@@ -14,11 +14,12 @@
 
         body {
             font-family: 'ZCOOL XiaoWei', cursive;
-            background: url('https://www.cmacck.edu.hk/attachment/upload/files/%E5%AD%B8%E7%A7%91%E7%B6%B2%E9%A0%81/CHIS/%E4%B8%AD%E5%9C%8B%E6%AD%B7%E5%8F%B2.jpg') center/cover fixed;
+            background: url('https://c-ssl.dtstatic.com/uploads/item/201711/13/20171113131235_YwU2t.thumb.700_0.jpeg_webp') center/cover fixed;
             color: white;
             min-height: 100vh;
             padding: 20px;
             margin: 0;
+            position: relative;
         }
 
         #roomControl {
@@ -122,7 +123,7 @@
             width: 100%;
             height: 100%;
             pointer-events: none;
-            background: url('https://i.imgur.com/6QJbQ0a.png') repeat;
+            background: url('https://c-ssl.dtstatic.com/uploads/item/201711/13/20171113131235_YwU2t.thumb.700_0.jpeg_webp') repeat;
             opacity: 0.1;
         }
 
@@ -131,6 +132,54 @@
             font-size: 2rem;
             color: var(--gold);
             display: none;
+        }
+
+        @keyframes bloodHit {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        @keyframes screenShake {
+            0% { transform: translate(0); }
+            25% { transform: translate(-10px, 10px); }
+            50% { transform: translate(10px, -10px); }
+            75% { transform: translate(-10px, -10px); }
+            100% { transform: translate(0); }
+        }
+
+        @keyframes victoryPulse {
+            0% { opacity: 0; transform: scale(0); }
+            80% { opacity: 1; transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+
+        .damage-effect {
+            animation: bloodHit 0.3s ease-in-out;
+        }
+
+        .screen-shake {
+            animation: screenShake 0.5s ease-in-out;
+        }
+
+        .victory-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 999;
+        }
+
+        .victory-text {
+            font-size: 5rem;
+            color: #d4af37;
+            text-shadow: 0 0 20px #c3272b;
+            animation: victoryPulse 1s ease-out;
         }
 
         @media (max-width: 768px) {
@@ -143,6 +192,9 @@
             }
             #question {
                 font-size: 1.4rem;
+            }
+            .victory-text {
+                font-size: 3rem;
             }
         }
     </style>
@@ -178,6 +230,10 @@
         <div id="timer">🕒 沙漏計時：15秒</div>
     </div>
 
+    <div class="victory-overlay">
+        <div class="victory-text"></div>
+    </div>
+
 <script>
 const firebaseConfig = {
   apiKey: "AIzaSyBi9IEquAN1JPQTA2FVylSheVCtuAG8ZoY",
@@ -197,11 +253,16 @@ let isHost = false;
 let timer;
 let timeLeft = 15;
 
-// 音樂控制
 const bgMusic = new Audio('https://freepd.com/music/Coy%20Koi.mp3');
 let isMusicPlaying = true;
 bgMusic.loop = true;
 bgMusic.volume = 0.3;
+
+const soundEffects = {
+    attack: new Audio('https://cdn.pixabay.com/audio/2024/06/15/audio_123456.mp3'),
+    victory: new Audio('https://cdn.pixabay.com/audio/2024/06/15/audio_654321.mp3'),
+    defeat: new Audio('https://cdn.pixabay.com/audio/2024/06/15/audio_789012.mp3')
+};
 
 function toggleMusic() {
     isMusicPlaying = !isMusicPlaying;
@@ -209,7 +270,6 @@ function toggleMusic() {
     document.querySelector('.music-control').textContent = isMusicPlaying ? '🎵 樂音' : '🔇 靜默';
 }
 
-// 遊戲邏輯
 function createRoom() {
     currentRoomId = document.getElementById('roomId').value || Math.floor(1000 + Math.random() * 9000);
     isHost = true;
@@ -298,22 +358,31 @@ function checkAnswer(isCorrect) {
     clearInterval(timer);
     const damage = Math.floor((timeLeft / 15) * 30);
     
+    document.getElementById('gameArea').classList.add('screen-shake');
+    document.querySelectorAll('.health-fill').forEach(bar => bar.classList.add('damage-effect'));
+
+    soundEffects.attack.currentTime = 0;
+    soundEffects.attack.play();
+
     const updates = {};
     const playerPath = isHost ? 'player1' : 'player2';
     const opponentPath = isHost ? 'player2' : 'player1';
     
     if (isCorrect) {
         updates[`${opponentPath}/health`] = firebase.database.ServerValue.increment(-damage);
-        playSoundEffect('https://cdn.pixabay.com/audio/2024/05/25/audio_6d0d0c0c3a.mp3');
     } else {
         updates[`${playerPath}/health`] = firebase.database.ServerValue.increment(-damage);
-        playSoundEffect('https://cdn.pixabay.com/audio/2024/05/25/audio_0a5a0a0a5a.mp3');
     }
     
     database.ref('rooms/' + currentRoomId).update(updates, () => {
         checkGameOver();
         loadNewQuestion();
     });
+
+    setTimeout(() => {
+        document.getElementById('gameArea').classList.remove('screen-shake');
+        document.querySelectorAll('.health-fill').forEach(bar => bar.classList.remove('damage-effect'));
+    }, 500);
 }
 
 function startTimer() {
@@ -333,9 +402,23 @@ function checkGameOver() {
         const myHealth = isHost ? room.player1.health : room.player2.health;
         
         if (myHealth <= 0 || (isHost ? room.player2?.health : room.player1.health) <= 0) {
-            alert(myHealth > 0 ? "🎉 武道巔峰！" : "💀 兵敗垂成...");
+            const victoryOverlay = document.querySelector('.victory-overlay');
+            const victoryText = document.querySelector('.victory-text');
+            
+            victoryOverlay.style.display = 'flex';
+            victoryText.textContent = myHealth > 0 ? "武運昌隆！" : "雖敗猶榮";
+            
+            const resultSound = myHealth > 0 ? soundEffects.victory : soundEffects.defeat;
+            resultSound.play();
+            
+            victoryText.style.animation = 'none';
+            setTimeout(() => victoryText.style.animation = 'victoryPulse 1s ease-out', 10);
+
             roomRef.remove();
-            setTimeout(() => location.reload(), 3000);
+            setTimeout(() => {
+                victoryOverlay.style.display = 'none';
+                location.reload();
+            }, 3000);
         }
     });
 }
