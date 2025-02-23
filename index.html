@@ -312,27 +312,35 @@
 
 <script>
 
-    // 在頁面加載時自動填充房間號
+   // 在 script 标签的最顶部插入
 document.addEventListener('DOMContentLoaded', () => {
     const savedRoomId = localStorage.getItem('lastRoomId');
+    console.log('从本地存储读取的房间号:', savedRoomId); // 调试用
     if (savedRoomId) {
         document.getElementById('roomId').value = savedRoomId;
+        console.log('已自动填充房间号'); // 调试用
     }
 });
 
-// 修改createRoom和joinRoom函數，添加存儲邏輯
-function createRoom() {
+    const firebaseConfig = {
+  apiKey: "AIzaSyBi9IEquAN1JPQTA2FVylSheVCtuAG8ZoY",
+
+};
+
+    function createRoom() {
     currentRoomId = document.getElementById('roomId').value || Math.floor(1000 + Math.random() * 9000);
-    // 新增這行 ↓
+    console.log('创建房间时保存的号码:', currentRoomId); // 调试用
     localStorage.setItem('lastRoomId', currentRoomId);
-    // 其餘保持不變...
+    // 其他代码...
 }
 
 function joinRoom() {
     currentRoomId = document.getElementById('roomId').value;
-    // 新增這行 ↓
+    console.log('加入房间时保存的号码:', currentRoomId); // 调试用
     localStorage.setItem('lastRoomId', currentRoomId);
-    // 其餘保持不變...
+
+<input type="text" id="roomId" placeholder="輸入四位戰閣編號"> <!-- 必须匹配 -->
+    
 }
 
 
