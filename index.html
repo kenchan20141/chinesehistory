@@ -273,7 +273,7 @@ let timeLeft = 15;
 let gameOver = false;
 
 const bgMusic = new Audio('https://freepd.com/music/Coy%20Koi.mp3');
-let isMusicPlaying = true;
+let isMusicPlaying = false;
 bgMusic.loop = true;
 bgMusic.volume = 0.3;
 
@@ -283,10 +283,18 @@ const soundEffects = {
     defeat: new Audio('https://taira-komori.jpn.org/sound_os2/jidaigeki01/Chinese_blade2.mp3')
 };
 
+// 修改重點 2：初始按鈕文字設定
+document.querySelector('.music-control').textContent = '🔇 靜默';  // 加入這行初始化設定
+
 function toggleMusic() {
     isMusicPlaying = !isMusicPlaying;
+    
+    // 修改重點 3：反轉播放/暫停邏輯
     isMusicPlaying ? bgMusic.play() : bgMusic.pause();
+    
+    // 反轉按鈕顯示文字
     document.querySelector('.music-control').textContent = isMusicPlaying ? '🎵 樂音' : '🔇 靜默';
+}
 }
 
 function createRoom() {
