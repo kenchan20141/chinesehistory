@@ -599,9 +599,6 @@ function checkAnswer(isCorrect) {
     document.getElementById('gameArea').classList.add('screen-shake');
     document.querySelectorAll('.health-fill').forEach(bar => bar.classList.add('damage-effect'));
     
-    // 原有答案處理邏輯保持不變
-    clearInterval(timer);
-    // ... 中間原有程式碼保持不變 ...
 
     // 在延遲結束後重置鎖定
     setTimeout(() => {
