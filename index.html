@@ -10,11 +10,58 @@
     <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
     <style>        
 
+@keyframes swordSlash {
+    0% { opacity: 0; transform: translateX(-100%) rotate(-45deg); }
+    50% { opacity: 1; transform: translateX(50%) rotate(15deg); }
+    100% { opacity: 0; transform: translateX(200%) rotate(45deg); }
+}
+
+.sword-effect {
+    position: absolute;
+    width: 150px;
+    height: 150px;
+    background: url('data:image/svg+xml;utf8,<svg ...>/* 簡化版刀光SVG代碼 */</svg>');
+    animation: swordSlash 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    pointer-events: none;
+}
+
+        @keyframes bloodRipple {
+    0% { transform: scale(0); opacity: 0.8; }
+    100% { transform: scale(2); opacity: 0; }
+}
+
+.blood-ripple {
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    background: rgba(255,0,0,0.5);
+    border-radius: 50%;
+    animation: bloodRipple 0.6s ease-out;
+}
+
+        
+
+        
         /* 新增動畫效果 */
 @keyframes damageFlash {
-    0% { filter: brightness(1); }
-    50% { filter: brightness(1.5); }
-    100% { filter: brightness(1); }
+     // 新增刀光元素
+    const slash = document.createElement('div');
+    slash.className = 'sword-effect';
+    document.getElementById('battleArea').appendChild(slash);
+    
+    // 強化現有效果
+    document.getElementById('battleArea').classList.add('screen-shake');
+    document.querySelectorAll('.health-fill').forEach(bar => {
+        bar.classList.add('damage-effect');
+        // 新增血色漣漪效果
+        bar.insertAdjacentHTML('beforeend', '<div class="blood-ripple"></div>');
+    });
+    
+    // 自動清除特效元素
+    setTimeout(() => {
+        slash.remove();
+        document.querySelectorAll('.blood-ripple').forEach(r => r.remove());
+    }, 1000);
 }
 
 .damage-flash {
@@ -402,6 +449,27 @@
     </div>
 
 <script>
+
+function applyDamageEffect() {
+    // 新增刀光元素
+    const slash = document.createElement('div');
+    slash.className = 'sword-effect';
+    document.getElementById('battleArea').appendChild(slash);
+    
+    // 強化現有效果
+    document.getElementById('battleArea').classList.add('screen-shake');
+    document.querySelectorAll('.health-fill').forEach(bar => {
+        bar.classList.add('damage-effect');
+        // 新增血色漣漪效果
+        bar.insertAdjacentHTML('beforeend', '<div class="blood-ripple"></div>');
+    });
+    
+    // 自動清除特效元素
+    setTimeout(() => {
+        slash.remove();
+        document.querySelectorAll('.blood-ripple').forEach(r => r.remove());
+    }, 1000);
+}
     
 // 修改 updateHealthDisplay 函數
 function updateHealthDisplay(room) {
