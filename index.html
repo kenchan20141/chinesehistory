@@ -488,6 +488,7 @@ function loadNewQuestion() {
 }
 
 function displayQuestion(question) {
+    window.currentQuestion = question; // 必須用window保存
     document.getElementById('question').textContent = question.question;
     const optionsDiv = document.getElementById('options');
     optionsDiv.innerHTML = '';
@@ -504,6 +505,21 @@ function displayQuestion(question) {
 function checkAnswer(isCorrect) {
     if (gameOver) return;
     clearInterval(timer);
+    
+    // 修正後的代碼 ▼
+    setTimeout(() => { // 延遲確保DOM已更新
+        const buttons = document.querySelectorAll('#options button');
+        const correctIndex = window.currentQuestion.correctIndex;
+        if (buttons[correctIndex]) {
+            buttons[correctIndex].style.cssText = `
+                background: #2ecc71 !important;
+                border: 2px solid #27ae60 !important;
+                transform: scale(1.05);
+            `;
+        }
+    }, 50);
+
+    // 保持原有傷害計算
     const damage = Math.floor((timeLeft / 15) * 13);
     
     navigator.vibrate = navigator.vibrate || navigator.webkitVibrate || navigator.mozVibrate || navigator.msVibrate;
