@@ -6,6 +6,81 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
     <style>
+
+        /* 新增动画效果 */
+    @keyframes fadeInUp {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes optionPop {
+        0% { transform: scale(0); opacity: 0; }
+        80% { transform: scale(1.1); }
+        100% { transform: scale(1); opacity: 1; }
+    }
+
+    @keyframes pulseGlow {
+        0% { box-shadow: 0 0 10px var(--gold); }
+        50% { box-shadow: 0 0 20px var(--gold); }
+        100% { box-shadow: 0 0 10px var(--gold); }
+    }
+
+    /* 修改现有元素样式 */
+    #roomControl {
+        animation: fadeInUp 0.8s ease-out; /* 初始进场动画 */
+    }
+
+    #gameArea {
+        animation: fadeInUp 0.5s ease-out; /* 游戏区浮现效果 */
+    }
+
+    #question {
+        animation: fadeInUp 0.3s ease-out; /* 题目浮现 */
+        transition: all 0.3s;
+    }
+
+    #options button {
+        animation: optionPop 0.5s cubic-bezier(0.68, -0.55, 0.27, 1.55) forwards; /* 选项弹出效果 */
+        opacity: 0;
+        transform-origin: center;
+    }
+
+    /* 为每个选项添加延迟 */
+    #options button:nth-child(1) { animation-delay: 0.2s; }
+    #options button:nth-child(2) { animation-delay: 0.4s; }
+    #options button:nth-child(3) { animation-delay: 0.6s; }
+    #options button:nth-child(4) { animation-delay: 0.8s; }
+
+    /* 新增按钮点击反馈 */
+    button:active {
+        transform: scale(0.95) !important;
+        filter: brightness(1.2);
+    }
+
+    /* 危险血量警示 */
+    .health-fill[style*="width: 30%"] {
+        animation: pulseGlow 1s infinite;
+        background: linear-gradient(90deg, #ff0000 0%, #ff4545 100%) !important;
+    }
+
+    /* 等待区动态效果 */
+    #waitingArea {
+        animation: pulseGlow 2s infinite;
+    }
+
+    /* 音乐按钮动态 */
+    .music-control {
+        transition: transform 0.3s, opacity 0.3s;
+    }
+    .music-control:hover {
+        transform: rotate(15deg) scale(1.1);
+    }
+
+
+
+
+
+        
         :root {
             --main-red: #c3272b;
             --gold: #d4af37;
