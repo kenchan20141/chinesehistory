@@ -212,16 +212,10 @@
         
         #timer {
             font-size: 1.2rem;
-            text-align: center;
-            margin: 1rem 0;
-            color: var(--gold);
             position: fixed;
-    bottom: 10px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: rgba(0,0,0,0.7);
-    padding: 0.5rem 1rem;
-    border-radius: 20px;
+    top: 20px;  /* 改到上方 */
+    right: 20px;
+    z-index: 999; /* 確保在最上層 */
         }
 
         .decorative-border {
@@ -293,13 +287,10 @@
 
         @media (max-width: 480px) {
             .music-control {
-        bottom: 13px;  /* 手机端更贴近底部 */
-        right: 8px;
-        width: 50px;
-        height: 50px;
-        font-size: 2rem;
-        border: 0px solid var(--gold); 
-        background: rgba(255,255,255,0.1)
+       position: fixed;
+    top: 20px;  /* 改到上方 */
+    left: 20px;
+    z-index: 999; /* 確保在最上層 */
     }
             #options {
                 grid-template-columns: 1fr;
