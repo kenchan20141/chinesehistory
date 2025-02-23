@@ -587,25 +587,10 @@ function displayQuestion(question) {
     startTimer();
 }
 
-// 在全局範圍宣告答案鎖定變數
-let isAnswerLocked = false;
-
 function checkAnswer(isCorrect) {
-    // 防連點機制
-    if (isAnswerLocked) return;
-    isAnswerLocked = true;
-    
-    // 原有動畫效果程式碼保持不變
-    document.getElementById('gameArea').classList.add('screen-shake');
-    document.querySelectorAll('.health-fill').forEach(bar => bar.classList.add('damage-effect'));
-    
-
-    // 在延遲結束後重置鎖定
-    setTimeout(() => {
-        isAnswerLocked = false;
-        document.getElementById('gameArea').classList.remove('screen-shake');
-        document.querySelectorAll('.health-fill').forEach(bar => bar.classList.remove('damage-effect'));
-    }, 500);
+    // 新增防重複提交檢查 ▼
+    if (this.answered) return;
+    this.answered = true;
     
     // 啟用按鈕 ▼
     const buttons = document.querySelectorAll('#options button');
@@ -671,7 +656,6 @@ function checkAnswer(isCorrect) {
 }
 
 function startTimer() {
-    isAnswerLocked = false; // 新增此行
     clearInterval(timer);
     // 新增以下兩行重置動畫狀態
     document.getElementById('gameArea').classList.remove('screen-shake');
