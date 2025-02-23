@@ -295,9 +295,9 @@
             .music-control {
         bottom: 13px;  /* 手机端更贴近底部 */
         right: 8px;
-        width: 36px;
-        height: 36px;
-        font-size: 1.5rem;
+        width: 50px;
+        height: 50px;
+        font-size: 2rem;
         border: 0px solid var(--gold); 
         background: rgba(255,255,255,0.1)
     }
@@ -422,7 +422,7 @@ let timeLeft = 15;
 let gameOver = false;
 
 const bgMusic = new Audio('https://freepd.com/music/Coy%20Koi.mp3');
-let isMusicPlaying = true;
+let isMusicPlaying = false;
 bgMusic.loop = true;
 bgMusic.volume = 0.3;
 
@@ -438,8 +438,7 @@ document.querySelector('.music-control').textContent = '🔇';  // 加入這行�
 function toggleMusic() {
     isMusicPlaying = !isMusicPlaying;
     
-    // 修改重點 3：反轉播放/暫停邏輯
-    isMusicPlaying ? bgMusic.play() : bgMusic.pause();
+    
     
     // 反轉按鈕顯示文字
     document.querySelector('.music-control').textContent = isMusicPlaying ? '🎵' : '🔇';
