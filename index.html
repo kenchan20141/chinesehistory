@@ -12,6 +12,7 @@
 
 /* 新增刀劍動畫樣式 */
 .sword-animation {
+    animation: swordClash 0.6s ease-out forwards; /* 添加forwards保持最終狀態 */
     position: fixed;
     top: 0;
     left: 0;
@@ -24,8 +25,8 @@
 
 /* 強化版刀光動畫 */
 @keyframes swordClash {
-    0% { 
-        opacity: 1;
+    100% { 
+        opacity: 0;
         transform: scale(1.2);
         background: 
             linear-gradient(45deg, 
@@ -692,9 +693,14 @@ function checkAnswer(isCorrect) {
     void effect.offsetWidth; // 觸發重繪
     effect.classList.add('active');
 
+      // 保持原有傷害計算邏輯...
+    const damage = Math.floor((timeLeft / 15) * 13);
+    const targetElement = isCorrect ? 
+        document.getElementById('opponentHealthBar') : 
+        document.getElementById('myHealthBar');
+
     // 僅在答對時保留動畫 ▼
     if (!isCorrect) {
-        setTimeout(() => {
             effect.classList.remove('active');
         }, 300); // 0.3秒後移除動畫
     }
