@@ -173,10 +173,16 @@
 /* 新增區分敵我的顏色 */
 #myHealthBar {
     background: linear-gradient(90deg, #27ae60 0%, #2ecc71 100%); /* 我方綠色系 */
+    top: auto;
+    bottom: 20px; /* 己方血量置底 *
 }
 
 #opponentHealthBar {
     background: linear-gradient(90deg, #c0392b 0%, #e74c3c 100%); /* 敵方紅色系 */
+    position: absolute;
+    left: 20px;
+    width: calc(100% - 40px);
+    top: 20px; /* 新增：敵方血量置頂 */
 }
 
         #question {
@@ -211,17 +217,10 @@
         }
         
         #timer {
-            font-size: 1.2rem;
-            text-align: center;
-            margin: 1rem 0;
-            color: var(--gold);
             position: fixed;
-    bottom: 10px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: rgba(0,0,0,0.7);
-    padding: 0.5rem 1rem;
-    border-radius: 20px;
+    top: 20px;  /* 改到上方 */
+    right: 20px;
+    z-index: 999; /* 確保在最上層 *
         }
 
         .decorative-border {
