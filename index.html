@@ -505,19 +505,13 @@ function displayQuestion(question) {
 function checkAnswer(isCorrect) {
     if (gameOver) return;
     clearInterval(timer);
-    function checkAnswer(isCorrect) {
-    if (gameOver) return;
-    clearInterval(timer);
     
     // 新增：高亮正確答案
     const correctIndex = window.currentQuestion.correctIndex; // 從全局變量獲取
     const options = document.querySelectorAll('#options button');
     options[correctIndex].style.background = '#2ecc71';
     options[correctIndex].style.boxShadow = '0 0 15px rgba(46, 204, 113, 0.5)';
-
-    // 保持原有邏輯...
-    const damage = Math.floor((timeLeft / 15) * 13);
-    // 後續原有程式碼保持不變...
+   
     const damage = Math.floor((timeLeft / 15) * 13);
     
     navigator.vibrate = navigator.vibrate || navigator.webkitVibrate || navigator.mozVibrate || navigator.msVibrate;
