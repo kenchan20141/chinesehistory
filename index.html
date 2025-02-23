@@ -287,10 +287,14 @@
 
         @media (max-width: 480px) {
             .music-control {
-       position: fixed;
-    top: 20px;  /* 改到上方 */
-    left: 20px;
-    z-index: 999; /* 確保在最上層 */
+       bottom: 13px;  /* 手机端更贴近底部 */
+        right: 8px;
+        width: 50px;
+        height: 50px;
+        font-size: 2rem;
+        border: 0px solid var(--gold); 
+        background: rgba(255,255,255,0.1)
+
     }
             #options {
                 grid-template-columns: 1fr;
@@ -315,9 +319,6 @@
 </head>
 <body>
     <button class="music-control" onclick="toggleMusic()">🎵</button>
-
-<div class="opponentHealthBar">敵方血量條...</div>
-<div class="myHealthBar">己方血量條...</div>
     
     <div id="roomControl">
         <h1 style="font-size:2.5rem; color:var(--gold); margin-bottom:1.5rem;">基元中史爭霸</h1>
@@ -616,10 +617,10 @@ function startTimer() {
     document.getElementById('gameArea').classList.remove('screen-shake');
     document.querySelectorAll('.health-fill').forEach(bar => bar.classList.remove('damage-effect'));
     timeLeft = 15;
-    document.getElementById('timer').textContent = `🕒 沙漏計時：${timeLeft}秒`;
+    document.getElementById('timer').textContent = `🕒${timeLeft}秒`;
     timer = setInterval(() => {
         timeLeft--;
-        document.getElementById('timer').textContent = `🕒 沙漏計時：${timeLeft}秒`;
+        document.getElementById('timer').textContent = `🕒${timeLeft}秒`;
         if (timeLeft <= 0) checkAnswer(false);
     }, 1000);
 }
