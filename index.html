@@ -312,6 +312,24 @@
 
 <script>
 
+// 修改 updateHealthDisplay 函數
+function updateHealthDisplay(room) {
+    const myHealth = isHost ? room.player1.health : (room.player2?.health || 100);
+    const myHealthBar = document.getElementById('myHealthBar');
+    
+    // 更新血條寬度
+    myHealthBar.style.width = myHealth + '%';
+    
+    // 簡單低血量提醒
+    if (myHealth <= 30) {
+        myHealthBar.style.background = '#ff0000'; // 直接變紅色
+        document.getElementById('myHealth').textContent = `${myHealth}% (危險！)`;
+    } else {
+        myHealthBar.style.background = 'linear-gradient(90deg, var(--main-red) 0%, #ff6b6b 100%)';
+        document.getElementById('myHealth').textContent = `${myHealth}%`;
+    }
+}
+    
 
 function stopDangerAlert() {
     document.getElementById('gameArea').classList.remove('danger-pulse');
