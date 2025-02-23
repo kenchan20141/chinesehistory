@@ -312,6 +312,32 @@
 
 <script>
 
+    // 在頁面加載時自動填充房間號
+document.addEventListener('DOMContentLoaded', () => {
+    const savedRoomId = localStorage.getItem('lastRoomId');
+    if (savedRoomId) {
+        document.getElementById('roomId').value = savedRoomId;
+    }
+});
+
+// 修改createRoom和joinRoom函數，添加存儲邏輯
+function createRoom() {
+    currentRoomId = document.getElementById('roomId').value || Math.floor(1000 + Math.random() * 9000);
+    // 新增這行 ↓
+    localStorage.setItem('lastRoomId', currentRoomId);
+    // 其餘保持不變...
+}
+
+function joinRoom() {
+    currentRoomId = document.getElementById('roomId').value;
+    // 新增這行 ↓
+    localStorage.setItem('lastRoomId', currentRoomId);
+    // 其餘保持不變...
+}
+
+
+    
+
 // 修改 updateHealthDisplay 函數
 function updateHealthDisplay(room) {
     const myHealth = isHost ? room.player1.health : (room.player2?.health || 100);
