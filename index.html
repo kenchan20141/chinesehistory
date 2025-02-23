@@ -436,7 +436,7 @@ const soundEffects = {
 document.querySelector('.music-control').textContent = '🔇';  // 加入這行初始化設定
 
 function toggleMusic() {
-
+   isMusicPlaying = !isMusicPlaying;
     
     // 修改重點 3：反轉播放/暫停邏輯
     isMusicPlaying ? bgMusic.play() : bgMusic.pause();
