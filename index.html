@@ -62,11 +62,34 @@
         animation: fadeInUp 0.1s ease-out; /* 题目浮现 */
         transition: all 0.1s;
 
-        #playerInfo {
-    display: flex;         /* 改用彈性盒子 */
-    flex-direction: column; /* 垂直排列 */
-    gap: 1.2rem;          /* 增加間距 */
-    margin-bottom: 1.5rem;
+       
+/* 敵方血條定位 */
+#enemyHealthContainer {
+    position: absolute;
+    top: 20px;
+    left: 1rem;
+    right: 1rem;
+    z-index: 2;
+}
+
+/* 己方血條定位 */
+#myHealthContainer {
+    position: absolute;
+    bottom: 80px; /* 根據答案區高度調整 */
+    left: 1rem;
+    right: 1rem;
+    z-index: 2;
+}
+
+/* 問題區增加底部間距 */
+#question {
+    margin: 5rem 0 2rem; /* 頂部留出敵方血條空間 */
+}
+
+/* 答案區限制最大高度 */
+#options {
+    max-height: 50vh;
+    overflow-y: auto;
 }
 
         
@@ -211,7 +234,7 @@
         }
         
         #timer {
-            font-size: 3.2rem;
+            font-size: 3rem;
             position: fixed;
     top: 20px;  /* 改到上方 */
     right: 20px;
@@ -322,9 +345,9 @@
     
     <div id="roomControl">
         <h1 style="font-size:2.5rem; color:var(--gold); margin-bottom:1.5rem;">基元中史爭霸</h1>
-        <input type="text" id="roomId" placeholder="輸入四位戰閣編號">
+        <input type="text" id="roomId" placeholder="輸入四位戰場編號">
         <div style="margin:1.5rem 0;">
-            <button onclick="createRoom()">⚔️ 創建戰閣</button>
+            <button onclick="createRoom()">⚔️ 開闢戰場</button>
             <button onclick="joinRoom()">🛡️ 加入征伐</button>
         </div>
     </div>
@@ -353,18 +376,26 @@
 
     <div id="gameArea">
         <div class="decorative-border"></div>
-        <div id="playerInfo">
-            <div>🏹 你的氣血: <span id="myHealth">100</span>
-                <div class="health-bar"><div class="health-fill" id="myHealthBar" style="width:100%"></div></div>
-            </div>
-            <div>🗡 敵方氣血: <span id="opponentHealth">100</span>
-                <div class="health-bar"><div class="health-fill" id="opponentHealthBar" style="width:100%"></div></div>
-            </div>
+        <!-- 敵方血條移至頂部 -->
+    <div id="enemyHealthContainer">
+        <div>🗡 敵方氣血: <span id="opponentHealth">100</span>
+            <div class="health-bar"><div class="health-fill" id="opponentHealthBar"></div></div>
         </div>
-        <div id="question"></div>
-        <div id="options"></div>
-        <div id="timer">🕒15</div>
     </div>
+
+    <!-- 問題與選項區 -->
+    <div id="question"></div>
+    <div id="options"></div>
+
+    <!-- 己方血條移至答案區下方 -->
+    <div id="myHealthContainer">
+        <div>🏹 你的氣血: <span id="myHealth">100</span>
+            <div class="health-bar"><div class="health-fill" id="myHealthBar"></div></div>
+        </div>
+    </div>
+    
+    <div id="timer">🕒15</div>
+</div>
 
     <div class="victory-overlay">
         <div class="victory-text"></div>
@@ -541,6 +572,7 @@ function loadNewQuestion() {
 }
 
 function displayQuestion(question) {
+    this.answered = false; // 重置答題狀態
     window.currentQuestion = question; // 必須用window保存
     document.getElementById('question').textContent = question.question;
     const optionsDiv = document.getElementById('options');
@@ -556,6 +588,18 @@ function displayQuestion(question) {
 }
 
 function checkAnswer(isCorrect) {
+    // 新增防重複提交檢查 ▼
+    if (this.answered) return;
+    this.answered = true;
+    
+    // 啟用按鈕 ▼
+    const buttons = document.querySelectorAll('#options button');
+    buttons.forEach(btn => {
+        btn.style.pointerEvents = 'auto';
+        btn.style.opacity = '1';
+    });
+
+    
     if (gameOver) return;
     clearInterval(timer);
     
