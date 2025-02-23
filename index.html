@@ -295,7 +295,6 @@ function toggleMusic() {
     // 反轉按鈕顯示文字
     document.querySelector('.music-control').textContent = isMusicPlaying ? '🎵 樂音' : '🔇 靜默';
 }
-}
 
 function createRoom() {
     currentRoomId = document.getElementById('roomId').value || Math.floor(1000 + Math.random() * 9000);
