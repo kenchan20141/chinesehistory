@@ -14,9 +14,18 @@
     100% { filter: brightness(1); }
 }
 
-/* 新增通用動畫類 */
 .damage-flash {
-    animation: damageFlash 0.3s ease-in-out;
+    animation: 
+        damageFlash 0.3s ease-in-out,
+        damageShake 0.3s ease-in-out; /* 新增此行 */
+}
+
+        /* 新增至CSS動畫區塊 */
+@keyframes damageShake {
+    0% { transform: translateX(0); }
+    25% { transform: translateX(2px); }
+    75% { transform: translateX(-2px); }
+    100% { transform: translateX(0); }
 }
         
         /* 新增动画效果 */
@@ -137,6 +146,7 @@
             border-radius: 15px;
             overflow: hidden;
             position: relative;
+            transform: translateZ(0);
         }
 
        .health-fill {
