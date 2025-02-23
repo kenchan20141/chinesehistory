@@ -104,7 +104,37 @@
         transform: rotate(15deg) scale(1.1);
     }
 
-
+  /* 危險脈衝效果 */
+    .danger-pulse {
+        animation: dangerPulse 1s infinite;
+        position: relative;
+    }
+    
+    @keyframes dangerPulse {
+        0% { box-shadow: 0 0 10px rgba(255,0,0,0.3); }
+        50% { box-shadow: 0 0 30px rgba(255,0,0,0.8); }
+        100% { box-shadow: 0 0 10px rgba(255,0,0,0.3); }
+    }
+    
+    /* 血條警示加強 */
+    .health-fill.danger::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(90deg, 
+            transparent 25%, 
+            rgba(255,255,255,0.3) 50%, 
+            transparent 75%);
+        animation: warningShine 2s infinite;
+    }
+    
+    @keyframes warningShine {
+        from { transform: translateX(-100%); }
+        to { transform: translateX(100%); }
+    }
 
 
 
@@ -357,26 +387,79 @@
 
 <script>
 
-// 在 updateHealthDisplay 函数中添加狀態檢測
+// 新增狀態追蹤變數
+let lastHealthState = {
+    player: 100,
+    opponent: 100
+};
+
+// 修改後的updateHealthDisplay函數
 function updateHealthDisplay(room) {
-  const myHealth = isHost ? room.player1.health : (room.player2?.health || 100);
-  const opponentHealth = isHost ? (room.player2?.health || 100) : room.player1.health;
+    const myHealth = isHost ? room.player1.health : (room.player2?.health || 100);
+    const opponentHealth = isHost ? (room.player2?.health || 100) : room.player1.health;
 
-  // 更新玩家血條
-  const myHealthBar = document.getElementById('myHealthBar');
-  myHealthBar.style.width = myHealth + '%';
-  myHealthBar.classList.toggle('danger', myHealth <= 30);
-  myHealthBar.classList.toggle('critical', myHealth <= 10);
+    // 更新玩家血條
+    const myHealthBar = document.getElementById('myHealthBar');
+    myHealthBar.style.width = myHealth + '%';
+    
+    // 玩家低血量警示
+    handleLowHealthWarning({
+        current: myHealth,
+        previous: lastHealthState.player,
+        element: myHealthBar,
+        isPlayer: true
+    });
+    lastHealthState.player = myHealth;
 
-  // 更新敵方血條
-  const opponentHealthBar = document.getElementById('opponentHealthBar');
-  opponentHealthBar.style.width = opponentHealth + '%';
-  opponentHealthBar.classList.toggle('danger', opponentHealth <= 30);
-  opponentHealthBar.classList.toggle('critical', opponentHealth <= 10);
+    // 更新敵方血條
+    const opponentHealthBar = document.getElementById('opponentHealthBar');
+    opponentHealthBar.style.width = opponentHealth + '%';
+    lastHealthState.opponent = opponentHealth;
 
-  // 更新文字顯示
-  document.getElementById('myHealth').textContent = myHealth;
-  document.getElementById('opponentHealth').textContent = opponentHealth;
+    // 更新文字顯示
+    document.getElementById('myHealth').textContent = myHealth;
+    document.getElementById('opponentHealth').textContent = opponentHealth;
+}
+
+// 新增低血量處理函數
+function handleLowHealthWarning({current, previous, element, isPlayer}) {
+    const isEnteringDanger = current <= 30 && previous > 30;
+    const isLeavingDanger = current > 30 && previous <= 30;
+
+    element.classList.toggle('danger', current <= 30);
+    element.classList.toggle('critical', current <= 10);
+
+    if(isEnteringDanger) {
+        triggerDangerAlert(isPlayer);
+    }
+    if(isLeavingDanger) {
+        stopDangerAlert();
+    }
+}
+
+// 新增警示觸發函數
+function triggerDangerAlert(isPlayer) {
+    // 視覺效果
+    document.getElementById('gameArea').classList.add('danger-pulse');
+    
+    // 音效警示（只對玩家自己觸發）
+    if(isPlayer) {
+        soundEffects.lowHealth.currentTime = 0;
+        soundEffects.lowHealth.play().catch(e => console.log('音效播放被阻止'));
+    }
+    
+    // 觸覺反饋（支援震動的裝置）
+    if(navigator.vibrate && isPlayer) {
+        navigator.vibrate([200, 100, 200]);
+    }
+    
+    // 控制台警示
+    console.warn('⚠️ 氣血不足！速速調息！');
+}
+
+function stopDangerAlert() {
+    document.getElementById('gameArea').classList.remove('danger-pulse');
+    soundEffects.lowHealth.pause();
 }
 
     
