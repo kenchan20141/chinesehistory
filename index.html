@@ -634,12 +634,6 @@ function checkAnswer(isCorrect) {
     if (this.answered) return;
     this.answered = true;
 
-    // 觸發動畫(無論是否答對)
-    const effect = document.getElementById('swordEffect');
-    effect.classList.remove('active');
-    void effect.offsetWidth; // 觸發重繪
-    effect.classList.add('active');
-
     // 僅在答對時保留動畫 ▼
     if (!isCorrect) {
         setTimeout(() => {
