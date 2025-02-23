@@ -506,11 +506,14 @@ function checkAnswer(isCorrect) {
     if (gameOver) return;
     clearInterval(timer);
     
-    // 新增：高亮正確答案
-    const correctIndex = window.currentQuestion.correctIndex; // 從全局變量獲取
+       // 修正：直接使用傳入的question對象
+    const correctIndex = window.currentQuestion.correctIndex;
     const options = document.querySelectorAll('#options button');
-    options[correctIndex].style.background = '#2ecc71';
-    options[correctIndex].style.boxShadow = '0 0 15px rgba(46, 204, 113, 0.5)';
+    
+    // 添加!important強制覆蓋樣式
+    options[correctIndex].style.cssText = `
+        background: #2ecc71 !important;
+        box-shadow: 0 0 15px rgba(46, 204, 113, 0.5) !important;
    
     const damage = Math.floor((timeLeft / 15) * 13);
     
