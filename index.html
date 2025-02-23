@@ -629,6 +629,9 @@ function displayQuestion(question) {
     startTimer();
 }
 
+// 新增全域變數記錄已回答狀態
+let hasAnswered = false;
+    
 function checkAnswer(isCorrect) {
      if (isCorrect) {
         const effect = document.getElementById('swordEffect');
@@ -637,9 +640,29 @@ function checkAnswer(isCorrect) {
        effect.classList.add('active');
     }
     
-    // 新增防重複提交檢查 ▼
-    if (this.answered) return;
-    this.answered = true;
+    // 檢查是否已回答
+    if (hasAnswered) return;
+    hasAnswered = true;
+
+    // 原有答案處理邏輯
+    const roomRef = database.ref('rooms/' + currentRoomId);
+    roomRef.transaction(room => {
+        // ... 原有傷害計算和動畫觸發邏輯 ...
+        return room;
+    });
+
+    // 新增答案鎖定狀態到數據庫
+    roomRef.child(isHost ? 'player1Answered' : 'player2Answered').set(true);
+}
+
+// 在加載新題目時重置狀態
+function loadQuestion() {
+    hasAnswered = false; // 重置前端狀態
+    const roomRef = database.ref('rooms/' + currentRoomId);
+    roomRef.update({
+        player1Answered: false,
+        player2Answered: false // 重置數據庫狀態
+    });
     
     // 啟用按鈕 ▼
     const buttons = document.querySelectorAll('#options button');
