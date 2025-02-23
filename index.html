@@ -504,6 +504,11 @@ function displayQuestion(question) {
 function checkAnswer(isCorrect) {
     if (gameOver) return;
     clearInterval(timer);
+
+const correctButton = document.querySelectorAll('#options button')[currentQuestion.correctIndex];
+    correctButton.style.background = '#2ecc71';
+    correctButton.style.border = '2px solid #27ae60';
+    
     const damage = Math.floor((timeLeft / 15) * 13);
     
     navigator.vibrate = navigator.vibrate || navigator.webkitVibrate || navigator.mozVibrate || navigator.msVibrate;
