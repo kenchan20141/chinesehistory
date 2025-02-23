@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>基元中史爭霸賽</title>
+    <title>基元中史爭霸</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
@@ -200,6 +200,7 @@
     </style>
 </head>
 <body>
+    <!-- 页面结构保持不变 -->
     <button class="music-control" onclick="toggleMusic()">🎵 樂音</button>
 
     <div id="roomControl">
@@ -235,6 +236,7 @@
     </div>
 
 <script>
+// Firebase配置保持不變
 const firebaseConfig = {
   apiKey: "AIzaSyBi9IEquAN1JPQTA2FVylSheVCtuAG8ZoY",
   authDomain: "game-9e2a9.firebaseapp.com",
@@ -248,12 +250,14 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const database = firebase.database();
 
+// 全局變量
 let currentRoomId = null;
 let isHost = false;
 let timer;
 let timeLeft = 15;
 let gameOver = false;
 
+// 音效系統
 const bgMusic = new Audio('https://freepd.com/music/Coy%20Koi.mp3');
 let isMusicPlaying = true;
 bgMusic.loop = true;
@@ -265,12 +269,14 @@ const soundEffects = {
     defeat: new Audio('https://taira-komori.jpn.org/sound_os2/jidaigeki01/Chinese_blade2.mp3')
 };
 
+// 音樂控制
 function toggleMusic() {
     isMusicPlaying = !isMusicPlaying;
     isMusicPlaying ? bgMusic.play() : bgMusic.pause();
     document.querySelector('.music-control').textContent = isMusicPlaying ? '🎵 樂音' : '🔇 靜默';
 }
 
+// 創建房間
 function createRoom() {
     currentRoomId = document.getElementById('roomId').value || Math.floor(1000 + Math.random() * 9000);
     isHost = true;
@@ -284,11 +290,13 @@ function createRoom() {
         currentQuestion: null,
         gameStarted: false,
         gameEnded: false,
-        winner: null
+        winner: null,
+        timerReset: null
     });
     listenToRoomChanges();
 }
 
+// 加入房間
 function joinRoom() {
     currentRoomId = document.getElementById('roomId').value;
     database.ref('rooms/' + currentRoomId).transaction(room => {
@@ -302,15 +310,24 @@ function joinRoom() {
     listenToRoomChanges();
 }
 
+// 監聽房間變化
 function listenToRoomChanges() {
     const roomRef = database.ref('rooms/' + currentRoomId);
     roomRef.on('value', (snapshot) => {
         const room = snapshot.val();
-        if (!room) return;
+        if (!room) {
+            alert('房間已被解散！');
+            window.location.reload();
+            return;
+        }
 
         if (room.gameEnded) {
             handleGameEnd(room.winner);
             return;
+        }
+
+        if (room.timerReset) {
+            startTimer();
         }
 
         if (room.gameStarted && !gameOver) {
@@ -322,6 +339,7 @@ function listenToRoomChanges() {
     });
 }
 
+// 更新血量顯示
 function updateHealthDisplay(room) {
     const myHealth = isHost ? room.player1.health : (room.player2?.health || 100);
     const opponentHealth = isHost ? (room.player2?.health || 100) : room.player1.health;
@@ -332,11 +350,13 @@ function updateHealthDisplay(room) {
     document.getElementById('opponentHealthBar').style.width = opponentHealth + '%';
 }
 
+// 開始遊戲
 function startGame(room) {
     if (!room.currentQuestion) loadNewQuestion();
     else displayQuestion(room.currentQuestion);
 }
 
+// 洗牌選項
 function shuffleArray(array) {
     for (let i = array.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
@@ -345,6 +365,7 @@ function shuffleArray(array) {
     return array;
 }
 
+// 載入新題目
 function loadNewQuestion() {
     const questionsRef = database.ref('questions');
     questionsRef.once('value').then(snapshot => {
@@ -363,11 +384,15 @@ function loadNewQuestion() {
             correctIndex: newCorrectIndex
         };
 
-        database.ref('rooms/' + currentRoomId).update({ currentQuestion: processedQuestion });
+        database.ref('rooms/' + currentRoomId).update({ 
+            currentQuestion: processedQuestion,
+            timerReset: firebase.database.ServerValue.TIMESTAMP
+        });
         startTimer();
     });
 }
 
+// 顯示題目
 function displayQuestion(question) {
     document.getElementById('question').textContent = question.question;
     const optionsDiv = document.getElementById('options');
@@ -381,10 +406,13 @@ function displayQuestion(question) {
     });
 }
 
-function checkAnswer(isCorrect) {
+// 檢查答案
+function checkAnswer(isCorrect, isTimeout = false) {
     if (gameOver) return;
     clearInterval(timer);
-    const damage = Math.floor((timeLeft / 15) * 30);
+    
+    const effectiveTimeLeft = isTimeout ? 15 : timeLeft;
+    const damage = Math.floor((effectiveTimeLeft / 15) * 13);
     
     navigator.vibrate = navigator.vibrate || navigator.webkitVibrate || navigator.mozVibrate || navigator.msVibrate;
     if (navigator.vibrate) navigator.vibrate(200);
@@ -402,7 +430,8 @@ function checkAnswer(isCorrect) {
     if (isCorrect) {
         updates[`${opponentPath}/health`] = firebase.database.ServerValue.increment(-damage);
     } else {
-        updates[`${playerPath}/health`] = firebase.database.ServerValue.increment(-damage);
+        const totalDamage = damage + (isTimeout ? 5 : 0);
+        updates[`${playerPath}/health`] = firebase.database.ServerValue.increment(-totalDamage);
     }
     
     database.ref('rooms/' + currentRoomId).update(updates, () => {
@@ -416,16 +445,31 @@ function checkAnswer(isCorrect) {
     }, 500);
 }
 
+// 啟動計時器
 function startTimer() {
+    clearInterval(timer);
     timeLeft = 15;
     document.getElementById('timer').textContent = `🕒 沙漏計時：${timeLeft}秒`;
+    
+    const startTime = Date.now();
     timer = setInterval(() => {
-        timeLeft--;
+        const elapsed = Math.floor((Date.now() - startTime) / 1000);
+        timeLeft = 15 - elapsed;
+        
+        if(timeLeft <= 0) {
+            clearInterval(timer);
+            handleTimeoutDamage();
+        }
         document.getElementById('timer').textContent = `🕒 沙漏計時：${timeLeft}秒`;
-        if (timeLeft <= 0) checkAnswer(false);
-    }, 1000);
+    }, 250);
 }
 
+// 超時傷害處理
+function handleTimeoutDamage() {
+    checkAnswer(false, true);
+}
+
+// 檢查遊戲結束
 function checkGameOver() {
     const roomRef = database.ref('rooms/' + currentRoomId);
     roomRef.once('value').then(snapshot => {
@@ -453,6 +497,7 @@ function checkGameOver() {
     });
 }
 
+// 處理遊戲結束
 function handleGameEnd(winnerType) {
     if (gameOver) return;
     gameOver = true;
