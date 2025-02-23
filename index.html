@@ -310,34 +310,7 @@ function joinRoom() {
     listenToRoomChanges();
 }
 
-// 監聽房間變化
-function listenToRoomChanges() {
-    const roomRef = database.ref('rooms/' + currentRoomId);
-    roomRef.on('value', (snapshot) => {
-        const room = snapshot.val();
-        if (!room) {
-            alert('房間已被解散！');
-            window.location.reload();
-            return;
-        }
 
-        if (room.gameEnded) {
-            handleGameEnd(room.winner);
-            return;
-        }
-
-        if (room.timerReset) {
-            startTimer();
-        }
-
-        if (room.gameStarted && !gameOver) {
-            document.getElementById('waitingArea').style.display = 'none';
-            document.getElementById('gameArea').style.display = 'block';
-            startGame(room);
-        }
-        updateHealthDisplay(room);
-    });
-}
 
 // 更新血量顯示
 function updateHealthDisplay(room) {
