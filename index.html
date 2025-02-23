@@ -273,9 +273,27 @@ let timeLeft = 15;
 let gameOver = false;
 
 const bgMusic = new Audio('https://freepd.com/music/Coy%20Koi.mp3');
-let isMusicPlaying = true;
+let isMusicPlaying = true; // 初始狀態設為播放
 bgMusic.loop = true;
 bgMusic.volume = 0.3;
+
+// 自動播放處理邏輯
+document.addEventListener('DOMContentLoaded', async () => {
+    try {
+        await bgMusic.play();
+        console.log('音樂自動播放成功');
+    } catch (err) {
+        console.warn('自動播放被阻止，需要用戶互動:', err);
+        isMusicPlaying = false;
+        updateMusicButton();
+    }
+});
+
+// 統一更新按鈕狀態的函數
+function updateMusicButton() {
+    document.querySelector('.music-control').textContent = 
+        isMusicPlaying ? '🎵 樂音' : '🔇 靜默';
+}
 
 const soundEffects = {
     attack: new Audio('https://taira-komori.jpn.org/sound_os2/jidaigeki01/Chinese_blade2.mp3'),
@@ -285,8 +303,16 @@ const soundEffects = {
 
 function toggleMusic() {
     isMusicPlaying = !isMusicPlaying;
-    isMusicPlaying ? bgMusic.play() : bgMusic.pause();
-    document.querySelector('.music-control').textContent = isMusicPlaying ? '🎵 樂音' : '🔇 靜默';
+    if (isMusicPlaying) {
+        bgMusic.play().catch(e => console.error('播放失敗:', e));
+    } else {
+        bgMusic.pause();
+    }
+    updateMusicButton();
+}
+
+// 首次載入時更新按鈕狀態
+updateMusicButton();
 }
 
 function createRoom() {
