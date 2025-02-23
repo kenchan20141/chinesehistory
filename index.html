@@ -10,101 +10,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
     <style>        
 
-/* 新增刀劍動畫樣式 */
-.sword-animation {
-    animation: swordClash 0.6s ease-out forwards; /* 添加forwards保持最終狀態 */
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    pointer-events: none;
-    z-index: 9999;
-    opacity: 0;
-}
-
-/* 強化版刀光動畫 */
-@keyframes swordClash {
-    100% { 
-        opacity: 0;
-        transform: scale(1.2);
-        background: 
-            linear-gradient(45deg, 
-                rgba(255,100,0,0.3) 0%,
-                rgba(255,230,0,0.2) 50%,
-                rgba(255,50,0,0.3) 100%
-            );
-        box-shadow: 
-            0 0 50px rgba(255,180,0,0.8),
-            -20px 0 40px rgba(255,80,0,0.6),
-            20px 0 40px rgba(255,200,0,0.6);
-    }
-    25% {
-        transform: skew(15deg, 5deg) scale(1.1);
-        box-shadow: 
-            0 0 60px rgba(255,150,0,0.9),
-            -30px -10px 50px rgba(255,50,0,0.7),
-            30px 10px 50px rgba(255,255,0,0.7);
-    }
-    50% {
-        transform: skew(-10deg, -5deg) scale(1.15);
-        background: 
-            linear-gradient(-45deg, 
-                rgba(255,50,0,0.4) 0%,
-                rgba(255,200,0,0.3) 50%,
-                rgba(255,100,0,0.4) 100%
-            );
-    }
-    100% {
-        opacity: 0;
-        transform: skew(0) scale(1);
-    }
-}
-
-/* 新增劍氣軌跡 */
-.sword-animation::before,
-.sword-animation::after {
-    content: '';
-    position: absolute;
-    width: 100%;
-    height: 4px;
-    background: linear-gradient(90deg, 
-        transparent 0%, 
-        rgba(255,230,0,0.8) 50%,
-        transparent 100%
-    );
-    animation: swordLine 0.6s ease-out;
-}
-
-.sword-animation::before {
-    top: 30%;
-    transform: rotate(-15deg);
-}
-
-.sword-animation::after {
-    bottom: 30%;
-    transform: rotate(15deg);
-}
-
-@keyframes swordLine {
-    0% {
-        transform: translateX(-100%) rotate(15deg);
-        opacity: 0;
-    }
-    50% {
-        transform: translateX(0) rotate(15deg);
-        opacity: 1;
-    }
-    100% {
-        transform: translateX(100%) rotate(15deg);
-        opacity: 0;
-    }
-}
-
-.sword-animation.active {
-    animation: swordClash 0.6s ease-out;
-}
-        
         /* 新增動畫效果 */
 @keyframes damageFlash {
     0% { filter: brightness(1); }
@@ -563,7 +468,7 @@ function toggleMusic() {
     isMusicPlaying ? bgMusic.play() : bgMusic.pause();
     
     // 反轉按鈕顯示文字
-    document.querySelector('.music-control').textContent = isMusicPlaying ? '🎵' : '🔇';
+    document.querySelector('.music-control').textContent = isMusicPlaying ? '🎵' : '';
 }
 
 function createRoom() {
@@ -683,24 +588,9 @@ function displayQuestion(question) {
 }
 
 function checkAnswer(isCorrect) {
-    // 防重複提交檢查必須在最前
+    // 新增防重複提交檢查 ▼
     if (this.answered) return;
     this.answered = true;
-
-    // 觸發動畫(無論是否答對)
-    const effect = document.getElementById('swordEffect');
-    effect.classList.remove('active');
-    void effect.offsetWidth; // 觸發重繪
-    effect.classList.add('active');
-}
-    
-      // 保持原有傷害計算邏輯...
-    const damage = Math.floor((timeLeft / 15) * 13);
-    const targetElement = isCorrect ? 
-        document.getElementById('opponentHealthBar') : 
-        document.getElementById('myHealthBar');
-
-    
     
     // 啟用按鈕 ▼
     const buttons = document.querySelectorAll('#options button');
@@ -838,8 +728,5 @@ function handleGameEnd(winnerType) {
     }, 5000);
 }
 </script>
-
-<div id="swordEffect" class="sword-animation"></div>
-    
 </body>
 </html>
