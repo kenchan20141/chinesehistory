@@ -692,7 +692,8 @@ function checkAnswer(isCorrect) {
     effect.classList.remove('active');
     void effect.offsetWidth; // 觸發重繪
     effect.classList.add('active');
-
+}
+    
       // 保持原有傷害計算邏輯...
     const damage = Math.floor((timeLeft / 15) * 13);
     const targetElement = isCorrect ? 
