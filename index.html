@@ -505,9 +505,6 @@ function checkAnswer(isCorrect) {
     if (gameOver) return;
     clearInterval(timer);
     const damage = Math.floor((timeLeft / 15) * 13);
-    const correctButton = document.querySelectorAll('#options button')[currentQuestion.correctIndex];
-    correctButton.style.background = '#2ecc71';
-    correctButton.style.border = '2px solid #27ae60';
     
     navigator.vibrate = navigator.vibrate || navigator.webkitVibrate || navigator.mozVibrate || navigator.msVibrate;
     if (navigator.vibrate) navigator.vibrate(200);
