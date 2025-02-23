@@ -700,10 +700,11 @@ function checkAnswer(isCorrect) {
         document.getElementById('myHealthBar');
 
     // 僅在答對時保留動畫 ▼
-    if (!isCorrect) {
-            effect.classList.remove('active');
-        }, 300); // 0.3秒後移除動畫
-    }
+if (!isCorrect) {
+setTimeout(() => {
+effect.classList.remove('active');
+}, 300); // 0.3秒後移除動畫
+}
     
     
     // 啟用按鈕 ▼
