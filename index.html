@@ -633,7 +633,7 @@ function checkAnswer(isCorrect) {
     // 防重複提交檢查必須在最前
     if (this.answered) return;
     this.answered = true;
-
+}
  // 觸發動畫(無論是否答對)
     const effect = document.getElementById('swordEffect');
     effect.classList.remove('active');
@@ -646,7 +646,6 @@ function checkAnswer(isCorrect) {
             effect.classList.remove('active');
         }, 300); // 0.3秒後移除動畫
      }
-}
 
     
     // 啟用按鈕 ▼
