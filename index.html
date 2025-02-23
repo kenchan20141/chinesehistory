@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>基元中史爭霸賽</title>
+    <title>基元中史爭霸</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
@@ -51,10 +51,44 @@
         filter: brightness(1.2);
     }
 
-    /* 危险血量警示 */
-    .health-fill[style*="width: 30%"] {
-        animation: pulseGlow 1s infinite;
-        background: linear-gradient(90deg, #ff0000 0%, #ff4545 100%) !important;
+   /* 修改後的血量警示效果 */
+.health-fill {
+  transition: width 0.5s ease, background 0.3s ease; /* 添加背景色漸變過渡 */
+}
+
+.health-fill.danger {
+  animation: pulseGlow 1s infinite;
+  background: linear-gradient(90deg, 
+    #ff0000 0%, 
+    #ff6b6b 50%, 
+    #ff0000 100%) !important;
+  background-size: 200% 100%;
+}
+
+@keyframes pulseGlow {
+  0% { 
+    opacity: 0.9;
+    background-position: 100% 0;
+  }
+  50% {
+    opacity: 1;
+    box-shadow: 0 0 15px #ff0000;
+  }
+  100% {
+    opacity: 0.9;
+    background-position: -100% 0;
+  }
+}
+
+/* 添加極度危險狀態 */
+.health-fill.critical {
+  animation: criticalFlash 0.5s infinite steps(2);
+}
+
+@keyframes criticalFlash {
+  from { opacity: 1; }
+  to { opacity: 0.3; }
+}
     }
 
     /* 等待区动态效果 */
@@ -272,7 +306,7 @@
     <button class="music-control" onclick="toggleMusic()">🎵 樂音</button>
 
     <div id="roomControl">
-        <h1 style="font-size:2.5rem; color:var(--gold); margin-bottom:1.5rem;">基元中史爭霸賽</h1>
+        <h1 style="font-size:2.5rem; color:var(--gold); margin-bottom:1.5rem;">基元中史爭霸</h1>
         <input type="text" id="roomId" placeholder="輸入四位戰閣編號">
         <div style="margin:1.5rem 0;">
             <button onclick="createRoom()">⚔️ 創建戰閣</button>
