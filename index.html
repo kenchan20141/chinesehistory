@@ -7,6 +7,33 @@
     <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
     <style>
 
+        /* 在原有樣式中添加以下規則 */
+#options button.correct {
+    background: #4CAF50 !important;
+    animation: correctBlink 0.5s ease;
+}
+
+#options button.wrong {
+    background: #f44336 !important;
+    animation: wrongShake 0.5s ease;
+}
+
+@keyframes correctBlink {
+    0% { box-shadow: 0 0 15px #4CAF50; }
+    50% { transform: scale(1.1); }
+    100% { box-shadow: none; }
+}
+
+@keyframes wrongShake {
+    0% { transform: translateX(0); }
+    25% { transform: translateX(-10px); }
+    50% { transform: translateX(10px); }
+    75% { transform: translateX(-5px); }
+    100% { transform: translateX(0); }
+}
+
+        
+        
         /* 新增动画效果 */
     @keyframes fadeInUp {
         from { opacity: 0; transform: translateY(20px); }
@@ -311,8 +338,50 @@
     </div>
 
 <script>
-    
 
+    // 修改checkAnswer函數
+function checkAnswer(isCorrect) {
+    if (gameOver) return;
+    clearInterval(timer);
+    
+    // 獲取被點擊的按鈕
+    const clickedButton = event.target;
+    
+    // 添加樣式反饋
+    if (isCorrect) {
+        clickedButton.classList.add('correct');
+        // 找出正確答案按鈕（用於多選題情況）
+        document.querySelectorAll('#options button').forEach((btn, index) => {
+            if (index === currentQuestion.correctIndex) {
+                btn.classList.add('correct');
+            }
+        });
+    } else {
+        clickedButton.classList.add('wrong');
+        // 顯示正確答案
+        document.querySelectorAll('#options button').forEach((btn, index) => {
+            if (index === currentQuestion.correctIndex) {
+                btn.classList.add('correct');
+            }
+        });
+    }
+
+    const damage = Math.floor((timeLeft / 15) * 13);
+    
+    // 原有震動邏輯...
+    
+    // 1秒後重置按鈕樣式
+    setTimeout(() => {
+        document.querySelectorAll('#options button').forEach(btn => {
+            btn.classList.remove('correct', 'wrong');
+        });
+    }, 1000);
+
+    // 原有傷害計算邏輯...
+}
+
+
+    
 // 修改 updateHealthDisplay 函數
 function updateHealthDisplay(room) {
     const myHealth = isHost ? room.player1.health : (room.player2?.health || 100);
