@@ -459,7 +459,7 @@ const soundEffects = {
 };
 
 // 修改重點 2：初始按鈕文字設定
-document.querySelector('.music-control').textContent = '🔇 靜默';  // 加入這行初始化設定
+document.querySelector('.music-control').textContent = '🔇 ';  // 加入這行初始化設定
 
 function toggleMusic() {
     isMusicPlaying = !isMusicPlaying;
@@ -468,7 +468,7 @@ function toggleMusic() {
     isMusicPlaying ? bgMusic.play() : bgMusic.pause();
     
     // 反轉按鈕顯示文字
-    document.querySelector('.music-control').textContent = isMusicPlaying ? '🎵 樂音' : '🔇 靜默';
+    document.querySelector('.music-control').textContent = isMusicPlaying ? '🎵 ' : '🔇 ';
 }
 
 function createRoom() {
