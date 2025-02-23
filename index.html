@@ -319,7 +319,7 @@
     </style>
 </head>
 <body>
-    <button class="music-control" onclick="toggleMusic()">🎵 樂音</button>
+    <button class="music-control" onclick="toggleMusic()">🎵</button>
 
     <div id="roomControl">
         <h1 style="font-size:2.5rem; color:var(--gold); margin-bottom:1.5rem;">基元中史爭霸</h1>
@@ -429,7 +429,7 @@ const soundEffects = {
 };
 
 // 修改重點 2：初始按鈕文字設定
-document.querySelector('.music-control').textContent = '🔇 ';  // 加入這行初始化設定
+document.querySelector('.music-control').textContent = '🔇';  // 加入這行初始化設定
 
 function toggleMusic() {
     isMusicPlaying = !isMusicPlaying;
@@ -438,7 +438,7 @@ function toggleMusic() {
     isMusicPlaying ? bgMusic.play() : bgMusic.pause();
     
     // 反轉按鈕顯示文字
-    document.querySelector('.music-control').textContent = isMusicPlaying ? '🎵 ' : '🔇 ';
+    document.querySelector('.music-control').textContent = isMusicPlaying ? '🎵' : '🔇';
 }
 
 function createRoom() {
