@@ -89,27 +89,6 @@
         animation: pulseGlow 2s infinite;
     }
 
-    /* 音乐按钮动态 */
-    .music-control {
-    position: fixed;
-    bottom: 20px;       /* 距离底部20px */
-    right: 20px;        /* 距离右侧20px */
-    width: 44px;        /* 按钮直径 */
-    height: 44px;
-    border-radius: 50%;  /* 圆形按钮 */
-    background: rgba(45, 41, 38, 0.95); /* 半透明背景 */
-    border: 2px solid var(--gold);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0;         /* 清除内边距 */
-    margin: 0;          /* 清除外边距 */
-    opacity: 0.9;       /* 默认半透明 */
-    transition: all 0.3s ease;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.25); /* 深度阴影 */
-    font-size: 24px;    /* 图标大小 */
-    color: var(--gold); /* 图标颜色 */
-    }
     .music-control:hover {
          transform: none;   /* 原：rotate(15deg) scale(1.1) */
     opacity: 1;        /* 悬停时变明显 */
@@ -138,7 +117,7 @@
             padding: 1rem;
             border-radius: 10px;
             box-shadow: 0 0 20px var(--gold);
-            max-width: 95%;
+            max-width: 85%;
             min-height: calc(100vh - 40px);
             margin: 1rem auto;
         }
@@ -328,11 +307,6 @@
             #options button {
         padding: 1rem !important;   /* 選項按鈕內距放大 */
         font-size: 1.2rem !important; /* 選項文字放大 */
-    }
-    .music-control {
-        transform: scale(1.8);      /* 音樂按鈕放大80% */
-        top: 20px;                 /* 調整位置 */
-        right: 20px;
     }
             #question {
                 font-size: 1.4rem;
