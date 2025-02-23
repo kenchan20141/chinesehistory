@@ -488,7 +488,6 @@ function loadNewQuestion() {
 }
 
 function displayQuestion(question) {
-    window.currentQuestion = question;
     document.getElementById('question').textContent = question.question;
     const optionsDiv = document.getElementById('options');
     optionsDiv.innerHTML = '';
@@ -505,16 +504,6 @@ function displayQuestion(question) {
 function checkAnswer(isCorrect) {
     if (gameOver) return;
     clearInterval(timer);
-    
-       // 修正：直接使用傳入的question對象
-    const correctIndex = window.currentQuestion.correctIndex;
-    const options = document.querySelectorAll('#options button');
-    
-    // 添加!important強制覆蓋樣式
-    options[correctIndex].style.cssText = `
-        background: #2ecc71 !important;
-        box-shadow: 0 0 15px rgba(46, 204, 113, 0.5) !important;
-   
     const damage = Math.floor((timeLeft / 15) * 13);
     
     navigator.vibrate = navigator.vibrate || navigator.webkitVibrate || navigator.mozVibrate || navigator.msVibrate;
