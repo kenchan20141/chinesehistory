@@ -95,7 +95,8 @@
             background: url('https://cdn.shuge.org/uploads/2014/04/zhong-guo-li-shi-jiao-ke-shu01.jpg') center/cover fixed;
             color: white;
             min-height: 100vh;
-            padding: 10px;
+            padding: 20px;
+            font-size: 16px;
             margin: 0;
             position: relative;
             font-size: 16px;
@@ -104,20 +105,21 @@
         #roomControl {
             text-align: center;
             background: rgba(45, 41, 38, 0.9);
-            padding: 2rem;
+            padding: 1rem;
             border-radius: 10px;
             box-shadow: 0 0 20px var(--gold);
-            max-width: 600px;
-            margin: 2rem auto;
+            max-width: 95%;
+            min-height: calc(100vh - 40px);
+            margin: 1rem auto;
         }
 
         input, button {
     font-family: 'WangHanZhongWeiBei', cursive;
     font-size: 1.4rem;
-    padding: 1.2rem 2rem;
-    margin: 0.5rem;
+    padding: 0.6rem 1.2rem;
+    margin: 0.3rem;
     border: 2px solid var(--gold);
-    border-radius: 25px;
+    border-radius: 15px;
     background: rgba(0,0,0,0.7);
     color: white;
     transition: all 0.3s;
@@ -133,9 +135,10 @@
             background: rgba(45, 41, 38, 0.95);
             border: 3px solid var(--gold);
             border-radius: 15px;
-            padding: 2rem;
-            max-width: 800px;
-            margin: 2rem auto;
+            padding: 1rem;
+            max-width: 100%;
+            margin: 1rem auto;
+            min-height: calc(100vh - 40px);
             position: relative;
             display: none;
         }
@@ -143,6 +146,7 @@
         .health-bar {
             width: 100%;
             height: 40px;
+            margin: 0.5rem 0;
             background: #333;
             border-radius: 15px;
             overflow: hidden;
@@ -165,26 +169,27 @@
 }
 
         #question {
-            font-size: 2.2rem;
+            font-size: 1.6rem;
             text-align: center;
-            margin: 1.5rem 0;
-            padding: 1.5rem;
+            margin: 1rem 0;
+            padding: 0.8rem;
+             line-height: 1.4;
             background: rgba(0,0,0,0.5);
             border-left: 5px solid var(--gold);
         }
 
         #options {
             display: grid;
-            gap: 1rem;
-            grid-template-columns: repeat(2, 1fr);
+            gap: 0.8rem;
+            grid-template-columns: repeat(1fr);
         }
 
         #options button {
             background: rgba(255,255,255,0.1);
             backdrop-filter: blur(5px);
             border: none;
-            padding: 2rem;
-            font-size: 1.4rem;
+            padding: 1.2rem;
+            font-size: 1.3rem;
             color: white;
         }
 
@@ -193,10 +198,17 @@
         }
 
         #timer {
-            font-size: 2.4rem;
+            font-size: 1.5rem;
             text-align: center;
             margin: 1rem 0;
             color: var(--gold);
+            position: fixed;
+    bottom: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0,0,0,0.7);
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
         }
 
         .music-control {
@@ -217,7 +229,10 @@
 
         #waitingArea {
             text-align: center;
-            font-size: 2rem;
+            font-size: 1.8rem;
+    max-width: 95%;
+    padding: 1.5rem;
+    margin: 1rem auto;
             color: var(--gold);
             display: none;
         }
@@ -279,8 +294,8 @@
                 margin: 0.5rem 0;
             }
             #options button {
-        padding: 2rem !important;   /* 選項按鈕內距放大 */
-        font-size: 1.6rem !important; /* 選項文字放大 */
+        padding: 1rem !important;   /* 選項按鈕內距放大 */
+        font-size: 1.2rem !important; /* 選項文字放大 */
     }
     .music-control {
         transform: scale(1.8);      /* 音樂按鈕放大80% */
@@ -289,6 +304,7 @@
     }
             #question {
                 font-size: 1.4rem;
+                margin: 0.8rem 0;
             }
             .victory-text {
                 font-size: 3rem;
