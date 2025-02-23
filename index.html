@@ -286,7 +286,7 @@ const soundEffects = {
 function toggleMusic() {
     isMusicPlaying = !isMusicPlaying;
     isMusicPlaying ? bgMusic.play() : bgMusic.pause();
-    document.querySelector('.music-control').textContent = isMusicPlaying ? '🔇 靜默' :'🎵 樂音' ;
+    document.querySelector('.music-control').textContent = isMusicPlaying ? '🎵 樂音' : '🔇 靜默';
 }
 
 function createRoom() {
