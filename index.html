@@ -635,7 +635,7 @@ function handleGameEnd(winnerType) {
     if (winnerType === 'draw') {
         victoryText.textContent = "平分秋色！";
     } else {
-        victoryText.textContent = isWinner ? "武道昌隆！" : "雖敗猶榮";
+        victoryText.textContent = isWinner ? "武道昌隆！" : "雖敗猶榮！";
     }
 
     const resultSound = isWinner ? soundEffects.victory : soundEffects.defeat;
