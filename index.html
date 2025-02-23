@@ -91,10 +91,25 @@
 
     /* 音乐按钮动态 */
     .music-control {
-        transition: transform 0.3s, opacity 0.3s;
+    position: fixed;
+    bottom: 60px;    /* 原：top: 20px */
+    right: 12px;      /* 原：right: 20px */
+    z-index: 100;
+    padding: 8px;     /* 原：无定义(默认) */
+    width: 40px;      /* 新增尺寸限制 */
+    height: 40px;
+    border-radius: 50%;/* 圆形按钮 */
+    font-size: 1.2rem; /* 原：无定义(默认) */
+    background: rgba(45, 41, 38, 0.9); /* 新增背景色 */
+    border: 1px solid var(--gold);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0.8;     /* 半透明效果 */
     }
     .music-control:hover {
-        transform: rotate(15deg) scale(1.1);
+         transform: none;   /* 原：rotate(15deg) scale(1.1) */
+    opacity: 1;        /* 悬停时变明显 */
     }
         
         :root {
@@ -299,7 +314,14 @@
             animation: victoryPulse 1s ease-out;
         }
 
-        @media (max-width: 768px) {
+        @media (max-width: 480px) {
+            .music-control {
+        bottom: 20px;  /* 手机端更贴近底部 */
+        right: 8px;
+        width: 36px;
+        height: 36px;
+        font-size: 1rem;
+    }
             #options {
                 grid-template-columns: 1fr;
             }
