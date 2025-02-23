@@ -6,6 +6,18 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
     <style>        
+
+        /* 新增動畫效果 */
+@keyframes damageFlash {
+    0% { filter: brightness(1); }
+    50% { filter: brightness(1.5); }
+    100% { filter: brightness(1); }
+}
+
+/* 新增通用動畫類 */
+.damage-flash {
+    animation: damageFlash 0.3s ease-in-out;
+}
         
         /* 新增动画效果 */
     @keyframes fadeInUp {
@@ -521,6 +533,12 @@ function checkAnswer(isCorrect) {
 
     // 保持原有傷害計算
     const damage = Math.floor((timeLeft / 15) * 13);
+      const targetElement = isCorrect ? 
+        document.getElementById('opponentHealthBar') : 
+        document.getElementById('myHealthBar');
+
+    targetElement.classList.add('damage-flash');
+    setTimeout(() => targetElement.classList.remove('damage-flash'), 300);
     
     navigator.vibrate = navigator.vibrate || navigator.webkitVibrate || navigator.mozVibrate || navigator.msVibrate;
     if (navigator.vibrate) navigator.vibrate(200);
