@@ -4,7 +4,7 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     
-    <title>基元文史爭霸</title>
+    <title>基元文史哲爭霸</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
@@ -762,16 +762,17 @@ function createRoom() {
     document.getElementById('waitingArea').style.display = 'block';
     document.getElementById('displayRoomId').textContent = currentRoomId;
 
-    database.ref('rooms/' + currentRoomId).set({
-        player1: { health: 100 },
-        player2: null,
-        currentQuestion: null,
-        gameStarted: false,
-        gameEnded: false,
-        winner: null
-    });
-    listenToRoomChanges();
-}
+    // ⌨️ 替换为 ▼
+database.ref('rooms/' + currentRoomId).set({
+    player1: { health: 100 },
+    player2: null,
+    currentQuestion: null,
+    gameStarted: false,
+    gameEnded: false,
+    winner: null,
+    hostRematch: false,   // 新增字段
+    clientRematch: false  // 新增字段
+});
 
 function joinRoom() {
     currentRoomId = document.getElementById('roomId').value;
@@ -794,10 +795,9 @@ function listenToRoomChanges() {
         const room = snapshot.val();
         if (!room) return;
 
-        if (room.gameEnded) {
-            handleGameEnd(room.winner);
-            return;
-        }
+      if (room.hostRematch && room.clientRematch) {
+    startNewGameSession();
+}
 
         if (room.gameStarted && !gameOver) {
             document.getElementById('waitingArea').style.display = 'none';
@@ -931,6 +931,11 @@ function checkGameOver() {
 }
 
 function handleGameEnd(winnerType) {
+    // ⌨️ 在函数开头添加 ▼
+    database.ref('rooms/' + currentRoomId).off('value'); // 清理旧监听
+
+    if (gameOver) return;
+    gameOver = true;
     if (gameOver) return;
     gameOver = true;
     
@@ -963,8 +968,28 @@ if (existingButtons) existingButtons.remove();
 const buttonContainer = document.createElement('div');
     buttonContainer.className = 'rematch-buttons';
     
-    const rematchBtn = document.createElement('button');
-    rematchBtn.textContent = '再戰江湖';
+   // ⌨️ 修改为以下内容 ▼
+rematchBtn.textContent = '再戰江湖 (等待對方)';
+rematchBtn.disabled = true; // 初始禁用按钮
+
+// 添加数据库监听更新状态
+const rematchRef = database.ref('rooms/' + currentRoomId);
+rematchRef.on('value', snap => {
+    const room = snap.val();
+    if (!room) return;
+
+    const hostReady = room.hostRematch || false;
+    const clientReady = room.clientRematch || false;
+
+    // 更新按钮文字
+    let statusText = [];
+    if (isHost && clientReady) statusText.push('對方已準備');
+    if (!isHost && hostReady) statusText.push('對方已準備');
+    rematchBtn.textContent = `再戰江湖${statusText.length ? ` (${statusText.join(', ')})` : ''}`;
+
+    // 当对方已准备时启用按钮
+    if ((isHost && clientReady) || (!isHost && hostReady)) {
+        rematchBtn.disabled = false;
     const mainMenuBtn = document.createElement('button');
     mainMenuBtn.textContent = '歸隱山林';
 
@@ -980,28 +1005,14 @@ const buttonContainer = document.createElement('div');
     victoryOverlay.appendChild(buttonContainer);
 }
 
-// 修正后的 handleRematchRequest 函数
+// ⌨️ 删除原handleRematchRequest函数，替换为 ▼
 function handleRematchRequest() {
-    if (isRematching) return;
-    isRematching = true;
-
-    // 强制移除胜利界面元素
-    const victoryOverlay = document.querySelector('.victory-overlay');
-    victoryOverlay.style.display = 'none';
-    const buttons = victoryOverlay.querySelector('.rematch-buttons');
-    if (buttons) buttons.remove();
-
-    // 原子性重置数据库状态
-    const updates = {
-        'player1/health': 100,
-        'player2/health': 100,
-        gameEnded: false,
-        currentQuestion: null,
-        winner: null,
-        gameStarted: true,
-        hostRematch: false,
-        clientRematch: false
-    };
+    if (isHost) {
+        database.ref('rooms/' + currentRoomId).update({ hostRematch: true });
+    } else {
+        database.ref('rooms/' + currentRoomId).update({ clientRematch: true });
+    }
+}
 
     database.ref('rooms/' + currentRoomId).update(updates, (error) => {
         isRematching = false;
@@ -1028,39 +1039,20 @@ function handleRematchRequest() {
 
 // 修正后的 startNewGameSession 函数
 function startNewGameSession() {
-    // 确保移除所有旧监听器
-    database.ref('rooms/' + currentRoomId).off();
-
-    // 重置游戏数据
     const updates = {
-        player1: { health: 100 },
-        player2: { health: 100 },
-        currentQuestion: null,
+        'player1/health': 100,
+        'player2/health': 100,
         gameEnded: false,
-        hostRematch: false,
-        clientRematch: false,
-        gameStarted: true
+        currentQuestion: null,
+        winner: null,
+        hostRematch: false,   // 重置状态
+        clientRematch: false  // 重置状态
     };
 
-    database.ref('rooms/' + currentRoomId).update(updates, () => {
-        // 本地状态重置
-        gameOver = false;
-        answered = false;
-        
-        // 强制界面刷新
-        document.getElementById('gameArea').style.display = 'block';
-        document.querySelector('.victory-overlay').style.display = 'none';
-        document.getElementById('question').textContent = '準備新回合...';
-        document.getElementById('options').innerHTML = '';
-
-        // 重新绑定监听器
-        listenToRoomChanges();
-        
-        // 延迟加载新题目
-        setTimeout(() => {
-            loadNewQuestion();
-        }, 500);
-    });
+    database.ref('rooms/' + currentRoomId).update(updates);
+    gameOver = false;
+    document.querySelector('.victory-overlay').style.display = 'none';
+    loadNewQuestion();
 }
 </script>
 </body>
