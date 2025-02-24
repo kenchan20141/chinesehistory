@@ -4,7 +4,7 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     
-    <title>基元文史哲爭霸</title>
+    <title>基元文史爭霸</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
@@ -787,6 +787,22 @@ function joinRoom() {
 }
 
 function listenToRoomChanges() {
+     roomRef.on('value', (snapshot) => {
+        const room = snapshot.val();
+        
+        // 新增题目同步检测
+        if (room.questionReady && room.questionStartTime) {
+            const timeDiff = room.questionStartTime - Date.now();
+            
+            // 统一倒计时
+            if (timeDiff > 0) {
+                setTimeout(() => {
+                    displayQuestion(room.currentQuestion);
+                    startTimer();
+                }, timeDiff);
+            } else {
+                displayQuestion(room.currentQuestion);
+                startTimer();
     // 先移除旧的监听器
     database.ref('rooms/' + currentRoomId).off('value');
     const roomRef = database.ref('rooms/' + currentRoomId);
@@ -869,7 +885,15 @@ function loadNewQuestion() {
         };
 
         database.ref('rooms/' + currentRoomId).update({ currentQuestion: processedQuestion });
-    });
+          currentQuestion: processedQuestion,
+        questionReady: false // 保持未准备状态
+    }, () => {
+        // 题目保存成功后设置准备状态
+        const startTime = Date.now() + 3000; // 3秒后统一开始
+        database.ref('rooms/' + currentRoomId).update({
+            questionReady: true,
+            questionStartTime: startTime 
+        });
 }
 
 function displayQuestion(question) {
@@ -890,6 +914,21 @@ function displayQuestion(question) {
 
 
 function startTimer() {
+     // 从数据库获取统一开始时间
+    database.ref('rooms/' + currentRoomId + '/questionStartTime').once('value').then(snap => {
+        const serverStartTime = snap.val();
+        const adjustedTimeLeft = 15 - Math.floor((Date.now() - serverStartTime)/1000);
+        
+        // 更新本地计时器
+        timeLeft = Math.max(adjustedTimeLeft, 1);
+        document.getElementById('timer').textContent = `🕒${timeLeft}秒`;
+        
+        // 启动同步计时器
+        timer = setInterval(() => {
+            timeLeft--;
+            document.getElementById('timer').textContent = `🕒${timeLeft}秒`;
+            if (timeLeft <= 0) checkAnswer(false);
+        }, 1000);
     clearInterval(timer);
     // 新增以下兩行重置動畫狀態
     document.getElementById('gameArea').classList.remove('screen-shake');
@@ -1001,6 +1040,8 @@ function handleRematchRequest() {
         gameStarted: true,
         hostRematch: false,
         clientRematch: false
+       questionReady: false, // 新增同步状态
+        questionStartTime: null // 新增题目开始时间戳
     };
 
     database.ref('rooms/' + currentRoomId).update(updates, (error) => {
