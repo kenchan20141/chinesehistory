@@ -4,26 +4,12 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     
-    <title>基元文史爭霸</title>
+    <title>基元文史哲爭霸</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
     <style>        
 
-.rematch-loader {
-    width: 50px;
-    height: 50px;
-    margin: 20px auto;
-    border: 5px solid #d4af37;
-    border-radius: 50%;
-    border-top-color: transparent;
-    animation: rematchSpin 1s linear infinite;
-}
-
-@keyframes rematchSpin {
-    to { transform: rotate(360deg); }
-}
-        
 .rematch-buttons {
     margin-top: 30px;
     display: flex;
@@ -799,14 +785,10 @@ function joinRoom() {
     listenToRoomChanges();
 }
 
-// 在 listenToRoomChanges 函数中新增重赛监听
 function listenToRoomChanges() {
+    // 先移除旧的监听器
+    database.ref('rooms/' + currentRoomId).off('value');
     const roomRef = database.ref('rooms/' + currentRoomId);
-    
-    // 清除旧监听避免重复
-    roomRef.off('value');
-    roomRef.off('child_changed');
-
     roomRef.on('value', (snapshot) => {
         const room = snapshot.val();
         if (!room) return;
@@ -823,76 +805,7 @@ function listenToRoomChanges() {
         }
         updateHealthDisplay(room);
     });
-
-// 新增重赛状态监听
-    roomRef.child('rematchState').on('child_changed', (snapshot) => {
-        handleRematchState(snapshot.val());
-    });
 }
-
-// 新增重赛状态处理函数
-function handleRematchState(state) {
-    if (state[isHost ? 'player2' : 'player1'] === 'ready') {
-        startNewGameSession();
-    }
-}
-
-// 修改后的重赛请求处理
-function handleRematchRequest() {
-    const rematchRef = database.ref(`rooms/${currentRoomId}/rematchState`);
-    rematchRef.transaction(currentState => {
-        currentState = currentState || {};
-        currentState[isHost ? 'player1' : 'player2'] = 'ready';
-        return currentState;
-    }).then(() => {
-        showRematchStatus();
-    });
-}
-
-// 显示重赛等待状态
-function showRematchStatus() {
-    const overlay = document.querySelector('.victory-overlay');
-    overlay.innerHTML = `
-        <div style="text-align:center;">
-            <div class="victory-text">${isHost ? '等待對方應戰...' : '發起再戰請求！'}</div>
-            <div class="rematch-loader"></div>
-        </div>
-    `;
-}
-
-// 优化后的新游戏启动
-function startNewGameSession() {
-    // 清除旧游戏状态
-    gameOver = false;
-    answered = false;
-    timeLeft = 15;
-    
-    // 重置数据库状态
-    const roomRef = database.ref('rooms/' + currentRoomId);
-    roomRef.update({
-        'player1.health': 100,
-        'player2.health': 100,
-        currentQuestion: null,
-        gameEnded: false,
-        rematchState: null,
-        winner: null
-    }).then(() => {
-        // 强制重新绑定监听
-        listenToRoomChanges();
-        
-        // 重置界面
-        document.querySelector('.victory-overlay').style.display = 'none';
-        document.getElementById('gameArea').style.display = 'block';
-        
-        // 触发新问题加载
-        if (isHost) loadNewQuestion();
-    });
-
-    // 清除残余动画
-    document.getElementById('gameArea').classList.remove('screen-shake');
-    document.querySelectorAll('.health-wave, .hit-marker').forEach(e => e.remove());
-}
-    
 
 function updateHealthDisplay(room) {
     const myHealth = isHost ? room.player1.health : (room.player2?.health || 100);
