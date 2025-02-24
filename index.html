@@ -917,16 +917,16 @@ function checkGameOver() {
 function handleGameEnd(winnerType) {
     if (gameOver) return;
     gameOver = true;
-    
+
     clearInterval(timer);
     document.querySelectorAll('#options button').forEach(btn => btn.disabled = true);
 
     const victoryOverlay = document.querySelector('.victory-overlay');
     const victoryText = document.querySelector('.victory-text');
-    
-    const isWinner = (winnerType === 'player1' && isHost) || 
-                    (winnerType === 'player2' && !isHost);
-    
+
+    const isWinner = (winnerType === 'player1' && isHost) ||
+        (winnerType === 'player2' && !isHost);
+
     victoryOverlay.style.display = 'flex';
     if (winnerType === 'draw') {
         victoryText.textContent = "平分秋色！";
@@ -939,29 +939,41 @@ function handleGameEnd(winnerType) {
 
     victoryText.style.animation = 'none';
     setTimeout(() => victoryText.style.animation = 'victoryPulse 1s ease-out', 10);
-// 新增重赛按钮容器
-   // 先移除已存在的按钮
-const existingButtons = document.querySelector('.rematch-buttons');
-if (existingButtons) existingButtons.remove();
 
-const buttonContainer = document.createElement('div');
+    // 添加重赛按钮
+    const buttonContainer = document.createElement('div');
     buttonContainer.className = 'rematch-buttons';
-    
+
     const rematchBtn = document.createElement('button');
     rematchBtn.textContent = '再戰江湖';
     const mainMenuBtn = document.createElement('button');
     mainMenuBtn.textContent = '歸隱山林';
 
-    // 按钮点击处理
     rematchBtn.onclick = () => handleRematchRequest();
     mainMenuBtn.onclick = () => {
-        database.ref('rooms/' + currentRoomId).remove();
-        window.location.reload();
+        // 删除旧房间数据
+        database.ref('rooms/' + currentRoomId).remove()
+            .then(() => {
+                console.log('旧房间已删除');
+                window.location.reload();
+            })
+            .catch(error => {
+                console.error('删除旧房间失败：', error);
+            });
     };
 
     buttonContainer.appendChild(rematchBtn);
     buttonContainer.appendChild(mainMenuBtn);
     victoryOverlay.appendChild(buttonContainer);
+
+    // 删除旧房间数据
+    database.ref('rooms/' + currentRoomId).remove()
+        .then(() => {
+            console.log('旧房间已删除');
+        })
+        .catch(error => {
+            console.error('删除旧房间失败：', error);
+        });
 }
 
 function handleRematchRequest() {
