@@ -9,60 +9,7 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
     <style>        
-      /* 基本遊戲容器樣式 */
-        .game-container {
-            width: 300px;
-            height: 200px;
-            position: relative;
-            overflow: hidden;
-        }
 
-        /* 正確答案的動畫效果（綠色刀光） */
-        .correct-animation::before {
-            content: "";
-            position: absolute;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: linear-gradient(45deg, rgba(0,255,0,0.3) 25%, transparent 50%);
-            animation: slash 0.5s linear;
-        }
-
-        /* 扣血時的動畫效果（紅色刀光） */
-        .damage-animation::after {
-            content: "";
-            position: absolute;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: linear-gradient(-45deg, rgba(255,0,0,0.3) 25%, transparent 50%);
-            animation: slash 0.5s linear;
-        }
-
-        /* 刀光動畫關鍵幀 */
-        @keyframes slash {
-            0% {
-                transform: rotate(0deg) scale(0);
-            }
-            50% {
-                transform: rotate(180deg) scale(1);
-            }
-            100% {
-                transform: rotate(360deg) scale(0);
-            }
-        }
-
-        /* 玩家區域樣式 */
-        .player {
-            padding: 20px;
-            margin: 10px;
-            border: 2px solid #333;
-        }
-
-
-        
         /* 新增動畫效果 */
 @keyframes damageFlash {
     0% { filter: brightness(1); }
@@ -394,7 +341,6 @@
     </style>
 </head>
 <body>
-    
     <button class="music-control" onclick="toggleMusic()">🎵</button>
     
     <div id="roomControl">
@@ -455,127 +401,7 @@
         <div class="victory-text"></div>
     </div>
 
-    
 <script>
-let answered = false; // 用於追蹤當前問題是否已回答
-
-function displayQuestion(question) {
-    answered = false; // 重置答題狀態
-    document.getElementById('question').textContent = question.question;
-
-    const optionsDiv = document.getElementById('options');
-    optionsDiv.innerHTML = '';
-
-    question.options.forEach((option, index) => {
-        const button = document.createElement('button');
-        button.textContent = option;
-
-        // 點擊處理邏輯
-        button.onclick = () => {
-            if (!answered) {
-                answered = true; // 避免多次點擊
-                checkAnswer(index === question.correctIndex);
-            }
-        };
-    
-        optionsDiv.appendChild(button);
-    });
-
-    startTimer();
-}
-
-function checkAnswer(isCorrect) {
-    if (answered || gameOver) return;
-    answered = true;
-
-    clearInterval(timer);
-    
-    // 樣式處理
-    const buttons = document.querySelectorAll('#options button');
-    const correctIndex = window.currentQuestion.correctIndex;
-    
-    // 顯示正確答案樣式
-    buttons.forEach((btn, index) => {
-        btn.style.pointerEvents = 'none'; // 立即禁止點擊
-        if (index === correctIndex) {
-            btn.style.cssText = `
-                background: #2ecc71 !important;
-                border: 2px solid #27ae60 !important;
-                transform: scale(1.05);
-            `;
-        } else {
-            btn.style.background = '#e74c3c';
-        }
-    });
-
-    // 傷害計算與動畫
-    const damage = Math.floor((timeLeft / 15) * 13);
-    const targetElement = isCorrect 
-        ? document.getElementById('opponentHealthBar')
-        : document.getElementById('myHealthBar');
-
-    // 觸發動畫效果
-    targetElement.classList.add('damage-flash');
-    document.getElementById('gameArea').classList.add('screen-shake');
-    document.querySelectorAll('.health-fill').forEach(bar => bar.classList.add('damage-effect'));
-    
-    // 震動效果
-    navigator.vibrate = navigator.vibrate || navigator.webkitVibrate || navigator.mozVibrate || navigator.msVibrate;
-    if (navigator.vibrate) navigator.vibrate(200);
-
-    // 音效播放
-    soundEffects.attack.currentTime = 0;
-    soundEffects.attack.play();
-
-    // 移除動畫
-    setTimeout(() => {
-        targetElement.classList.remove('damage-flash');
-        document.getElementById('gameArea').classList.remove('screen-shake');
-        document.querySelectorAll('.health-fill').forEach(bar => bar.classList.remove('damage-effect'));
-    }, 500);
-
-    // 更新數據庫
-    const updates = {};
-    const playerPath = isHost ? 'player1' : 'player2';
-    const opponentPath = isHost ? 'player2' : 'player1';
-    
-    if (isCorrect) {
-        updates[`${opponentPath}/health`] = firebase.database.ServerValue.increment(-damage);
-    } else {
-        updates[`${playerPath}/health`] = firebase.database.ServerValue.increment(-damage);
-    }
-
-    database.ref('rooms/' + currentRoomId).update(updates, () => {
-        checkGameOver();
-        if (!gameOver) {
-            setTimeout(() => {
-                // 重置按鈕樣式和互動狀態
-                buttons.forEach(btn => {
-                    btn.style.cssText = '';
-                    btn.style.pointerEvents = 'auto'; // 重新啟用點擊
-                });
-                answered = false; // 新增：重置回答狀態
-                loadNewQuestion();
-            }, 700);
-        }
-    });
-
- // 修正後的代碼 ▼
-    setTimeout(() => { // 延遲確保DOM已更新
-        const buttons = document.querySelectorAll('#options button');
-        const correctIndex = window.currentQuestion.correctIndex;
-        if (buttons[correctIndex]) {
-            buttons[correctIndex].style.cssText = `
-                background: #2ecc71 !important;
-                border: 2px solid #27ae60 !important;
-                transform: scale(1.05);
-            `;
-        }
-    }, 50);
-
-    
-}
-    
     
 // 修改 updateHealthDisplay 函數
 function updateHealthDisplay(room) {
@@ -642,7 +468,7 @@ function toggleMusic() {
     isMusicPlaying ? bgMusic.play() : bgMusic.pause();
     
     // 反轉按鈕顯示文字
-    document.querySelector('.music-control').textContent = isMusicPlaying ? '🎵' : '🔇';
+    document.querySelector('.music-control').textContent = isMusicPlaying ? '🎵' : '';
 }
 
 function createRoom() {
@@ -761,6 +587,73 @@ function displayQuestion(question) {
     startTimer();
 }
 
+function checkAnswer(isCorrect) {
+    // 新增防重複提交檢查 ▼
+    if (this.answered) return;
+    this.answered = true;
+    
+    // 啟用按鈕 ▼
+    const buttons = document.querySelectorAll('#options button');
+    buttons.forEach(btn => {
+        btn.style.pointerEvents = 'auto';
+        btn.style.opacity = '1';
+    });
+
+    
+    if (gameOver) return;
+    clearInterval(timer);
+    
+    // 修正後的代碼 ▼
+    setTimeout(() => { // 延遲確保DOM已更新
+        const buttons = document.querySelectorAll('#options button');
+        const correctIndex = window.currentQuestion.correctIndex;
+        if (buttons[correctIndex]) {
+            buttons[correctIndex].style.cssText = `
+                background: #2ecc71 !important;
+                border: 2px solid #27ae60 !important;
+                transform: scale(1.05);
+            `;
+        }
+    }, 50);
+
+    // 保持原有傷害計算
+    const damage = Math.floor((timeLeft / 15) * 13);
+      const targetElement = isCorrect ? 
+        document.getElementById('opponentHealthBar') : 
+        document.getElementById('myHealthBar');
+
+    targetElement.classList.add('damage-flash');
+    setTimeout(() => targetElement.classList.remove('damage-flash'), 300);
+    
+    navigator.vibrate = navigator.vibrate || navigator.webkitVibrate || navigator.mozVibrate || navigator.msVibrate;
+    if (navigator.vibrate) navigator.vibrate(200);
+
+    document.getElementById('gameArea').classList.add('screen-shake');
+    document.querySelectorAll('.health-fill').forEach(bar => bar.classList.add('damage-effect'));
+
+    soundEffects.attack.currentTime = 0;
+    soundEffects.attack.play();
+
+    const updates = {};
+    const playerPath = isHost ? 'player1' : 'player2';
+    const opponentPath = isHost ? 'player2' : 'player1';
+    
+    if (isCorrect) {
+        updates[`${opponentPath}/health`] = firebase.database.ServerValue.increment(-damage);
+    } else {
+        updates[`${playerPath}/health`] = firebase.database.ServerValue.increment(-damage);
+    }
+    
+    database.ref('rooms/' + currentRoomId).update(updates, () => {
+    checkGameOver();
+    if (!gameOver) setTimeout(() => loadNewQuestion(), 700); // 增加400毫秒延遲
+});
+
+    setTimeout(() => {
+        document.getElementById('gameArea').classList.remove('screen-shake');
+        document.querySelectorAll('.health-fill').forEach(bar => bar.classList.remove('damage-effect'));
+    }, 500);
+}
 
 function startTimer() {
     clearInterval(timer);
@@ -834,40 +727,6 @@ function handleGameEnd(winnerType) {
         window.location.reload();
     }, 5000);
 }
-
-
- // 觸發正確答案動畫的函數
-        function playCorrectAnimation() {
-            const container = document.querySelector('.game-container');
-            
-            // 添加動畫 class
-            container.classList.add('correct-animation');
-            
-            // 動畫結束後移除 class
-            setTimeout(() => {
-                container.classList.remove('correct-animation');
-            }, 500);
-        }
-
-        // 觸發扣血動畫的函數
-        function playDamageAnimation() {
-            const container = document.querySelector('.game-container');
-            
-            // 添加動畫 class
-            container.classList.add('damage-animation');
-            
-            // 動畫結束後移除 class
-            setTimeout(() => {
-                container.classList.remove('damage-animation');
-            }, 500);
-        }
-
-        `;
-
-
-    
 </script>
 </body>
 </html>
-
-
