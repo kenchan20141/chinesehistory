@@ -541,6 +541,10 @@
 
     
 <script>
+const rematchBtn = document.getElementById('rematchBtn');
+rematchBtn.onclick = null;
+rematchBtn.removeEventListener('click', oldHandler); 
+    
 let isRematchInitiator = false;
 let rematchTimeout = null;
     
