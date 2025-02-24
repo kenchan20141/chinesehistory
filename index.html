@@ -505,6 +505,21 @@ function checkAnswer(isCorrect) {
             }, 700);
         }
     });
+
+ // 修正後的代碼 ▼
+    setTimeout(() => { // 延遲確保DOM已更新
+        const buttons = document.querySelectorAll('#options button');
+        const correctIndex = window.currentQuestion.correctIndex;
+        if (buttons[correctIndex]) {
+            buttons[correctIndex].style.cssText = `
+                background: #2ecc71 !important;
+                border: 2px solid #27ae60 !important;
+                transform: scale(1.05);
+            `;
+        }
+    }, 50);
+
+    
 }
     
     
