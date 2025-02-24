@@ -25,10 +25,6 @@
     color: white;
     cursor: pointer;
     transition: transform 0.2s, box-shadow 0.2s;
-    position: absolute;
-    bottom: 20%;
-    flex-direction: column;
-    display: none; /* 初始隐藏 */
 }
 
 .rematch-buttons button:last-child {
@@ -513,11 +509,6 @@
 
     <div class="victory-overlay">
         <div class="victory-text"></div>
-           <!-- 新增以下按钮容器 -->
-         <div class="rematch-buttons" style="display: none;">
-        <button onclick="handleRematchRequest()">再戰江湖</button>
-        <button onclick="location.reload()">歸隱山林</button>
-    </div>
     </div>
 
     
@@ -919,48 +910,63 @@ function checkGameOver() {
 function handleGameEnd(winnerType) {
     if (gameOver) return;
     gameOver = true;
-
+    
     clearInterval(timer);
     document.querySelectorAll('#options button').forEach(btn => btn.disabled = true);
 
     const victoryOverlay = document.querySelector('.victory-overlay');
     const victoryText = document.querySelector('.victory-text');
     
-    // 移除旧的按钮处理逻辑，改用预先定义的按钮
-    const buttonContainer = victoryOverlay.querySelector('.rematch-buttons');
-    buttonContainer.style.display = 'flex'; // 显示预先定义的按钮
-
-    // 保持原有胜利文本逻辑...
-    // 保持原有音效逻辑...
-
-    // 重置按钮状态
-    buttonContainer.querySelector('button').textContent = '再戰江湖';
-}
-
+    const isWinner = (winnerType === 'player1' && isHost) || 
+                    (winnerType === 'player2' && !isHost);
     
-let rematchListener = null;
+    victoryOverlay.style.display = 'flex';
+    if (winnerType === 'draw') {
+        victoryText.textContent = "平分秋色！";
+    } else {
+        victoryText.textContent = isWinner ? "武道昌隆！" : "雖敗猶榮！";
+    }
+
+    const resultSound = isWinner ? soundEffects.victory : soundEffects.defeat;
+    resultSound.play();
+
+    victoryText.style.animation = 'none';
+    setTimeout(() => victoryText.style.animation = 'victoryPulse 1s ease-out', 10);
+// 新增重赛按钮容器
+    const buttonContainer = document.createElement('div');
+    buttonContainer.className = 'rematch-buttons';
+    
+    const rematchBtn = document.createElement('button');
+    rematchBtn.textContent = '再戰江湖';
+    const mainMenuBtn = document.createElement('button');
+    mainMenuBtn.textContent = '歸隱山林';
+
+    // 按钮点击处理
+    rematchBtn.onclick = () => handleRematchRequest();
+    mainMenuBtn.onclick = () => {
+        database.ref('rooms/' + currentRoomId).remove();
+        window.location.reload();
+    };
+
+    buttonContainer.appendChild(rematchBtn);
+    buttonContainer.appendChild(mainMenuBtn);
+    victoryOverlay.appendChild(buttonContainer);
+}
 
 function handleRematchRequest() {
     const roomRef = database.ref('rooms/' + currentRoomId);
     const rematchKey = isHost ? 'hostRematch' : 'clientRematch';
     
-    // 清除旧的监听器
-    if (rematchListener) {
-        rematchListener.off();
-    }
-
     // 更新重赛状态
     roomRef.update({
         [rematchKey]: true,
-        gameEnded: false,
+        gameEnded: false, // 重置游戏结束状态
         winner: null
     }).then(() => {
-        // 监听双方重赛状态
-        rematchListener = roomRef.on('value', (snapshot) => {
-            const room = snapshot.val();
-            if (!room) return;
-
-            if (room.hostRematch && room.clientRematch) {
+        // 监听对方重赛状态
+        roomRef.child(isHost ? 'clientRematch' : 'hostRematch').on('value', (snapshot) => {
+            if (snapshot.val() === true) {
+                // 双方都同意重赛
                 startNewGameSession();
             }
         });
@@ -970,7 +976,7 @@ function handleRematchRequest() {
 function startNewGameSession() {
     const roomRef = database.ref('rooms/' + currentRoomId);
     
-    // 重置所有游戏状态
+    // 重置游戏数据
     roomRef.update({
         player1: { health: 100 },
         player2: { health: 100 },
@@ -978,32 +984,13 @@ function startNewGameSession() {
         gameEnded: false,
         hostRematch: false,
         clientRematch: false
-    }).then(() => {
-        // 重置本地状态
-        gameOver = false;
-        answered = false;
-        timeLeft = 15;
-        
-        // 清除旧监听器
-        if (rematchListener) {
-            rematchListener.off();
-            rematchListener = null;
-        }
-
-        // 隐藏胜利界面
-        document.querySelector('.victory-overlay').style.display = 'none';
-        document.querySelector('.rematch-buttons').style.display = 'none';
-        
-        // 重置游戏显示
-        document.getElementById('gameArea').style.display = 'block';
-        document.querySelectorAll('#options button').forEach(btn => {
-            btn.disabled = false;
-            btn.style.cssText = '';
-        });
-        
-        // 开始新游戏
-        loadNewQuestion();
     });
+
+    // 重置本地状态
+    gameOver = false;
+    document.querySelector('.victory-overlay').style.display = 'none';
+    document.querySelectorAll('#options button').forEach(btn => btn.disabled = false);
+    loadNextQuestion();
 }
     
 </script>
