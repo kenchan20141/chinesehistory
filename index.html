@@ -4,7 +4,7 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     
-    <title>基元文史爭霸</title>
+    <title>基元中史爭霸</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
@@ -967,8 +967,7 @@ function handleRematchRequest() {
         gameEnded: false, // 重置游戏结束状态
         winner: null
     }).then(() => {
-     // 先移除旧监听器避免重复
-        roomRef.child(isHost ? 'clientRematch' : 'hostRematch').off();
+   
         
         // 监听对方重赛状态
         const rematchListener = roomRef.child(isHost ? 'clientRematch' : 'hostRematch').on('value', (snapshot) => {
