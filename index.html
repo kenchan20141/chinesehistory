@@ -537,16 +537,15 @@
     <div class="waiting-text">⚔️ 等待對方應戰...</div>
     <button onclick="cancelRematch()" class="menu-btn">🚫 取消約戰</button>
 </div>
-</div>
 
     
 <script>
-const rematchBtn = document.getElementById('rematchBtn');
-rematchBtn.onclick = null;
-rematchBtn.removeEventListener('click', oldHandler); 
-    
 let isRematchInitiator = false;
 let rematchTimeout = null;
+    
+    const rematchBtn = document.getElementById('rematchBtn');
+rematchBtn.onclick = null;
+rematchBtn.removeEventListener('click', oldHandler); 
     
 let answered = false; // 用於追蹤當前問題是否已回答
 
@@ -1055,12 +1054,22 @@ function startRematch(newRoomId) {
         isHost = true;
         createRoom();
     };
-
+    }
+}
     document.getElementById('mainMenuBtn').onclick = () => {
         database.ref('rooms/' + currentRoomId).remove();
         window.location.reload();
     };
 }
+
+rematchRequests: {
+  $roomId: {
+    player1: uid,
+    player2: null,
+    createdAt: timestamp
+  }
+}
+    
 </script>
 </body>
 </html>
