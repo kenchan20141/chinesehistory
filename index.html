@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    
+
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     
     <title>基元中史爭霸</title>
@@ -16,7 +16,7 @@
     50% { filter: brightness(1.5); }
     100% { filter: brightness(1); }
 }
-        
+
 .damage-flash {
     animation: 
         damageFlash 0.3s ease-in-out,
@@ -402,175 +402,6 @@
     </div>
 
 <script>
-
-// 全局變數聲明區
-let currentRoomId = null;
-let isHost = false;
-let timer;
-let timeLeft = 15;
-let gameOver = false;
-let hasAnswered = false;
-
-// Firebase配置
-const firebaseConfig = { /* 保持原有配置 */ };
-firebase.initializeApp(firebaseConfig);
-const database = firebase.database();
-    
-// 新增全域回答鎖定變數
-let hasAnswered = false;
-let gameOver = false;   // 補上缺失的遊戲結束標記
-
-// 修改後的 displayQuestion 函數
-function displayQuestion(question) {
-    hasAnswered = false; // 重置鎖定狀態
-    window.currentQuestion = question;
-    document.getElementById('question').textContent = question.question;
-    const optionsDiv = document.getElementById('options');
-    optionsDiv.innerHTML = '';
-
-    question.options.forEach((option, index) => {
-        const button = document.createElement('button');
-        button.textContent = option;
-        button.onclick = () => {
-            if (!hasAnswered) checkAnswer(index === question.correctIndex);
-        };
-        optionsDiv.appendChild(button);
-    });
-    
-    // 啟用所有按鈕互動
-    document.querySelectorAll('#options button').forEach(btn => {
-        btn.style.pointerEvents = 'auto';
-        btn.style.opacity = '1';
-    });
-    startTimer();
-}
-
-function checkAnswer(isCorrect) {
-    if (hasAnswered || gameOver) return;
-    hasAnswered = true;
-    
-    // 精準定位答案按鈕 (關鍵修改)
-    const answerButtons = document.querySelectorAll('#options button');
-    answerButtons.forEach(btn => {
-        btn.style.pointerEvents = 'none';
-        btn.style.opacity = '0.6';
-    });
-
-    // 保持其他邏輯不變...
-}
-    
-
-// 保留原有音效和動畫邏輯
-    if (isCorrect) {
-        soundEffects.correct.play();
-        document.getElementById('player'+(isHost?'2':'1')+'-avatar').classList.add('damage-flash');
-    } else {
-        soundEffects.incorrect.play();
-        document.getElementById('player'+(isHost?'1':'2')+'-avatar').classList.add('damage-flash');
-    }
-
-    // 保留原有扣血邏輯
-    const damage = isCorrect ? 0 : 10;
-    const playerType = isHost ? 'player1' : 'player2';
-    const newHealth = Math.max(0, (currentPlayer.health || 100) - damage);
-    
-    database.ref('rooms/' + currentRoomId + '/' + playerType).update({
-        health: newHealth
-    });
-
-    // 保留後續處理
-    setTimeout(() => {
-        document.querySelectorAll('.damage-flash').forEach(el => el.classList.remove('damage-flash'));
-    }, 500);
-
-    setTimeout(loadNewQuestion, 1500); // 調整為1.5秒後載入新題目
-}
-
-// 修改後的loadNewQuestion函數
-function loadNewQuestion() {
-    hasAnswered = false; // 重置回答狀態
-    
-    // 重新啟用答案按鈕
-    document.querySelectorAll('#options button').forEach(btn => {
-        btn.style.pointerEvents = 'auto';
-        btn.style.opacity = '1';
-        btn.style.background = 'rgba(255,255,255,0.1)'; // 重置按鈕樣式
-    });
-
-
-    // 保留原有題目載入邏輯
-    currentQuestionIndex++;
-    if (currentQuestionIndex >= questions.length) currentQuestionIndex = 0;
-    
-    const question = questions[currentQuestionIndex];
-    document.getElementById('question').textContent = question.question;
-    
-    const optionsDiv = document.getElementById('options');
-    optionsDiv.innerHTML = '';
-    
-    question.options.forEach((option, index) => {
-        const button = document.createElement('button');
-        button.textContent = option;
-        button.onclick = () => checkAnswer(index === question.correctIndex);
-        optionsDiv.appendChild(button);
-    });
-
-    startTimer();
-}
-
-// 新增按鈕禁用樣式
-<style>
-.disabled-option {
-    opacity: 0.5 !important;
-    pointer-events: none !important;
-    filter: grayscale(100%);
-}
-</style>
-    
-
-    clearInterval(timer);
-    
-    // 顯示正確答案
-    const correctIndex = window.currentQuestion.correctIndex;
-    buttons[correctIndex].style.cssText = `
-        background: #2ecc71 !important;
-        border: 2px solid #27ae60 !important;
-        transform: scale(1.05);
-    `;
-
-    // 傷害計算與效果
-    const damage = Math.floor((timeLeft / 15) * 13);
-    const targetElement = isCorrect ? 
-        document.getElementById('opponentHealthBar') : 
-        document.getElementById('myHealthBar');
-
-    targetElement.classList.add('damage-flash');
-    navigator.vibrate && navigator.vibrate(200);
-    document.getElementById('gameArea').classList.add('screen-shake');
-    soundEffects.attack.play();
-
-    // 更新血量
-    const updates = {};
-    const playerPath = isHost ? 'player1' : 'player2';
-    const opponentPath = isHost ? 'player2' : 'player1';
-    
-    if (isCorrect) {
-        updates[`${opponentPath}/health`] = firebase.database.ServerValue.increment(-damage);
-    } else {
-        updates[`${playerPath}/health`] = firebase.database.ServerValue.increment(-damage);
-    }
-
-    database.ref('rooms/' + currentRoomId).update(updates, () => {
-        checkGameOver();
-        if (!gameOver) setTimeout(loadNewQuestion, 1000);
-    });
-
-    // 清除動畫
-    setTimeout(() => {
-        targetElement.classList.remove('damage-flash');
-        document.getElementById('gameArea').classList.remove('screen-shake');
-    }, 500);
-}
     
 // 修改 updateHealthDisplay 函數
 function updateHealthDisplay(room) {
@@ -637,19 +468,10 @@ function toggleMusic() {
     isMusicPlaying ? bgMusic.play() : bgMusic.pause();
     
     // 反轉按鈕顯示文字
-    document.querySelector('.music-control').textContent = isMusicPlaying ? '🎵' : '🔇';
+    document.querySelector('.music-control').textContent = isMusicPlaying ? '🎵' : '';
 }
 
-// 修改后的createRoom函数
 function createRoom() {
-    console.log('createRoom called'); // 调试信息
-    currentRoomId = document.getElementById('roomId').value || Math.floor(1000 + Math.random() * 9000);
-    isHost = true;
-    // 重置关键状态
-  gameOver = false;
-    hasAnswered = false;
-    document.getElementById('gameArea').style.display = 'none';
-    
     currentRoomId = document.getElementById('roomId').value || Math.floor(1000 + Math.random() * 9000);
     isHost = true;
     document.getElementById('roomControl').style.display = 'none';
@@ -663,12 +485,8 @@ function createRoom() {
         gameStarted: false,
         gameEnded: false,
         winner: null
-    }).then(() => {
-        console.log('Room created successfully');
-        listenToRoomChanges();
-    }).catch(error => {
-        console.error('Error creating room:', error);
     });
+    listenToRoomChanges();
 }
 
 function joinRoom() {
@@ -682,21 +500,6 @@ function joinRoom() {
     });
     document.getElementById('roomControl').style.display = 'none';
     listenToRoomChanges();
-    gameOver = false;
-    hasAnswered = false;
-    document.getElementById('gameArea').style.display = 'none';
-    
-    currentRoomId = document.getElementById('roomId').value;
-    database.ref('rooms/' + currentRoomId).transaction(room => {
-        if (room && !room.gameStarted) {
-            room.player2 = { health: 100 };
-            room.gameStarted = true;
-        }
-        return room;
-    });
-    document.getElementById('roomControl').style.display = 'none';
-    listenToRoomChanges();
-}
 }
 
 function listenToRoomChanges() {
@@ -735,7 +538,8 @@ function startGame(room) {
     } else {
         displayQuestion(room.currentQuestion);
         startTimer();
-    }}
+    }
+}
 
 function shuffleArray(array) {
     for (let i = array.length - 1; i > 0; i--) {
@@ -783,15 +587,10 @@ function displayQuestion(question) {
     startTimer();
 }
 
-// 修改后的答案按钮禁用逻辑，仅针对选项按钮
 function checkAnswer(isCorrect) {
-    if (window.hasAnswered) return;
-    const answerButtons = document.querySelectorAll('#options button');
-    answerButtons.forEach(btn => {
-        btn.style.pointerEvents = 'none'; // 仅禁用答案按钮
-        btn.style.opacity = '0.6';
-    });
-}
+    // 新增防重複提交檢查 ▼
+    if (this.answered) return;
+    this.answered = true;
     
     // 啟用按鈕 ▼
     const buttons = document.querySelectorAll('#options button');
@@ -856,15 +655,17 @@ function checkAnswer(isCorrect) {
     }, 500);
 }
 
-// 修改後的 startTimer 函數
 function startTimer() {
     clearInterval(timer);
+    // 新增以下兩行重置動畫狀態
+    document.getElementById('gameArea').classList.remove('screen-shake');
+    document.querySelectorAll('.health-fill').forEach(bar => bar.classList.remove('damage-effect'));
     timeLeft = 15;
-    document.getElementById('timer').textContent = `🕒${timeLeft}`;
+    document.getElementById('timer').textContent = `🕒${timeLeft}秒`;
     timer = setInterval(() => {
         timeLeft--;
-        document.getElementById('timer').textContent = `🕒${timeLeft}`;
-        if (timeLeft <= 0 && !hasAnswered) checkAnswer(false);
+        document.getElementById('timer').textContent = `🕒${timeLeft}秒`;
+        if (timeLeft <= 0) checkAnswer(false);
     }, 1000);
 }
 
