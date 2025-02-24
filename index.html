@@ -402,68 +402,6 @@
     </div>
 
 <script>
-
-// ▼▼▼ 修改1/4：在全局變數區新增狀態追蹤 ▼▼▼
-let answerLocked = false;  // 新增在文件最頂部變數區
-let currentButtons = [];
-    
-// 在全局變數新增按鈕鎖定狀態
-let buttonsLocked = false; // 新增全域變數
-
-function loadQuestion() {
-    // 在載入新問題時解鎖按鈕
-    buttonsLocked = false; // 新增此行
-    document.querySelectorAll('#options button').forEach(btn => {
-        btn.disabled = false; // 新增此行
-        btn.style.opacity = 1; // 確保按鈕可見
-    });
-}
-
-function checkAnswer(isCorrect) {
-    if (buttonsLocked) return; // 新增防重複點擊判斷
-    buttonsLocked = true; // 新增鎖定狀態
-    
-    // 立即禁用所有按鈕
-    document.querySelectorAll('#options button').forEach(btn => {
-        btn.disabled = true; // 新增禁用按鈕
-        btn.style.opacity = 0.5; // 視覺反饋
-    });
-
-    // 原有扣血邏輯保持不變
-    const damage = isCorrect ? 0 : 10;
-    updateHealth(damage);
-    
-    // 保持原有音效和動畫
-    if (isCorrect) {
-        soundEffects.correct.play();
-    } else {
-        soundEffects.incorrect.play();
-        document.getElementById('gameArea').classList.add('screen-shake');
-    }
-
-    // 保持原有資料庫更新
-    const roomRef = database.ref('rooms/' + currentRoomId);
-    roomRef.update({
-        [`${playerType}/answer`]: isCorrect,
-        [`${playerType}/health`]: playerHealth - damage
-    });
-
-    // 保持原有計時邏輯
-    clearInterval(timer);
-    checkGameOver();
-}
-
-// 在切換題目時重置按鈕狀態
-function showNextQuestion() {
-    buttonsLocked = false; // 重置鎖定狀態
-    document.querySelectorAll('#options button').forEach(btn => {
-        btn.disabled = false; // 解鎖按鈕
-        btn.style.opacity = 1; // 恢復可見
-    });
-    loadQuestion();
-    startTimer();
-}
-
     
 // 修改 updateHealthDisplay 函數
 function updateHealthDisplay(room) {
@@ -630,51 +568,38 @@ function loadNewQuestion() {
         };
 
         database.ref('rooms/' + currentRoomId).update({ currentQuestion: processedQuestion });
-  // 解鎖按鈕為下一題準備
-    answerLocked = false;
-    currentButtons.forEach(btn => {
-        btn.disabled = false;
-        btn.style.opacity = 1;
     });
 }
 
 function displayQuestion(question) {
-    answerLocked = false; // 重置鎖定狀態
-    window.currentQuestion = question;
+    this.answered = false; // 重置答題狀態
+    window.currentQuestion = question; // 必須用window保存
     document.getElementById('question').textContent = question.question;
     const optionsDiv = document.getElementById('options');
     optionsDiv.innerHTML = '';
     
-    // 清除舊按鈕引用
-    currentButtons = [];
-
     question.options.forEach((option, index) => {
         const button = document.createElement('button');
         button.textContent = option;
-        button.style.opacity = 1; // 確保可見
-        button.disabled = false; // 確保啟用
-        
-        // 綁定新版事件監聽
-        button.addEventListener('click', () => {
-            if (!answerLocked) {
-                answerLocked = true; // 立即鎖定
-                checkAnswer(index === question.correctIndex);
-                
-                // 禁用所有按鈕
-                currentButtons.forEach(btn => {
-                    btn.disabled = true;
-                    btn.style.opacity = 0.6;
-                });
-            }
-        });
-        
-        currentButtons.push(button);
+        button.onclick = () => checkAnswer(index === question.correctIndex);
         optionsDiv.appendChild(button);
     });
+    startTimer();
 }
 
 function checkAnswer(isCorrect) {
-    if (answerLocked || gameOver) return; // 增加狀態檢查
+    // 新增防重複提交檢查 ▼
+    if (this.answered) return;
+    this.answered = true;
+    
+    // 啟用按鈕 ▼
+    const buttons = document.querySelectorAll('#options button');
+    buttons.forEach(btn => {
+        btn.style.pointerEvents = 'auto';
+        btn.style.opacity = '1';
+    });
+
+    
     if (gameOver) return;
     clearInterval(timer);
     
