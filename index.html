@@ -932,7 +932,11 @@ function handleGameEnd(winnerType) {
 
     victoryText.style.animation = 'none';
     setTimeout(() => victoryText.style.animation = 'victoryPulse 1s ease-out', 10);
-// 新增重赛按钮容器
+// 先移除已存在的按钮
+    const existingButtons = victoryOverlay.querySelector('.rematch-buttons');
+    if (existingButtons) existingButtons.remove();
+
+    // 新增重赛按钮容器
     const buttonContainer = document.createElement('div');
     buttonContainer.className = 'rematch-buttons';
     
@@ -964,7 +968,7 @@ function handleRematchRequest() {
         winner: null
     }).then(() => {
         // 监听对方重赛状态
-        roomRef.child(isHost ? 'clientRematch' : 'hostRematch').on('value', (snapshot) => {
+       roomRef.child(isHost ? 'clientRematch' : 'hostRematch').once('value', (snapshot) => {
             if (snapshot.val() === true) {
                 // 双方都同意重赛
                 startNewGameSession();
@@ -982,15 +986,21 @@ function startNewGameSession() {
         player2: { health: 100 },
         currentQuestion: null,
         gameEnded: false,
-        hostRematch: false,
-        clientRematch: false
+        gameStarted: true,  // 新增此行
+        hostRematch: null,  // 修改为null
+        clientRematch: null // 修改为null
     });
 
     // 重置本地状态
     gameOver = false;
     document.querySelector('.victory-overlay').style.display = 'none';
     document.querySelectorAll('#options button').forEach(btn => btn.disabled = false);
-    loadNextQuestion();
+    
+    // 强制重新加载问题
+    setTimeout(() => {
+        database.ref('rooms/' + currentRoomId).update({ currentQuestion: null });
+        loadNewQuestion();
+    }, 500);
 }
     
 </script>
