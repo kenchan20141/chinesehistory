@@ -568,6 +568,11 @@ function loadNewQuestion() {
         };
 
         database.ref('rooms/' + currentRoomId).update({ currentQuestion: processedQuestion });
+
+         // 新增：啟用所有答案按鈕
+    document.querySelectorAll('#options button').forEach(btn => {
+        btn.disabled = false;
+        btn.style.opacity = '1';
     });
 }
 
@@ -588,17 +593,17 @@ function displayQuestion(question) {
 }
 
 function checkAnswer(isCorrect) {
-    // 新增防重複提交檢查 ▼
-    if (this.answered) return;
-    this.answered = true;
-    
-    // 啟用按鈕 ▼
-    const buttons = document.querySelectorAll('#options button');
-    buttons.forEach(btn => {
-        btn.style.pointerEvents = 'auto';
-        btn.style.opacity = '1';
+    // 新增：立即禁用所有答案按鈕
+    document.querySelectorAll('#options button').forEach(btn => {
+        btn.disabled = true;
+        btn.style.opacity = '0.5'; // 視覺反饋
     });
 
+    const roomRef = database.ref('rooms/' + currentRoomId);
+    roomRef.once('value').then(snapshot => {
+        // 保持原有邏輯不變...
+    });
+}
     
     if (gameOver) return;
     clearInterval(timer);
