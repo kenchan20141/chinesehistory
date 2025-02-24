@@ -4,7 +4,7 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     
-    <title>基元文史爭霸</title>
+    <title>基元文史哲爭霸</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
@@ -989,31 +989,36 @@ function handleRematchRequest() {
 }
 
 function startNewGameSession() {
-     // 新增以下代码清除旧监听器
+    // 新增強制解除綁定
     database.ref('rooms/' + currentRoomId).off();
-    // 修改后的重置代码
+
+    // 修改重置邏輯
     const roomRef = database.ref('rooms/' + currentRoomId);
-    
-    // 重置游戏数据
     roomRef.update({
         player1: { health: 100 },
         player2: { health: 100 },
         currentQuestion: null,
         gameEnded: false,
-        hostRematch: false,
-        clientRematch: false,
-        gameStarted: true // 确保游戏状态保持开启
+        hostRematch: false,  // 重要！必須用 false 而不是 null
+        clientRematch: false, // 重要！必須用 false 而不是 null
+        gameStarted: true
+    }).then(() => {
+        // 新增本地狀態重置
+        gameOver = false;
+        answered = false;
+        timeLeft = 15;
+        
+        // 強制重設界面
+        document.getElementById('gameArea').style.display = 'block';
+        document.querySelector('.victory-overlay').style.display = 'none';
+        document.querySelectorAll('#options button').forEach(btn => {
+            btn.disabled = false;
+            btn.style.cssText = ''; // 清除殘留樣式
+        });
+
+        // 新增延遲確保資料庫更新
+        setTimeout(() => listenToRoomChanges(), 500);
     });
-
-    // 重置本地状态
-    gameOver = false;
-    answered = false;
-    document.getElementById('gameArea').style.display = 'block'; // 确保游戏区域显示
-    document.querySelector('.victory-overlay').style.display = 'none';
-    document.querySelectorAll('#options button').forEach(btn => btn.disabled = false);
-
-    // 强制重新绑定监听器
-    listenToRoomChanges(); 
 }
     
 </script>
