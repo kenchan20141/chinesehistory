@@ -786,8 +786,10 @@ function joinRoom() {
 }
 
 function listenToRoomChanges() {
-    // 先移除旧的监听器
-    database.ref('rooms/' + currentRoomId).off('value');
+    // 新增強制解除舊監聽器
+    if (currentRoomId) {
+        database.ref('rooms/' + currentRoomId).off('value');
+    }
     const roomRef = database.ref('rooms/' + currentRoomId);
     roomRef.on('value', (snapshot) => {
         const room = snapshot.val();
