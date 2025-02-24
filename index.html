@@ -4,12 +4,92 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     
-    <title>基元文史哲爭霸</title>
+    <title>基元文史爭霸</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
     <style>        
 
+          /* 连击计数器 */
+    #comboCounter {
+        position: fixed;
+        top: 20px;
+        left: 20px;
+        font-size: 2.5rem;
+        color: #ffd700;
+        text-shadow: 0 0 10px rgba(255,215,0,0.5);
+        display: none;
+    }
+
+    /* 技能按钮容器 */
+    #skillBar {
+        position: fixed;
+        bottom: 120px;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        gap: 15px;
+        z-index: 1000;
+    }
+
+    .skill-button {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        border: 2px solid #fff;
+        background: rgba(0,0,0,0.7);
+        color: white;
+        font-size: 1.2rem;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+
+    .skill-button.disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    /* 能量条样式 */
+    #energyBar {
+        position: fixed;
+        bottom: 100px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 200px;
+        height: 10px;
+        background: #333;
+        border-radius: 5px;
+        overflow: hidden;
+    }
+
+    #energyFill {
+        height: 100%;
+        width: 0%;
+        background: linear-gradient(90deg, #00ffff, #0066ff);
+        transition: width 0.3s ease;
+    }
+
+    /* 成就提示 */
+    .achievement-toast {
+        position: fixed;
+        top: 20%;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(0,0,0,0.9);
+        padding: 15px 30px;
+        border-radius: 25px;
+        border: 2px solid gold;
+        font-size: 1.2rem;
+        animation: slideIn 0.5s ease-out;
+        display: none;
+    }
+
+    @keyframes slideIn {
+        from { opacity: 0; transform: translate(-50%, -50px); }
+        to { opacity: 1; transform: translate(-50%, 0); }
+    }
+
+        
 .rematch-buttons {
     margin-top: 30px;
     display: flex;
@@ -457,6 +537,18 @@
 </head>
 <body>
     <button class="music-control" onclick="toggleMusic()">🎵</button>
+
+<div id="comboCounter">✕ 0 连击</div>
+<div id="skillBar">
+    <button class="skill-button" onclick="useSkill('heal')">💊</button>
+    <button class="skill-button" onclick="useSkill('attackBoost')">⚡</button>
+</div>
+<div id="energyBar">
+    <div id="energyFill"></div>
+</div>
+<div class="achievement-toast"></div>
+
+
     
     <div id="roomControl">
         <h1 style="font-size:2.5rem; color:var(--gold); margin-bottom:1.5rem;">基元中史爭霸</h1>
@@ -518,9 +610,142 @@
 
     
 <script>
+let comboCount = 0;
+let energy = 0;
+let activeSkills = {
+    attackBoost: { active: false, multiplier: 1 },
+    heal: { charges: 0 }
+};
+
+// 修改checkAnswer函数中的伤害计算部分
+function checkAnswer(isCorrect) {
+    // ...原有代码...
+    
+    // 修改后的伤害计算（加入连击和技能加成）
+    let baseDamage = Math.floor((timeLeft / 15) * 13);
+    let finalDamage = baseDamage * 
+                     (1 + comboCount * 0.1) * 
+                     activeSkills.attackBoost.multiplier;
+
+    // 连击计数逻辑
+    if(isCorrect) {
+        comboCount++;
+        if(comboCount % 5 === 0) showAchievement(`${comboCount}连击达成！`);
+    } else {
+        comboCount = 0;
+    }
+    updateComboDisplay();
+
+    // 能量获取逻辑
+    energy = Math.min(100, energy + (isCorrect ? 15 : 5));
+    updateEnergyDisplay();
+
+
+    // 新增功能函数
+function updateComboDisplay() {
+    const comboDisplay = document.getElementById('comboCounter');
+    comboDisplay.textContent = `✕ ${comboCount} 连击`;
+    comboDisplay.style.display = comboCount > 1 ? 'block' : 'none';
+    
+    // 连击特效
+    if(comboCount > 1) {
+        const comboEffect = document.createElement('div');
+        comboEffect.className = 'hit-marker';
+        comboEffect.textContent = comboCount + ' COMBO!';
+        comboEffect.style.color = '#ffd700';
+        document.body.appendChild(comboEffect);
+        setTimeout(() => comboEffect.remove(), 1000);
+    }
+}
+
+function updateEnergyDisplay() {
+    document.getElementById('energyFill').style.width = energy + '%';
+    document.querySelectorAll('.skill-button').forEach(btn => {
+        btn.disabled = energy < getSkillCost(btn.textContent);
+    });
+}
+
+function getSkillCost(skill) {
+    const costs = { '💊': 30, '⚡': 50 };
+    return costs[skill] || 0;
+}
+
+function useSkill(type) {
+    if(energy < getSkillCost(type === 'heal' ? '💊' : '⚡')) return;
+
+    // 技能效果
+    switch(type) {
+        case 'heal':
+            energy -= 30;
+            database.ref(`rooms/${currentRoomId}/${isHost ? 'player1' : 'player2'}/health`)
+                .transaction(health => Math.min(100, (health || 0) + 20));
+            showAchievement('生命恢复！');
+            break;
+            
+        case 'attackBoost':
+            energy -= 50;
+            activeSkills.attackBoost = { active: true, multiplier: 1.5 };
+            showAchievement('攻击强化！');
+            setTimeout(() => {
+                activeSkills.attackBoost = { active: false, multiplier: 1 };
+                showAchievement('攻击强化结束');
+            }, 10000);
+            break;
+    }
+    
+    updateEnergyDisplay();
+    playSkillEffect(type);
+}
+
+function playSkillEffect(type) {
+    const effect = document.createElement('div');
+    effect.className = 'skill-effect';
+    effect.style.cssText = `
+        position: fixed;
+        pointer-events: none;
+        z-index: 9999;
+    `;
+
+    switch(type) {
+        case 'heal':
+            effect.innerHTML = '✨+20❤️';
+            effect.style.color = '#00ff00';
+            effect.style.left = '50%';
+            effect.style.bottom = '200px';
+            break;
+        case 'attackBoost':
+            effect.innerHTML = '⚡攻击UP!';
+            effect.style.color = '#ff4500';
+            effect.style.left = '50%';
+            effect.style.top = '50%';
+            effect.style.fontSize = '3rem';
+            break;
+    }
+
+    document.body.appendChild(effect);
+    setTimeout(() => effect.remove(), 1000);
+}
+
+function showAchievement(text) {
+    const toast = document.querySelector('.achievement-toast');
+    toast.textContent = text;
+    toast.style.display = 'block';
+    setTimeout(() => toast.style.display = 'none', 2000);
+}
+
+// 在updateHealthDisplay函数中加入能量显示更新
+function updateHealthDisplay(room) {
+    // ...原有代码...
+    updateEnergyDisplay(); // 新增此行
+}
+
+// 初始化时显示技能按钮
+document.getElementById('skillBar').style.display = 'block';
+    
     let isRematching = false;
 let answered = false; // 用於追蹤當前問題是否已回答
 
+    
 function displayQuestion(question) {
     answered = false; // 重置答題狀態
     document.getElementById('question').textContent = question.question;
