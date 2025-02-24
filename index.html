@@ -590,15 +590,17 @@ function displayQuestion(question) {
 
 function checkAnswer(isCorrect) {
     // 新增防重複提交檢查 ▼
-    if (this.answered) return;
-    this.answered = true;
+   if (hasAnswered) return; // 防止重複提交
+        hasAnswered = true; // 標記已回答
     
     // 啟用按鈕 ▼
     const buttons = document.querySelectorAll('#options button');
-    buttons.forEach(btn => {
-        btn.style.pointerEvents = 'auto';
-        btn.style.opacity = '1';
-    });
+        buttons.forEach((btn, index) => {
+            btn.disabled = true; // 禁用所有按鈕
+            if (index === window.currentQuestion.correctIndex) {
+                btn.style.backgroundColor = '#2ecc71'; // 正確答案顯示綠色
+            }
+        });
 
     
     if (gameOver) return;
