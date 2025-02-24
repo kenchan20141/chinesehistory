@@ -394,14 +394,6 @@
     </style>
 </head>
 <body>
-       <!-- 遊戲容器 -->
-    <div class="game-container">
-        <!-- 玩家1區域 -->
-        <div class="player" id="player1">
-            <h3>玩家1 血量: <span id="hp1">100</span></h3>
-        </div>
-    </div>
-    
     
     <button class="music-control" onclick="toggleMusic()">🎵</button>
     
@@ -870,10 +862,6 @@ function handleGameEnd(winnerType) {
             }, 500);
         }
 
-        // 測試用按鈕（實際使用時可移除）
-        document.body.innerHTML += `
-            <button onclick="playCorrectAnimation()">測試正確答案</button>
-            <button onclick="playDamageAnimation()">測試扣血效果</button>
         `;
 
 
