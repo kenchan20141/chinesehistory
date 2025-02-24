@@ -932,7 +932,11 @@ function handleGameEnd(winnerType) {
 
     victoryText.style.animation = 'none';
     setTimeout(() => victoryText.style.animation = 'victoryPulse 1s ease-out', 10);
-// 新增重赛按钮容器
+ // 清除旧按钮避免重复
+    const existingButtons = document.querySelector('.victory-overlay .rematch-buttons');
+    if (existingButtons) existingButtons.remove();
+
+    // 新增重赛按钮容器
     const buttonContainer = document.createElement('div');
     buttonContainer.className = 'rematch-buttons';
     
@@ -963,10 +967,14 @@ function handleRematchRequest() {
         gameEnded: false, // 重置游戏结束状态
         winner: null
     }).then(() => {
+     // 先移除旧监听器避免重复
+        roomRef.child(isHost ? 'clientRematch' : 'hostRematch').off();
+        
         // 监听对方重赛状态
-        roomRef.child(isHost ? 'clientRematch' : 'hostRematch').on('value', (snapshot) => {
+        const rematchListener = roomRef.child(isHost ? 'clientRematch' : 'hostRematch').on('value', (snapshot) => {
             if (snapshot.val() === true) {
-                // 双方都同意重赛
+                // 双方都同意重赛时移除监听器
+                roomRef.child(isHost ? 'clientRematch' : 'hostRematch').off('value', rematchListener);
                 startNewGameSession();
             }
         });
@@ -974,7 +982,37 @@ function handleRematchRequest() {
 }
 
 function startNewGameSession() {
+       // 新增：重置界面状态
+    document.getElementById('gameArea').style.display = 'block';
+    document.querySelector('.victory-overlay').style.display = 'none';
+    
     const roomRef = database.ref('rooms/' + currentRoomId);
+
+     // 重置游戏数据
+    roomRef.update({
+        player1: { health: 100 },
+        player2: { health: 100 },
+        currentQuestion: null,
+        gameEnded: false,
+        hostRematch: false,
+        clientRematch: false
+    });
+
+    // 重置本地状态
+    gameOver = false;
+    answered = false;
+    timeLeft = 15;
+    document.querySelectorAll('#options button').forEach(btn => {
+        btn.disabled = false;
+        btn.style.cssText = '';
+    });
+    
+    // 新增：强制重置血条显示
+    document.getElementById('myHealthBar').style.width = '100%';
+    document.getElementById('opponentHealthBar').style.width = '100%';
+    
+    loadNewQuestion();
+}
     
     // 重置游戏数据
     roomRef.update({
