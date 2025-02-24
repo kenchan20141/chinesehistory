@@ -4,7 +4,7 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     
-    <title>基元文史爭霸</title>
+    <title>基元文史哲爭霸</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
@@ -211,7 +211,7 @@
             padding:1rem;
             border-radius: 10px;
             box-shadow: 0 0 20px var(--gold);
-            max-width: 93%;
+            max-width: 87%;
             min-height: calc(100vh - 40px);
             margin: 1rem auto;
         }
@@ -518,19 +518,6 @@
 
     
 <script>
-
-function fullResetState() {
-    gameOver = false;
-    answered = false;
-    timeLeft = 15;
-    clearInterval(timer);
-    document.getElementById('timer').textContent = '🕒15秒';
-    document.getElementById('gameArea').classList.remove('screen-shake');
-    document.querySelectorAll('.health-fill').forEach(bar => {
-        bar.classList.remove('damage-effect', 'damage-flash');
-    });
-}
-    
 let answered = false; // 用於追蹤當前問題是否已回答
 
 function displayQuestion(question) {
@@ -798,35 +785,29 @@ function joinRoom() {
     listenToRoomChanges();
 }
 
-// 强化 listenToRoomChanges ▼ 替换原有函数
 function listenToRoomChanges() {
+    // 先移除旧的监听器
+    database.ref('rooms/' + currentRoomId).off('value');
     const roomRef = database.ref('rooms/' + currentRoomId);
-    roomRef.off('value'); // 清理旧监听
-    
-    roomRef.on('value', snapshot => {
+    roomRef.on('value', (snapshot) => {
         const room = snapshot.val();
         if (!room) return;
 
-
-        if (room.gameEnded && !gameOver) {
+        if (room.gameEnded) {
             handleGameEnd(room.winner);
-        } else if (room.gameStarted) {
+            return;
+        }
+
+        if (room.gameStarted && !gameOver) {
             document.getElementById('waitingArea').style.display = 'none';
             document.getElementById('gameArea').style.display = 'block';
-            if (!room.currentQuestion && isHost) {
-                loadNewQuestion();
-            } else if (room.currentQuestion) {
-                displayQuestion(room.currentQuestion);
-            }
-            updateHealthDisplay(room);
+            startGame(room);
         }
+        updateHealthDisplay(room);
     });
 }
 
 function updateHealthDisplay(room) {
-    // 强制血条宽度重置
-    document.getElementById('myHealthBar').style.width = '100%';
-    document.getElementById('opponentHealthBar').style.width = '100%';
     const myHealth = isHost ? room.player1.health : (room.player2?.health || 100);
     const opponentHealth = isHost ? (room.player2?.health || 100) : room.player1.health;
     
@@ -934,11 +915,6 @@ function checkGameOver() {
 }
 
 function handleGameEnd(winnerType) {
-    const existingOverlay = document.querySelector('.victory-overlay');
-if (existingOverlay) {
-    existingOverlay.style.display = 'none';
-    existingOverlay.querySelector('.rematch-buttons')?.remove();
-}
     if (gameOver) return;
     gameOver = true;
     
@@ -989,83 +965,55 @@ const buttonContainer = document.createElement('div');
 }
 
 function handleRematchRequest() {
-    // 清理旧监听器
+     // 在函数开头新增清理代码
     const rematchPath = isHost ? 'clientRematch' : 'hostRematch';
     database.ref('rooms/' + currentRoomId + '/' + rematchPath).off();
     
     const roomRef = database.ref('rooms/' + currentRoomId);
     const rematchKey = isHost ? 'hostRematch' : 'clientRematch';
     
-    // 重置本地状态
-    fullResetState();
-    
+    // 更新重赛状态
     roomRef.update({
         [rematchKey]: true,
-        gameEnded: false,
+        gameEnded: false, // 重置游戏结束状态
         winner: null
     }).then(() => {
-        // 监听对方响应
-        roomRef.child(rematchPath).on('value', (snapshot) => {
+        // 监听对方重赛状态
+        roomRef.child(isHost ? 'clientRematch' : 'hostRematch').on('value', (snapshot) => {
             if (snapshot.val() === true) {
-                // 双方确认后清除重赛标记
-                roomRef.update({
-                    hostRematch: false,
-                    clientRematch: false
-                }).then(() => {
-                    startNewGameSession();
-                });
+                // 双方都同意重赛
+                startNewGameSession();
             }
         });
-        
-        // 添加超时检测 ▼ 新增代码
-        setTimeout(() => {
-            if (!gameOver) return;
-            roomRef.child(rematchPath).once('value').then(snap => {
-                if (!snap.val()) {
-                    alert('对方未响应，请重新发起挑战！');
-                    roomRef.update({ [rematchKey]: false });
-                }
-            });
-        }, 10000);
     });
 }
 
-// 强化版 startNewGameSession ▼ 替换原有函数
 function startNewGameSession() {
-    // 清理所有残留监听器
+     // 新增以下代码清除旧监听器
     database.ref('rooms/' + currentRoomId).off();
-    
-    // 重置界面元素
-    document.querySelector('.victory-overlay').style.display = 'none';
-    document.getElementById('gameArea').style.display = 'block';
-    const optionsDiv = document.getElementById('options');
-    while (optionsDiv.firstChild) {
-        optionsDiv.removeChild(optionsDiv.firstChild);
-    }
-    
-    // 强制刷新血条 ▼ 新增代码
-    document.getElementById('myHealthBar').style.width = '100%';
-    document.getElementById('opponentHealthBar').style.width = '100%';
-    
-    // 重置数据库状态
+    // 修改后的重置代码
     const roomRef = database.ref('rooms/' + currentRoomId);
-    roomRef.transaction(currentData => {
-        if (currentData) {
-            currentData.player1.health = 100;
-            if (currentData.player2) currentData.player2.health = 100;
-            currentData.currentQuestion = null;
-            currentData.gameEnded = false;
-            currentData.hostRematch = false;
-            currentData.clientRematch = false;
-            currentData.gameStarted = true;
-        }
-        return currentData;
-    }).then(() => {
-        // 重新绑定监听器
-        listenToRoomChanges();
-        // 触发新问题加载 ▼ 新增代码
-        if (isHost) loadNewQuestion();
+    
+    // 重置游戏数据
+    roomRef.update({
+        player1: { health: 100 },
+        player2: { health: 100 },
+        currentQuestion: null,
+        gameEnded: false,
+        hostRematch: false,
+        clientRematch: false,
+        gameStarted: true // 确保游戏状态保持开启
     });
+
+    // 重置本地状态
+    gameOver = false;
+    answered = false;
+    document.getElementById('gameArea').style.display = 'block'; // 确保游戏区域显示
+    document.querySelector('.victory-overlay').style.display = 'none';
+    document.querySelectorAll('#options button').forEach(btn => btn.disabled = false);
+
+    // 强制重新绑定监听器
+    listenToRoomChanges(); 
 }
     
 </script>
