@@ -676,6 +676,21 @@ function joinRoom() {
     });
     document.getElementById('roomControl').style.display = 'none';
     listenToRoomChanges();
+    gameOver = false;
+    hasAnswered = false;
+    document.getElementById('gameArea').style.display = 'none';
+    
+    currentRoomId = document.getElementById('roomId').value;
+    database.ref('rooms/' + currentRoomId).transaction(room => {
+        if (room && !room.gameStarted) {
+            room.player2 = { health: 100 };
+            room.gameStarted = true;
+        }
+        return room;
+    });
+    document.getElementById('roomControl').style.display = 'none';
+    listenToRoomChanges();
+}
 }
 
 function listenToRoomChanges() {
