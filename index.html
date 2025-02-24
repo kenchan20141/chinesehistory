@@ -402,6 +402,96 @@
     </div>
 
 <script>
+let answered = false; // 用於追蹤當前問題是否已回答
+
+function displayQuestion(question) {
+    answered = false; // 重置答題狀態
+    document.getElementById('question').textContent = question.question;
+
+    const optionsDiv = document.getElementById('options');
+    optionsDiv.innerHTML = '';
+
+    question.options.forEach((option, index) => {
+        const button = document.createElement('button');
+        button.textContent = option;
+
+        // 點擊處理邏輯
+        button.onclick = () => {
+            if (!answered) {
+                answered = true; // 避免多次點擊
+                checkAnswer(index === question.correctIndex);
+            }
+        };
+
+        optionsDiv.appendChild(button);
+    });
+
+    startTimer();
+}
+
+function checkAnswer(isCorrect) {
+    if (answered) return; // 如果已經點擊過，直接返回
+    answered = true; // 確保只能點擊一次
+
+    clearInterval(timer);
+
+    // 改變按鈕樣式，顯示正確答案
+    const buttons = document.querySelectorAll('#options button');
+    buttons.forEach((btn, index) => {
+        if (index === window.currentQuestion.correctIndex) {
+            btn.style.background = '#2ecc71'; // 正確答案綠色
+        } else {
+            btn.style.background = '#e74c3c'; // 錯誤答案紅色
+        }
+        btn.style.pointerEvents = 'none'; // 禁止再點擊
+    });
+
+    const damage = Math.floor((timeLeft / 15) * 13);
+    const targetElement = isCorrect
+        ? document.getElementById('opponentHealthBar')
+        : document.getElementById('myHealthBar');
+
+    // 顯示傷害動畫
+    targetElement.classList.add('damage-flash');
+    setTimeout(() => targetElement.classList.remove('damage-flash'), 300);
+
+    soundEffects.attack.currentTime = 0;
+    soundEffects.attack.play();
+
+    const updates = {};
+    const playerPath = isHost ? 'player1' : 'player2';
+    const opponentPath = isHost ? 'player2' : 'player1';
+
+    if (isCorrect) {
+        updates[`${opponentPath}/health`] = firebase.database.ServerValue.increment(-damage);
+    } else {
+        updates[`${playerPath}/health`] = firebase.database.ServerValue.increment(-damage);
+    }
+
+    database.ref('rooms/' + currentRoomId).update(updates, () => {
+        checkGameOver();
+        if (!gameOver) setTimeout(() => loadNewQuestion(), 1000); // 新問題延遲 1 秒
+    });
+}
+
+function startTimer() {
+    clearInterval(timer);
+    timeLeft = 15;
+    document.getElementById('timer').textContent = `🕒 ${timeLeft} 秒`;
+
+    timer = setInterval(() => {
+        timeLeft--;
+        document.getElementById('timer').textContent = `🕒 ${timeLeft} 秒`;
+        if (timeLeft <= 0) {
+            clearInterval(timer);
+            checkAnswer(false); // 時間到自動判定為錯誤
+        }
+    }, 1000);
+}
+</script>
+
+    
+<script>
     
 // 修改 updateHealthDisplay 函數
 function updateHealthDisplay(room) {
