@@ -9,53 +9,7 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
     <style>        
-
-    .container {
-            display: flex;
-            justify-content: space-around;
-        }
-
-        .character {
-            width: 200px;
-            height: 300px;
-            position: relative;
-        }
-
-        .sword {
-            position: absolute;
-            width: 50px;
-            height: 50px;
-            background-image: url('https://cdn-icons-png.flaticon.com/512/326/326909.png');
-            background-size: cover;
-            opacity: 0;
-        }
-
-        /* 答對時的攻擊動畫 */
-        .attack-animation {
-            animation: swordAttack 0.5s forwards;
-        }
-
-        @keyframes swordAttack {
-            0% { opacity: 0; transform: translateX(0) rotate(0deg); }
-            50% { opacity: 1; transform: translateX(150px) rotate(360deg); }
-            100% { opacity: 0; transform: translateX(300px) rotate(720deg); }
-        }
-
-        /* 答錯時的受擊動畫 */
-        .damage-animation {
-            animation: takeDamage 0.5s;
-        }
-
-        @keyframes takeDamage {
-            0% { transform: translateX(0); }
-            25% { transform: translateX(-10px); }
-            50% { transform: translateX(10px); }
-            75% { transform: translateX(-10px); }
-            100% { transform: translateX(0); }
-        }
     
-
-        
         /* 新增動畫效果 */
 @keyframes damageFlash {
     0% { filter: brightness(1); }
@@ -827,5 +781,113 @@ function handleGameEnd(winnerType) {
     }, 5000);
 }
 </script>
+</body>
+</html>
+
+
+
+
+
+
+
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        /* 基本遊戲容器樣式 */
+        .game-container {
+            width: 300px;
+            height: 200px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* 正確答案的動畫效果（綠色刀光） */
+        .correct-animation::before {
+            content: "";
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, rgba(0,255,0,0.3) 25%, transparent 50%);
+            animation: slash 0.5s linear;
+        }
+
+        /* 扣血時的動畫效果（紅色刀光） */
+        .damage-animation::after {
+            content: "";
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(-45deg, rgba(255,0,0,0.3) 25%, transparent 50%);
+            animation: slash 0.5s linear;
+        }
+
+        /* 刀光動畫關鍵幀 */
+        @keyframes slash {
+            0% {
+                transform: rotate(0deg) scale(0);
+            }
+            50% {
+                transform: rotate(180deg) scale(1);
+            }
+            100% {
+                transform: rotate(360deg) scale(0);
+            }
+        }
+
+        /* 玩家區域樣式 */
+        .player {
+            padding: 20px;
+            margin: 10px;
+            border: 2px solid #333;
+        }
+    </style>
+</head>
+<body>
+    <!-- 遊戲容器 -->
+    <div class="game-container">
+        <!-- 玩家1區域 -->
+        <div class="player" id="player1">
+            <h3>玩家1 血量: <span id="hp1">100</span></h3>
+        </div>
+    </div>
+
+    <script>
+        // 觸發正確答案動畫的函數
+        function playCorrectAnimation() {
+            const container = document.querySelector('.game-container');
+            
+            // 添加動畫 class
+            container.classList.add('correct-animation');
+            
+            // 動畫結束後移除 class
+            setTimeout(() => {
+                container.classList.remove('correct-animation');
+            }, 500);
+        }
+
+        // 觸發扣血動畫的函數
+        function playDamageAnimation() {
+            const container = document.querySelector('.game-container');
+            
+            // 添加動畫 class
+            container.classList.add('damage-animation');
+            
+            // 動畫結束後移除 class
+            setTimeout(() => {
+                container.classList.remove('damage-animation');
+            }, 500);
+        }
+
+        // 測試用按鈕（實際使用時可移除）
+        document.body.innerHTML += `
+            <button onclick="playCorrectAnimation()">測試正確答案</button>
+            <button onclick="playDamageAnimation()">測試扣血效果</button>
+        `;
+    </script>
 </body>
 </html>
