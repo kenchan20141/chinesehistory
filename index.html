@@ -401,6 +401,7 @@
         <div class="victory-text"></div>
     </div>
 
+    
 <script>
 let answered = false; // 用於追蹤當前問題是否已回答
 
@@ -422,7 +423,7 @@ function displayQuestion(question) {
                 checkAnswer(index === question.correctIndex);
             }
         };
-
+    
         optionsDiv.appendChild(button);
     });
 
@@ -474,24 +475,6 @@ function checkAnswer(isCorrect) {
     });
 }
 
-function startTimer() {
-    clearInterval(timer);
-    timeLeft = 15;
-    document.getElementById('timer').textContent = `🕒 ${timeLeft} 秒`;
-
-    timer = setInterval(() => {
-        timeLeft--;
-        document.getElementById('timer').textContent = `🕒 ${timeLeft} 秒`;
-        if (timeLeft <= 0) {
-            clearInterval(timer);
-            checkAnswer(false); // 時間到自動判定為錯誤
-        }
-    }, 1000);
-}
-</script>
-
-    
-<script>
     
 // 修改 updateHealthDisplay 函數
 function updateHealthDisplay(room) {
