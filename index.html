@@ -593,11 +593,6 @@ function checkAnswer(isCorrect) {
         btn.disabled = true;
         btn.style.opacity = '0.5'; // 視覺反饋
     });
-
-    const roomRef = database.ref('rooms/' + currentRoomId);
-    roomRef.once('value').then(snapshot => {
-        // 保持原有邏輯不變...
-    });
 }
     
     if (gameOver) return;
