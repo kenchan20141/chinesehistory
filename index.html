@@ -404,6 +404,7 @@
 <script>
 // 新增全域回答鎖定變數
 let hasAnswered = false;
+let gameOver = false;   // 補上缺失的遊戲結束標記
 
 // 修改後的 displayQuestion 函數
 function displayQuestion(question) {
@@ -432,14 +433,16 @@ function displayQuestion(question) {
 
 // 修改後的checkAnswer函數
 function checkAnswer(isCorrect) {
-    if (hasAnswered) return; // 新增防重複點擊判斷
-    hasAnswered = true;      // 標記已回答
+    if (hasAnswered) return;
+    hasAnswered = true;
     
-     // 立即禁用所有答案按鈕
-    document.querySelectorAll('#options button').forEach(btn => {
+    // 仅禁用答案按钮
+    const answerButtons = document.querySelectorAll('#options button');
+    answerButtons.forEach(btn => {
         btn.disabled = true;
         btn.classList.add('disabled-option');
     });
+    
 
 // 保留原有音效和動畫邏輯
     if (isCorrect) {
@@ -473,9 +476,13 @@ function loadNewQuestion() {
     
     // 重新啟用答案按鈕
     document.querySelectorAll('#options button').forEach(btn => {
-        btn.disabled = false;
-        btn.classList.remove('disabled-option','correct-answer','wrong-answer');
+        btn.style.pointerEvents = 'auto';
+        btn.style.opacity = '1';
+        btn.style.background = 'rgba(255,255,255,0.1)'; // 重置按鈕樣式
     });
+
+      const questionsRef = database.ref('questions');
+    questionsRef.once('value').then(snapshot => {
 
     // 保留原有題目載入邏輯
     currentQuestionIndex++;
