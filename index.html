@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-
+    
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     
     <title>基元中史爭霸</title>
@@ -17,6 +17,14 @@
     100% { filter: brightness(1); }
 }
 
+// 在文件最頂部聲明全局變數 (約第20行)
+let currentRoomId = null;
+let isHost = false;
+let timer;
+let timeLeft = 15;
+let gameOver = false;  // 改用小寫駝峰式命名
+let hasAnswered = false;
+        
 .damage-flash {
     animation: 
         damageFlash 0.3s ease-in-out,
@@ -431,17 +439,19 @@ function displayQuestion(question) {
     startTimer();
 }
 
-// 修改後的checkAnswer函數
 function checkAnswer(isCorrect) {
-    if (hasAnswered) return;
+    if (hasAnswered || gameOver) return;
     hasAnswered = true;
     
-    // 仅禁用答案按钮
+    // 精準定位答案按鈕 (關鍵修改)
     const answerButtons = document.querySelectorAll('#options button');
     answerButtons.forEach(btn => {
-        btn.disabled = true;
-        btn.classList.add('disabled-option');
+        btn.style.pointerEvents = 'none';
+        btn.style.opacity = '0.6';
     });
+
+    // 保持其他邏輯不變...
+}
     
 
 // 保留原有音效和動畫邏輯
@@ -624,7 +634,16 @@ function toggleMusic() {
     document.querySelector('.music-control').textContent = isMusicPlaying ? '🎵' : '🔇';
 }
 
+// 修改后的createRoom函数
 function createRoom() {
+    console.log('createRoom called'); // 调试信息
+    currentRoomId = document.getElementById('roomId').value || Math.floor(1000 + Math.random() * 9000);
+    isHost = true;
+    // 重置关键状态
+  gameOver = false;
+    hasAnswered = false;
+    document.getElementById('gameArea').style.display = 'none';
+    
     currentRoomId = document.getElementById('roomId').value || Math.floor(1000 + Math.random() * 9000);
     isHost = true;
     document.getElementById('roomControl').style.display = 'none';
@@ -638,8 +657,12 @@ function createRoom() {
         gameStarted: false,
         gameEnded: false,
         winner: null
+    }).then(() => {
+        console.log('Room created successfully');
+        listenToRoomChanges();
+    }).catch(error => {
+        console.error('Error creating room:', error);
     });
-    listenToRoomChanges();
 }
 
 function joinRoom() {
@@ -739,10 +762,15 @@ function displayQuestion(question) {
     startTimer();
 }
 
+// 修改后的答案按钮禁用逻辑，仅针对选项按钮
 function checkAnswer(isCorrect) {
-    // 新增防重複提交檢查 ▼
-    if (this.answered) return;
-    this.answered = true;
+    if (window.hasAnswered) return;
+    const answerButtons = document.querySelectorAll('#options button');
+    answerButtons.forEach(btn => {
+        btn.style.pointerEvents = 'none'; // 仅禁用答案按钮
+        btn.style.opacity = '0.6';
+    });
+}
     
     // 啟用按鈕 ▼
     const buttons = document.querySelectorAll('#options button');
