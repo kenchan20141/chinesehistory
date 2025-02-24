@@ -786,12 +786,8 @@ function joinRoom() {
 }
 
 function listenToRoomChanges() {
-    // 移除旧房间的监听器
-    if (currentRoomId) {
-        database.ref('rooms/' + currentRoomId).off('value');
-    }
-
-    // 监听新房间的变化
+    // 先移除旧的监听器
+    database.ref('rooms/' + currentRoomId).off('value');
     const roomRef = database.ref('rooms/' + currentRoomId);
     roomRef.on('value', (snapshot) => {
         const room = snapshot.val();
@@ -821,18 +817,13 @@ function updateHealthDisplay(room) {
     document.getElementById('opponentHealthBar').style.width = opponentHealth + '%';
 }
 
-function startGame() {
-    const roomRef = database.ref('rooms/' + currentRoomId);
-    roomRef.once('value').then(snapshot => {
-        const room = snapshot.val();
-        if (!room) return;
-
-        // 加载新问题
+function startGame(room) {
+    if (!room.currentQuestion) {
         loadNewQuestion();
-
-        // 启动计时器
+    } else {
+        displayQuestion(room.currentQuestion);
         startTimer();
-    });
+    }
 }
 
 function shuffleArray(array) {
@@ -926,16 +917,16 @@ function checkGameOver() {
 function handleGameEnd(winnerType) {
     if (gameOver) return;
     gameOver = true;
-
+    
     clearInterval(timer);
     document.querySelectorAll('#options button').forEach(btn => btn.disabled = true);
 
     const victoryOverlay = document.querySelector('.victory-overlay');
     const victoryText = document.querySelector('.victory-text');
-
-    const isWinner = (winnerType === 'player1' && isHost) ||
-        (winnerType === 'player2' && !isHost);
-
+    
+    const isWinner = (winnerType === 'player1' && isHost) || 
+                    (winnerType === 'player2' && !isHost);
+    
     victoryOverlay.style.display = 'flex';
     if (winnerType === 'draw') {
         victoryText.textContent = "平分秋色！";
@@ -948,27 +939,24 @@ function handleGameEnd(winnerType) {
 
     victoryText.style.animation = 'none';
     setTimeout(() => victoryText.style.animation = 'victoryPulse 1s ease-out', 10);
+// 新增重赛按钮容器
+   // 先移除已存在的按钮
+const existingButtons = document.querySelector('.rematch-buttons');
+if (existingButtons) existingButtons.remove();
 
-    // 添加重赛按钮
-    const buttonContainer = document.createElement('div');
+const buttonContainer = document.createElement('div');
     buttonContainer.className = 'rematch-buttons';
-
+    
     const rematchBtn = document.createElement('button');
     rematchBtn.textContent = '再戰江湖';
     const mainMenuBtn = document.createElement('button');
     mainMenuBtn.textContent = '歸隱山林';
 
+    // 按钮点击处理
     rematchBtn.onclick = () => handleRematchRequest();
     mainMenuBtn.onclick = () => {
-        // 删除旧房间数据
-        database.ref('rooms/' + currentRoomId).remove()
-            .then(() => {
-                console.log('旧房间已删除');
-                window.location.reload();
-            })
-            .catch(error => {
-                console.error('删除旧房间失败：', error);
-            });
+        database.ref('rooms/' + currentRoomId).remove();
+        window.location.reload();
     };
 
     buttonContainer.appendChild(rematchBtn);
@@ -976,41 +964,27 @@ function handleGameEnd(winnerType) {
     victoryOverlay.appendChild(buttonContainer);
 }
 
-    
 function handleRematchRequest() {
-    // 重置房间状态
+     // 在函数开头新增清理代码
+    const rematchPath = isHost ? 'clientRematch' : 'hostRematch';
+    database.ref('rooms/' + currentRoomId + '/' + rematchPath).off();
+    
     const roomRef = database.ref('rooms/' + currentRoomId);
+    const rematchKey = isHost ? 'hostRematch' : 'clientRematch';
+    
+    // 更新重赛状态
     roomRef.update({
-        player1: { health: 100 }, // 重置玩家1状态
-        player2: { health: 100 }, // 重置玩家2状态
-        currentQuestion: null,    // 清空当前问题
-        gameEnded: false,         // 重置游戏结束状态
-        winner: null              // 清空胜利者
+        [rematchKey]: true,
+        gameEnded: false, // 重置游戏结束状态
+        winner: null
     }).then(() => {
-        console.log('房间状态已重置，准备重新开始游戏');
-
-        // 重置本地状态
-        resetLocalGameState();
-
-        // 重新开始游戏
-        startGame();
-    }).catch(error => {
-        console.error('重置房间状态失败：', error);
-    });
-}
-
-function resetLocalGameState() {
-    // 重置本地变量
-    gameOver = false;
-    answered = false;
-    timeLeft = 15;
-
-    // 重置界面
-    document.getElementById('gameArea').style.display = 'block';
-    document.querySelector('.victory-overlay').style.display = 'none';
-    document.querySelectorAll('#options button').forEach(btn => {
-        btn.disabled = false;
-        btn.style.cssText = ''; // 清除残留样式
+        // 监听对方重赛状态
+        roomRef.child(isHost ? 'clientRematch' : 'hostRematch').on('value', (snapshot) => {
+            if (snapshot.val() === true) {
+                // 双方都同意重赛
+                startNewGameSession();
+            }
+        });
     });
 }
 
