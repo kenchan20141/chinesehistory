@@ -4,7 +4,7 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     
-    <title>基元文史爭霸</title>
+    <title>基元文史哲爭霸</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
@@ -973,35 +973,37 @@ const buttonContainer = document.createElement('div');
 }
 
 function handleRematchRequest() {
-     // 在函数开头新增清理代码
-    const rematchPath = isHost ? 'clientRematch' : 'hostRematch';
-    database.ref('rooms/' + currentRoomId + '/' + rematchPath).off();
-    
+    // 解除所有監聽器
     const roomRef = database.ref('rooms/' + currentRoomId);
+    roomRef.off();
+
     const rematchKey = isHost ? 'hostRematch' : 'clientRematch';
-    
-    // 更新重赛状态
+    const opponentRematchKey = isHost ? 'clientRematch' : 'hostRematch';
+
+    // 更新重賽狀態
     roomRef.update({
         [rematchKey]: true,
-        gameEnded: false, // 重置游戏结束状态
+        gameEnded: false, // 重置遊戲結束狀態
         winner: null
     }).then(() => {
-        // 监听对方重赛状态
-        roomRef.child(isHost ? 'clientRematch' : 'hostRematch').on('value', (snapshot) => {
+        // 監聽對方重賽狀態
+        roomRef.child(opponentRematchKey).on('value', (snapshot) => {
             if (snapshot.val() === true) {
-                // 双方都同意重赛
+                // 雙方都同意重賽
                 startNewGameSession();
             }
         });
+    }).catch(error => {
+        console.error('更新重賽狀態失敗：', error);
     });
 }
 
 function startNewGameSession() {
-    // 新增強制解除綁定
-    database.ref('rooms/' + currentRoomId).off();
-
-    // 修改重置邏輯
+    // 解除所有監聽器
     const roomRef = database.ref('rooms/' + currentRoomId);
+    roomRef.off();
+
+    // 重置遊戲狀態
     roomRef.update({
         player1: { health: 100 },
         player2: { health: 100 },
@@ -1011,12 +1013,12 @@ function startNewGameSession() {
         clientRematch: false, // 重要！必須用 false 而不是 null
         gameStarted: true
     }).then(() => {
-        // 新增本地狀態重置
+        // 重置本地狀態
         gameOver = false;
         answered = false;
         timeLeft = 15;
-        
-        // 強制重設界面
+
+        // 重置界面
         document.getElementById('gameArea').style.display = 'block';
         document.querySelector('.victory-overlay').style.display = 'none';
         document.querySelectorAll('#options button').forEach(btn => {
@@ -1024,8 +1026,10 @@ function startNewGameSession() {
             btn.style.cssText = ''; // 清除殘留樣式
         });
 
-        // 新增延遲確保資料庫更新
-        setTimeout(() => listenToRoomChanges(), 500);
+        // 重新監聽房間變化
+        listenToRoomChanges();
+    }).catch(error => {
+        console.error('重置遊戲狀態失敗：', error);
     });
 }
     
