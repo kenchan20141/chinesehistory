@@ -402,6 +402,20 @@
     </div>
 
 <script>
+
+// 全局變數聲明區
+let currentRoomId = null;
+let isHost = false;
+let timer;
+let timeLeft = 15;
+let gameOver = false;
+let hasAnswered = false;
+
+// Firebase配置
+const firebaseConfig = { /* 保持原有配置 */ };
+firebase.initializeApp(firebaseConfig);
+const database = firebase.database();
+    
 // 新增全域回答鎖定變數
 let hasAnswered = false;
 let gameOver = false;   // 補上缺失的遊戲結束標記
