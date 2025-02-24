@@ -4,7 +4,7 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     
-    <title>基元文史哲爭霸</title>
+    <title>基元文史爭霸</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
@@ -769,6 +769,8 @@ function createRoom() {
         gameStarted: false,
         gameEnded: false,
         winner: null
+          p1Ready: false, 
+    p2Ready: false  
     });
     listenToRoomChanges();
 }
@@ -787,6 +789,7 @@ function joinRoom() {
 }
 
 function listenToRoomChanges() {
+    
     // 先移除旧的监听器
     database.ref('rooms/' + currentRoomId).off('value');
     const roomRef = database.ref('rooms/' + currentRoomId);
@@ -806,6 +809,20 @@ function listenToRoomChanges() {
         }
         updateHealthDisplay(room);
     });
+
+if (room.p1Ready && room.p2Ready) {
+    // 双方确认后执行
+    database.ref('rooms/' + currentRoomId).update({
+        p1Ready: false,  // 重置状态
+        p2Ready: false,
+        gameEnded: false,
+        'player1/health': 100,
+        'player2/health': 100
+    });
+    gameOver = false;
+    document.querySelector('.victory-overlay').style.display = 'none';
+    loadNewQuestion();
+    
 }
 
 function updateHealthDisplay(room) {
@@ -931,6 +948,11 @@ function checkGameOver() {
 }
 
 function handleGameEnd(winnerType) {
+    if (currentRoomId) {
+    // 📍重置对方准备状态
+    const path = isHost ? 'p2Ready' : 'p1Ready';
+    database.ref('rooms/' + currentRoomId).update({ [path]: false });
+}
     if (gameOver) return;
     gameOver = true;
     
@@ -978,52 +1000,24 @@ const buttonContainer = document.createElement('div');
     buttonContainer.appendChild(rematchBtn);
     buttonContainer.appendChild(mainMenuBtn);
     victoryOverlay.appendChild(buttonContainer);
+
+    const statusRef = database.ref('rooms/' + currentRoomId);
+statusRef.on('value', snap => {
+    const room = snap.val();
+    if (!room) return;
+
+    // 显示对方状态
+    const otherReady = isHost ? room.p2Ready : room.p1Ready;
+    rematchBtn.textContent = otherReady ? 
+        '再戰江湖 (對方已準備)' : 
+        '再戰江湖 (等待中)';
+});
 }
 
 // 修正后的 handleRematchRequest 函数
 function handleRematchRequest() {
-    if (isRematching) return;
-    isRematching = true;
-
-    // 强制移除胜利界面元素
-    const victoryOverlay = document.querySelector('.victory-overlay');
-    victoryOverlay.style.display = 'none';
-    const buttons = victoryOverlay.querySelector('.rematch-buttons');
-    if (buttons) buttons.remove();
-
-    // 原子性重置数据库状态
-    const updates = {
-        'player1/health': 100,
-        'player2/health': 100,
-        gameEnded: false,
-        currentQuestion: null,
-        winner: null,
-        gameStarted: true,
-        hostRematch: false,
-        clientRematch: false
-    };
-
-    database.ref('rooms/' + currentRoomId).update(updates, (error) => {
-        isRematching = false;
-        if (error) return;
-
-        // 本地强制重置
-        gameOver = false;
-        answered = false;
-        
-        // 清除旧问题显示
-        document.getElementById('question').textContent = '';
-        document.getElementById('options').innerHTML = '';
-
-        // 强制刷新游戏区域
-        document.getElementById('gameArea').style.display = 'none';
-        setTimeout(() => {
-            document.getElementById('gameArea').style.display = 'block';
-        }, 100);
-
-        // 重新绑定监听器
-        listenToRoomChanges();
-    });
+    const path = isHost ? 'p1Ready' : 'p2Ready';
+    database.ref('rooms/' + currentRoomId).update({ [path]: true });
 }
 
 // 修正后的 startNewGameSession 函数
