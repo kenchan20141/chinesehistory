@@ -430,17 +430,82 @@ function displayQuestion(question) {
     startTimer();
 }
 
-// 修改後的 checkAnswer 函數
+// 修改後的checkAnswer函數
 function checkAnswer(isCorrect) {
-    if (hasAnswered || gameOver) return;
-    hasAnswered = true; // 立即鎖定回答
+    if (hasAnswered) return; // 新增防重複點擊判斷
+    hasAnswered = true;      // 標記已回答
     
-    // 禁用所有按鈕
-    const buttons = document.querySelectorAll('#options button');
-    buttons.forEach(btn => {
-        btn.style.pointerEvents = 'none';
-        btn.style.opacity = '0.6';
+     // 立即禁用所有答案按鈕
+    document.querySelectorAll('#options button').forEach(btn => {
+        btn.disabled = true;
+        btn.classList.add('disabled-option');
     });
+
+// 保留原有音效和動畫邏輯
+    if (isCorrect) {
+        soundEffects.correct.play();
+        document.getElementById('player'+(isHost?'2':'1')+'-avatar').classList.add('damage-flash');
+    } else {
+        soundEffects.incorrect.play();
+        document.getElementById('player'+(isHost?'1':'2')+'-avatar').classList.add('damage-flash');
+    }
+
+    // 保留原有扣血邏輯
+    const damage = isCorrect ? 0 : 10;
+    const playerType = isHost ? 'player1' : 'player2';
+    const newHealth = Math.max(0, (currentPlayer.health || 100) - damage);
+    
+    database.ref('rooms/' + currentRoomId + '/' + playerType).update({
+        health: newHealth
+    });
+
+    // 保留後續處理
+    setTimeout(() => {
+        document.querySelectorAll('.damage-flash').forEach(el => el.classList.remove('damage-flash'));
+    }, 500);
+
+    setTimeout(loadNewQuestion, 1500); // 調整為1.5秒後載入新題目
+}
+
+// 修改後的loadNewQuestion函數
+function loadNewQuestion() {
+    hasAnswered = false; // 重置回答狀態
+    
+    // 重新啟用答案按鈕
+    document.querySelectorAll('#options button').forEach(btn => {
+        btn.disabled = false;
+        btn.classList.remove('disabled-option','correct-answer','wrong-answer');
+    });
+
+    // 保留原有題目載入邏輯
+    currentQuestionIndex++;
+    if (currentQuestionIndex >= questions.length) currentQuestionIndex = 0;
+    
+    const question = questions[currentQuestionIndex];
+    document.getElementById('question').textContent = question.question;
+    
+    const optionsDiv = document.getElementById('options');
+    optionsDiv.innerHTML = '';
+    
+    question.options.forEach((option, index) => {
+        const button = document.createElement('button');
+        button.textContent = option;
+        button.onclick = () => checkAnswer(index === question.correctIndex);
+        optionsDiv.appendChild(button);
+    });
+
+    startTimer();
+}
+
+// 新增按鈕禁用樣式
+<style>
+.disabled-option {
+    opacity: 0.5 !important;
+    pointer-events: none !important;
+    filter: grayscale(100%);
+}
+</style>
+    
 
     clearInterval(timer);
     
