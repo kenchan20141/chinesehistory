@@ -4,7 +4,7 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     
-    <title>基元文史爭霸</title>
+    <title>基元文史哲爭霸</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
@@ -755,6 +755,38 @@ function toggleMusic() {
 }
 
 function createRoom() {
+
+function createRoom() {
+    // 使用全局计数器生成新房间编号
+    const counterRef = database.ref('roomCounter');
+    counterRef.transaction(currentCounter => {
+        return (currentCounter || 0) + 1;
+    }).then(() => {
+        counterRef.once('value').then(snapshot => {
+            currentRoomId = snapshot.val();
+            isHost = true;
+
+            document.getElementById('roomControl').style.display = 'none';
+            document.getElementById('waitingArea').style.display = 'block';
+            document.getElementById('displayRoomId').textContent = currentRoomId;
+
+            // 创建新房间
+            database.ref('rooms/' + currentRoomId).set({
+                player1: { health: 100 },
+                player2: null,
+                currentQuestion: null,
+                gameStarted: false,
+                gameEnded: false,
+                winner: null
+            });
+
+            listenToRoomChanges();
+        });
+    }).catch(error => {
+        console.error('生成房间编号失败：', error);
+    });
+}
+    
     currentRoomId = document.getElementById('roomId').value || Math.floor(1000 + Math.random() * 9000);
     isHost = true;
     document.getElementById('roomControl').style.display = 'none';
@@ -773,7 +805,7 @@ function createRoom() {
 }
 
 function joinRoom() {
-    currentRoomId = document.getElementById('roomId').value;
+      currentRoomId = document.getElementById('roomId').value;
     database.ref('rooms/' + currentRoomId).transaction(room => {
         if (room && !room.gameStarted) {
             room.player2 = { health: 100 };
@@ -965,6 +997,82 @@ const buttonContainer = document.createElement('div');
 }
 
 function handleRematchRequest() {
+
+  // 获取当前房间编号并递增
+    const counterRef = database.ref('roomCounter');
+    counterRef.transaction(currentCounter => {
+        return (currentCounter || 0) + 1; // 如果不存在，初始化为 1
+    }).then(() => {
+        // 获取新的房间编号
+        counterRef.once('value').then(snapshot => {
+            const newRoomId = snapshot.val();
+            console.log('新房间编号：', newRoomId);
+
+            // 创建新房间
+            createNewRoomForRematch(newRoomId);
+        });
+    }).catch(error => {
+        console.error('更新房间编号失败：', error);
+    });
+}
+
+function createNewRoomForRematch(newRoomId) {
+    const roomRef = database.ref('rooms/' + newRoomId);
+
+    // 获取当前房间的玩家数据
+    const currentRoomRef = database.ref('rooms/' + currentRoomId);
+    currentRoomRef.once('value').then(snapshot => {
+        const currentRoom = snapshot.val();
+        if (!currentRoom) return;
+
+        // 创建新房间
+        roomRef.set({
+            player1: { health: 100 }, // 重置玩家1状态
+            player2: { health: 100 }, // 重置玩家2状态
+            gameStarted: true,
+            gameEnded: false,
+            currentQuestion: null,
+            winner: null
+        }).then(() => {
+            console.log('新房间创建成功，编号：', newRoomId);
+
+            // 将玩家迁移到新房间
+            migratePlayersToNewRoom(newRoomId);
+        }).catch(error => {
+            console.error('创建新房间失败：', error);
+        });
+    });
+}
+
+function migratePlayersToNewRoom(newRoomId) {
+    // 更新当前房间编号
+    currentRoomId = newRoomId;
+
+    // 重置本地游戏状态
+    gameOver = false;
+    answered = false;
+    timeLeft = 15;
+
+    // 重置界面
+    document.getElementById('gameArea').style.display = 'block';
+    document.querySelector('.victory-overlay').style.display = 'none';
+    document.querySelectorAll('#options button').forEach(btn => {
+        btn.disabled = false;
+        btn.style.cssText = ''; // 清除残留样式
+    });
+
+    // 重新监听新房间的变化
+    listenToRoomChanges();
+
+    // 删除旧房间
+    database.ref('rooms/' + currentRoomId).remove()
+        .then(() => {
+            console.log('旧房间已删除');
+        })
+        .catch(error => {
+            console.error('删除旧房间失败：', error);
+        });
+    
      // 在函数开头新增清理代码
     const rematchPath = isHost ? 'clientRematch' : 'hostRematch';
     database.ref('rooms/' + currentRoomId + '/' + rematchPath).off();
