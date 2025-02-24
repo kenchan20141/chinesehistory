@@ -4,7 +4,7 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     
-    <title>基元文史爭霸</title>
+    <title>基元文史哲爭霸</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
@@ -518,44 +518,6 @@
 
     
 <script>
-
-// 前端呼叫
-const restartGame = functions.httpsCallable('restartGame');
-restartGame({ roomId: currentRoomId })
-  .then(result => {
-    // 跳轉到新房間
-    window.location.href = `/game?roomId=${result.data.newRoomId}`;
-  });
-
-    exports.restartGame = functions.https.onCall(async (data, context) => {
-  // 驗證用戶身份
-  if (!context.auth) throw new Error('Unauthorized');
-  
-  const oldRoomRef = firestore.collection('rooms').doc(data.roomId);
-  const oldRoom = await oldRoomRef.get();
-  
-  // 確認用戶屬於該房間
-  const players = oldRoom.data().players;
-  if (players.player1.uid !== context.auth.uid && players.player2.uid !== context.auth.uid) {
-    throw new Error('Permission denied');
-  }
-  
-  // 刪除舊房間
-  await oldRoomRef.delete();
-  
-  // 創建新房間
-  const newRoomRef = await firestore.collection('rooms').add({
-    players: {
-      player1: { uid: players.player1.uid, ready: false },
-      player2: { uid: players.player2.uid, ready: false }
-    },
-    gameState: "waiting"
-  });
-  
-  return { newRoomId: newRoomRef.id };
-});
-
-    
 let answered = false; // 用於追蹤當前問題是否已回答
 
 function displayQuestion(question) {
