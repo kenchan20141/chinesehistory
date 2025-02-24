@@ -4,7 +4,7 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     
-    <title>基元文史哲爭霸</title>
+    <title>基元文史爭霸</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
@@ -619,7 +619,7 @@ function checkAnswer(isCorrect) {
                 loadNewQuestion();
             }, 700);
         }
-    });
+ 
 
  // 修正後的代碼 ▼
     setTimeout(() => { // 延遲確保DOM已更新
@@ -786,6 +786,9 @@ function joinRoom() {
 }
 
 function listenToRoomChanges() {
+      if (currentRoomId) {
+        database.ref('rooms/' + currentRoomId).off('value');
+    }
     // 先移除旧的监听器
     database.ref('rooms/' + currentRoomId).off('value');
     const roomRef = database.ref('rooms/' + currentRoomId);
@@ -965,6 +968,9 @@ const buttonContainer = document.createElement('div');
 }
 
 function handleRematchRequest() {
+    // 清除本地殘留狀態 ▼
+document.querySelectorAll('.rematch-buttons').forEach(btn => btn.remove());
+document.querySelector('.victory-overlay').style.display = 'none'; 
      // 在函数开头新增清理代码
     const rematchPath = isHost ? 'clientRematch' : 'hostRematch';
     database.ref('rooms/' + currentRoomId + '/' + rematchPath).off();
