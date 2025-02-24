@@ -10,6 +10,52 @@
     <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
     <style>        
 
+    .container {
+            display: flex;
+            justify-content: space-around;
+        }
+
+        .character {
+            width: 200px;
+            height: 300px;
+            position: relative;
+        }
+
+        .sword {
+            position: absolute;
+            width: 50px;
+            height: 50px;
+            background-image: url('https://cdn-icons-png.flaticon.com/512/326/326909.png');
+            background-size: cover;
+            opacity: 0;
+        }
+
+        /* 答對時的攻擊動畫 */
+        .attack-animation {
+            animation: swordAttack 0.5s forwards;
+        }
+
+        @keyframes swordAttack {
+            0% { opacity: 0; transform: translateX(0) rotate(0deg); }
+            50% { opacity: 1; transform: translateX(150px) rotate(360deg); }
+            100% { opacity: 0; transform: translateX(300px) rotate(720deg); }
+        }
+
+        /* 答錯時的受擊動畫 */
+        .damage-animation {
+            animation: takeDamage 0.5s;
+        }
+
+        @keyframes takeDamage {
+            0% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            50% { transform: translateX(10px); }
+            75% { transform: translateX(-10px); }
+            100% { transform: translateX(0); }
+        }
+    
+
+        
         /* 新增動畫效果 */
 @keyframes damageFlash {
     0% { filter: brightness(1); }
