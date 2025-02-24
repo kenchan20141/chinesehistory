@@ -9,72 +9,28 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
     <style>        
-/* 新增三种关键帧动画 */
-@keyframes correctSlash {
-    0% { opacity: 0; transform: translateY(-50px) rotate(45deg); }
-    50% { opacity: 1; transform: translateY(0) rotate(45deg); }
-    100% { opacity: 0; transform: translateY(50px) rotate(45deg); }
-}
 
-@keyframes damageSlash {
-    0% { opacity: 0; transform: translateX(-100%); }
-    50% { opacity: 1; transform: translateX(0); }
-    100% { opacity: 0; transform: translateX(100%); }
-}
-
-@keyframes damageShake { /* 新增缺失的震动动画 */
-    0%, 100% { transform: translateX(0); }
-    25% { transform: translateX(-5px); }
-    75% { transform: translateX(5px); }
-}
-
+        /* 新增動畫效果 */
 @keyframes damageFlash {
     0% { filter: brightness(1); }
     50% { filter: brightness(1.5); }
     100% { filter: brightness(1); }
 }
 
-/* 刀光基础样式 */
-.slash-effect {
-    position: absolute; /* 改为绝对定位 */
-    pointer-events: none;
-    z-index: 9999;
-    width: 100px; /* 需要具体尺寸 */
-    height: 100px;
-    background: transparent;
-    opacity: 0; /* 初始透明 */
-    background-repeat: no-repeat;
-    background-position: center;
-}
-
-/* 动画类 */
-.correct-slash {
-    animation: 
-        correctSlash 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-}
-
-.damage-slash {
-    animation: 
-        damageSlash 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-}
-
 .damage-flash {
     animation: 
         damageFlash 0.3s ease-in-out,
-        damageShake 0.3s ease-in-out;
+        damageShake 0.3s ease-in-out; /* 新增此行 */
 }
 
-/* 可选：添加材质样式 */
-.correct-slash::after {
-    content: "";
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(45deg, 
-        rgba(255,255,255,0.8) 0%,
-        rgba(200,200,255,0.6) 100%);
-    mask-image: url(slash-texture.png); /* 需要准备贴图 */
+        /* 新增至CSS動畫區塊 */
+@keyframes damageShake {
+    0% { transform: translateX(0); }
+    25% { transform: translateX(3px); }
+    75% { transform: translateX(-3px); }
+    100% { transform: translateX(0); }
 }
+        
         /* 新增动画效果 */
     @keyframes fadeInUp {
         from { opacity: 0; transform: translateY(20px); }
@@ -446,22 +402,6 @@
     </div>
 
 <script>
-
-function createSlashEffect(type, x, y) {
-  const slash = document.createElement('div');
-  slash.className = `slash-effect ${type}`;
-  slash.style.top = `${y}px`;
-  slash.style.left = `${x}px`;
-  document.body.appendChild(slash);
-  
-  slash.addEventListener('animationend', () => {
-    slash.remove();
-  });
-}
-
-// 使用示例
-createSlashEffect('correct-slash', 100, 100);
-    
     
 // 修改 updateHealthDisplay 函數
 function updateHealthDisplay(room) {
@@ -528,7 +468,7 @@ function toggleMusic() {
     isMusicPlaying ? bgMusic.play() : bgMusic.pause();
     
     // 反轉按鈕顯示文字
-    document.querySelector('.music-control').textContent = isMusicPlaying ? '🎵' : '🔇';
+    document.querySelector('.music-control').textContent = isMusicPlaying ? '🎵' : '';
 }
 
 function createRoom() {
@@ -648,20 +588,23 @@ function displayQuestion(question) {
 }
 
 function checkAnswer(isCorrect) {
+    // 新增防重複提交檢查 ▼
     if (this.answered) return;
     this.answered = true;
-
+    
+    // 啟用按鈕 ▼
     const buttons = document.querySelectorAll('#options button');
     buttons.forEach(btn => {
         btn.style.pointerEvents = 'auto';
         btn.style.opacity = '1';
     });
 
+    
     if (gameOver) return;
     clearInterval(timer);
-
-    // 正確答案高亮顯示（保持不變）
-    setTimeout(() => {
+    
+    // 修正後的代碼 ▼
+    setTimeout(() => { // 延遲確保DOM已更新
         const buttons = document.querySelectorAll('#options button');
         const correctIndex = window.currentQuestion.correctIndex;
         if (buttons[correctIndex]) {
@@ -673,48 +616,24 @@ function checkAnswer(isCorrect) {
         }
     }, 50);
 
-    // 傷害計算
+    // 保持原有傷害計算
     const damage = Math.floor((timeLeft / 15) * 13);
-
-   // ======= 修改後的刀光動畫觸發方式 =======
-    const correctSlash = document.getElementById('correctSlash');
-    const damageSlash = document.getElementById('damageSlash');
-
-    if (isCorrect) {
-        correctSlash.style.display = 'block';
-        correctSlash.classList.remove('correct-slash');
-        void correctSlash.offsetWidth; // 觸發重繪
-        correctSlash.classList.add('correct-slash');
-        setTimeout(() => correctSlash.style.display = 'none', 600);
-    } else {
-        damageSlash.style.display = 'block';
-        damageSlash.classList.remove('damage-slash');
-        void damageSlash.offsetWidth;
-        damageSlash.classList.add('damage-slash');
-        setTimeout(() => damageSlash.style.display = 'none', 400);
-    }
-
-    // 以下保持原有邏輯
-    const targetElement = isCorrect ? 
+      const targetElement = isCorrect ? 
         document.getElementById('opponentHealthBar') : 
         document.getElementById('myHealthBar');
 
     targetElement.classList.add('damage-flash');
     setTimeout(() => targetElement.classList.remove('damage-flash'), 300);
     
-    // 裝置震動
     navigator.vibrate = navigator.vibrate || navigator.webkitVibrate || navigator.mozVibrate || navigator.msVibrate;
     if (navigator.vibrate) navigator.vibrate(200);
 
-    // 畫面效果
     document.getElementById('gameArea').classList.add('screen-shake');
     document.querySelectorAll('.health-fill').forEach(bar => bar.classList.add('damage-effect'));
 
-    // 音效
     soundEffects.attack.currentTime = 0;
     soundEffects.attack.play();
 
-    // 數據庫更新
     const updates = {};
     const playerPath = isHost ? 'player1' : 'player2';
     const opponentPath = isHost ? 'player2' : 'player1';
@@ -726,11 +645,10 @@ function checkAnswer(isCorrect) {
     }
     
     database.ref('rooms/' + currentRoomId).update(updates, () => {
-        checkGameOver();
-        if (!gameOver) setTimeout(() => loadNewQuestion(), 700);
-    });
+    checkGameOver();
+    if (!gameOver) setTimeout(() => loadNewQuestion(), 700); // 增加400毫秒延遲
+});
 
-    // 移除畫面效果
     setTimeout(() => {
         document.getElementById('gameArea').classList.remove('screen-shake');
         document.querySelectorAll('.health-fill').forEach(bar => bar.classList.remove('damage-effect'));
@@ -810,10 +728,5 @@ function handleGameEnd(winnerType) {
     }, 5000);
 }
 </script>
-
-<!-- 修改後的刀光元素 -->
-<div id="correctSlash" class="slash-effect correct-slash"></div>
-<div id="damageSlash" class="slash-effect damage-slash"></div>
-    
 </body>
 </html>
