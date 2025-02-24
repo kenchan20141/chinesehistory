@@ -4,7 +4,7 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     
-    <title>基元文史哲爭霸</title>
+    <title>基元文史爭霸</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
@@ -908,13 +908,19 @@ function checkGameOver() {
                 winner = 'draw';
             }
 
+            // 更新遊戲狀態
             roomRef.update({
                 gameEnded: true,
-                winner: "player2"
+                winner: winner
+            }).then(() => {
+                console.log('遊戲結束，勝者為：', winner);
+            }).catch(error => {
+                console.error('更新遊戲狀態失敗：', error);
             });
         }
     });
 }
+
 
 function handleGameEnd(winnerType) {
     if (gameOver) return;
