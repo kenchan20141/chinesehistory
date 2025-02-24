@@ -343,8 +343,6 @@
             justify-content: center;
             align-items: center;
             z-index: 999;
-            flex-direction: column; /* 改為縱向排列 */
-            backdrop-filter: blur(5px); /* 新增背景模糊 */
         }
 
         .victory-text {
@@ -422,51 +420,6 @@
 }
 
 
-        /* 新增結束選單樣式 */
-.restart-menu {
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
-    margin-top: 3rem;
-}
-
-        .rematch-waiting {
-    margin-top: 2rem;
-    text-align: center;
-}
-
-.waiting-text {
-    font-size: 2rem;
-    color: #d4af37;
-    text-shadow: 0 0 10px rgba(212,175,55,0.5);
-    margin-bottom: 1.5rem;
-}
-
-
-
-.menu-btn {
-    font-size: 2.5rem !important;
-    padding: 1.5rem 3rem !important;
-    border-radius: 25px !important;
-    background: linear-gradient(145deg, 
-        rgba(212,175,55,0.9) 0%,
-        rgba(195,39,43,0.9) 100%) !important;
-    border: 3px solid #d4af37 !important;
-    transition: all 0.3s ease !important;
-    animation: buttonPulse 2s infinite;
-}
-
-.menu-btn:hover {
-    transform: scale(1.1) rotate(-2deg);
-    filter: hue-rotate(15deg);
-}
-
-@keyframes buttonPulse {
-    0% { transform: scale(1); }
-    50% { transform: scale(1.05); }
-    100% { transform: scale(1); }
-}
-
         
     </style>
 </head>
@@ -528,25 +481,11 @@
 </div>
 
     <div class="victory-overlay">
-    <div class="victory-text"></div>
-    <div class="restart-menu">
-        <button id="rematchBtn" class="menu-btn">⚔️ 再戰江湖</button>
-        <button id="mainMenuBtn" class="menu-btn">🏯 歸隱山林</button>
+        <div class="victory-text"></div>
     </div>
-                <div class="rematch-waiting" style="display:none;">
-    <div class="waiting-text">⚔️ 等待對方應戰...</div>
-    <button onclick="cancelRematch()" class="menu-btn">🚫 取消約戰</button>
-</div>
 
     
 <script>
-let isRematchInitiator = false;
-let rematchTimeout = null;
-    
-    const rematchBtn = document.getElementById('rematchBtn');
-rematchBtn.onclick = null;
-rematchBtn.removeEventListener('click', oldHandler); 
-    
 let answered = false; // 用於追蹤當前問題是否已回答
 
 function displayQuestion(question) {
@@ -829,7 +768,6 @@ function listenToRoomChanges() {
             document.getElementById('waitingArea').style.display = 'none';
             document.getElementById('gameArea').style.display = 'block';
             startGame(room);
-            listenToRematch(); // 開始監聽重賽請求
         }
         updateHealthDisplay(room);
     });
@@ -945,11 +883,6 @@ function checkGameOver() {
 function handleGameEnd(winnerType) {
     if (gameOver) return;
     gameOver = true;
-
-  // 新增以下代碼 ▼
-    // 移除舊事件監聽
-    document.getElementById('rematchBtn').onclick = null;
-    document.getElementById('mainMenuBtn').onclick = null;
     
     clearInterval(timer);
     document.querySelectorAll('#options button').forEach(btn => btn.disabled = true);
@@ -973,103 +906,11 @@ function handleGameEnd(winnerType) {
     victoryText.style.animation = 'none';
     setTimeout(() => victoryText.style.animation = 'victoryPulse 1s ease-out', 10);
 
-   // 綁定按鈕事件
-    document.getElementById('rematchBtn').onclick = () => {
-    // 隱藏按鈕顯示等待
-    document.querySelector('.restart-menu').style.display = 'none';
-    document.querySelector('.rematch-waiting').style.display = 'block';
-    
-    // 建立重賽請求
-    const rematchRef = database.ref('rematchRequests/' + currentRoomId);
-    isRematchInitiator = true;
-    
-    // 寫入請求
-    rematchRef.set({
-        player1: isHost ? 'host' : 'guest',
-        player2: null,
-        createdAt: firebase.database.ServerValue.TIMESTAMP
-    });
-    
-    // 監聽對方響應
-    rematchRef.on('value', (snapshot) => {
-        const data = snapshot.val();
-        if (data && data.player2) {
-            startRematch(data.newRoomId);
-        }
-    });
-    
-    // 設定超時
-    rematchTimeout = setTimeout(() => {
-        rematchRef.off();
-        rematchRef.remove();
-        alert('對方未回應，自動返回主頁');
-        window.location.reload();
-    }, 30000);
-};
-
-// 新增取消約戰函數 ▼
-function cancelRematch() {
-    if (isRematchInitiator) {
-        database.ref('rematchRequests/' + currentRoomId).remove();
-    }
-    window.location.reload();
-}
-
-// 新增處理對方約戰的監聽 ▼ (加在listenToRoomChanges函數下方)
-function listenToRematch() {
-    database.ref('rematchRequests').orderByChild('player1').equalTo(isHost ? 'guest' : 'host').on('child_added', (snapshot) => {
-        const request = snapshot.val();
-        if (!request.player2) {
-            // 同意約戰
-            database.ref('rematchRequests/' + snapshot.key).update({
-                player2: isHost ? 'host' : 'guest',
-                newRoomId: generateNewRoomId()
-            });
-        }
-    });
-}
-
-// 新增生成新房間ID的函數 ▼
-function generateNewRoomId() {
-    return Math.floor(1000 + Math.random() * 9000).toString();
-}
-
-// 新增開始重賽的函數 ▼
-function startRematch(newRoomId) {
-    // 清除舊房間
-    database.ref('rooms/' + currentRoomId).remove();
-    
-    // 重置狀態
-    gameOver = false;
-    document.querySelector('.victory-overlay').style.display = 'none';
-    
-    if (isRematchInitiator) {
-        // 發起方加入新房間
-        currentRoomId = newRoomId;
-        isHost = false; // 發起方變為玩家2
-        joinRoom();
-    } else {
-        // 應戰方建立新房間
-        currentRoomId = newRoomId;
-        isHost = true;
-        createRoom();
-    };
-    }
-}
-    document.getElementById('mainMenuBtn').onclick = () => {
+    setTimeout(() => {
         database.ref('rooms/' + currentRoomId).remove();
         window.location.reload();
-    };
+    }, 5000);
 }
-
-rematchRequests: {
-  $roomId: {
-    player1: uid,
-    player2: null,
-    createdAt: timestamp
-  }
-}
-    
 </script>
 </body>
 </html>
