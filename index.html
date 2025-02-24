@@ -534,6 +534,8 @@
     
 <script>
 
+    let previousRoomId = null; // 新增全局变量
+
 // 新增共用函数
 function generateRoomCode() {
     const hash = Math.abs(hashCode(currentRoomId)); // 基于旧房间ID生成哈希
@@ -554,11 +556,28 @@ function handleGameEnd(winnerType) {
     // ...原有代码...
 
     // 修改重赛按钮点击处理
-    rematchBtn.onclick = () => {
-        victoryOverlay.style.opacity = '0.5'; // 半透明效果
-        handleAutoRematch();
-    };
-}
+   rematchBtn.onclick = () => {
+    cleanupListeners(); // 新增
+    hardResetGameState(); // 新增
+    
+    const newRoomId = generateNewRoomId();
+    database.ref(`rooms/${previousRoomId}/rematch`) // 使用旧房间号
+           .update({ [isHost ? 'hostCode' : 'clientCode']: newRoomId });
+    
+    // 添加超时保护
+    const timeout = setTimeout(() => {
+        alert('對手無回應');
+        window.location.reload();
+    }, 10000);
+    
+    database.ref(`rooms/${previousRoomId}/rematch`)
+           .on('value', snap => {
+        if(/* 验证通过 */) {
+            clearTimeout(timeout); // 清除超时
+            // 跳转逻辑...
+        }
+    });
+};
 
 // 新增智能重赛逻辑
 function handleAutoRematch() {
@@ -582,6 +601,44 @@ function handleAutoRematch() {
     });
 }
 
+function cleanupListeners() {
+    const roomRef = database.ref('rooms/' + currentRoomId);
+    roomRef.off(); // 移除所有监听
+    roomRef.child('rematch').off();
+    roomRef.child('currentQuestion').off();
+}
+
+// 在 handleAutoRematch 调用
+cleanupListeners();
+
+function loadNewQuestion() {
+    // 新增验证
+    database.ref('rooms/'+currentRoomId).once('value').then(snap => {
+        const room = snap.val();
+        if (!room.player1 || !room.player2) {
+            console.log('对手尚未加入，延迟加载');
+            setTimeout(loadNewQuestion, 1000);
+            return;
+        }
+        // 原有加载逻辑...
+    });
+}
+
+    
+function generateNewRoomId() {
+    previousRoomId = currentRoomId; // 保存旧房间号
+    return /* 生成算法 */; 
+}
+    
+    function hardResetGameState() {
+    gameOver = false;
+    answered = false;
+    timeLeft = 15;
+    clearInterval(timer);
+    document.getElementById('timer').textContent = '🕒15';
+    document.querySelectorAll('.health-wave, .hit-marker').forEach(e => e.remove());
+}
+    
 function performAutoJoin(roomId) {
     // 保存状态到本地存储
     localStorage.setItem('autoRematch', JSON.stringify({
@@ -885,6 +942,8 @@ function joinRoom() {
 }
 
 function listenToRoomChanges() {
+    // 确保每次监听前清除旧监听
+cleanupListeners(); 
     // 先移除旧的监听器
     database.ref('rooms/' + currentRoomId).off('value');
     const roomRef = database.ref('rooms/' + currentRoomId);
