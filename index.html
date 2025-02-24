@@ -10,25 +10,43 @@
     <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
     <style>        
 
-    /* 新增攻擊刀光特效 */
-    @keyframes swordSlash {
-        0% { opacity: 0; transform: translateX(-50%) scale(0); }
-        50% { opacity: 1; transform: translateX(-50%) scale(1.2); }
-        100% { opacity: 0; transform: translateX(-50%) scale(0.5); }
-    }
+/* 新增全屏闪光效果 */
+@keyframes greenFlash {
+    0% { background-color: rgba(0,255,0,0); }
+    50% { background-color: rgba(50,255,50,0.3); }
+    100% { background-color: rgba(0,255,0,0); }
+}
 
-    .sword-slash {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        width: 200px;
-        height: 200px;
-        background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="%23ff0000" d="M11 2L13 7H18V9H14.88L16.24 12H21V14H17.76L20 18.33L18.67 19.67L16 14H13.76L12.12 18H15V20H9V18H11.88L8.12 7H3V5H8.12L11 2M12 4.12L9.88 8H14.12L12 4.12Z"/></svg>') no-repeat center;
-        background-size: contain;
-        animation: swordSlash 0.3s ease-out;
-        pointer-events: none;
-        z-index: 999;
-    }
+@keyframes redFlash {
+    0% { background-color: rgba(255,0,0,0); }
+    50% { background-color: rgba(255,50,50,0.3); }
+    100% { background-color: rgba(255,0,0,0); }
+}
+
+.flash-green {
+    animation: greenFlash 0.5s ease-out;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+
+.flash-red {
+    animation: redFlash 0.5s ease-out;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+
+/* 优化原有血条动画 */
+.health-fill {
+    transition: width 0.5s ease, background-color 0.3s ease;
+}
 
     /* 血條衝擊波特效 */
     @keyframes healthWave {
@@ -571,16 +589,26 @@ function checkAnswer(isCorrect) {
         }
     }, 50);
 
- // 新增刀光劍影特效
-    const slash = document.createElement('div');
-    slash.className = 'sword-slash';
-    document.getElementById('gameArea').appendChild(slash);
-    setTimeout(() => slash.remove(), 300);
+ // 替换原有的刀光特效代码 ▼
+    const flash = document.createElement('div');
+    flash.className = isCorrect ? 'flash-green' : 'flash-red';
+    document.body.appendChild(flash);
+    
+    // 自动移除闪光元素
+    setTimeout(() => flash.remove(), 500);
 
-    // 新增血條衝擊波
+    // 根据回答正确性添加不同颜色边框脉冲
+    const gameArea = document.getElementById('gameArea');
+    gameArea.style.boxShadow = `0 0 30px ${isCorrect ? '#2ecc71' : '#e74c3c'}`;
+    setTimeout(() => {
+        gameArea.style.boxShadow = '0 0 20px var(--gold)';
+    }, 300);
+
+    // 保留原有的血条冲击波效果，但修改颜色
     const healthBar = isCorrect ? document.getElementById('opponentHealthBar') : document.getElementById('myHealthBar');
     const wave = document.createElement('div');
     wave.className = 'health-wave';
+    wave.style.background = `linear-gradient(90deg, transparent 0%, ${isCorrect ? 'rgba(46,204,113,0.3)' : 'rgba(231,76,60,0.3)'} 50%, transparent 100%)`;
     healthBar.appendChild(wave);
     setTimeout(() => wave.remove(), 500);
 
