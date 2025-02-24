@@ -781,8 +781,7 @@ function joinRoom() {
 }
 
 function listenToRoomChanges() {
-     const roomRef = database.ref('rooms/' + currentRoomId);
-    roomRef.off('value');  // 新增這行
+    const roomRef = database.ref('rooms/' + currentRoomId);
     roomRef.on('value', (snapshot) => {
         const room = snapshot.val();
         if (!room) return;
@@ -904,11 +903,6 @@ function checkGameOver() {
                 gameEnded: true,
                 winner: winner
             });
-            .catch((error) => {
-    console.log('Game over check error:', error);
-    // 自動重試機制
-    setTimeout(checkGameOver, 1000);
-});
         }
     });
 }
@@ -938,11 +932,7 @@ function handleGameEnd(winnerType) {
 
     victoryText.style.animation = 'none';
     setTimeout(() => victoryText.style.animation = 'victoryPulse 1s ease-out', 10);
-// 先移除已存在的按钮
-    const existingButtons = victoryOverlay.querySelector('.rematch-buttons');
-    if (existingButtons) existingButtons.remove();
-
-    // 新增重赛按钮容器
+// 新增重赛按钮容器
     const buttonContainer = document.createElement('div');
     buttonContainer.className = 'rematch-buttons';
     
@@ -969,14 +959,12 @@ function handleRematchRequest() {
     
     // 更新重赛状态
     roomRef.update({
-    [rematchKey]: true,
-    gameEnded: false,
-    winner: null,
-    currentQuestion: null,  // 新增這行
-    gameStarted: true       // 新增這行
-}).then(() => {
+        [rematchKey]: true,
+        gameEnded: false, // 重置游戏结束状态
+        winner: null
+    }).then(() => {
         // 监听对方重赛状态
-       roomRef.child(isHost ? 'clientRematch' : 'hostRematch').once('value', (snapshot) => {
+        roomRef.child(isHost ? 'clientRematch' : 'hostRematch').on('value', (snapshot) => {
             if (snapshot.val() === true) {
                 // 双方都同意重赛
                 startNewGameSession();
@@ -988,37 +976,21 @@ function handleRematchRequest() {
 function startNewGameSession() {
     const roomRef = database.ref('rooms/' + currentRoomId);
     
-    // 先移除舊監聽器
-    roomRef.off('value');
-    
-    // 完全重置遊戲數據
+    // 重置游戏数据
     roomRef.update({
         player1: { health: 100 },
         player2: { health: 100 },
         currentQuestion: null,
         gameEnded: false,
-        gameStarted: true,    // 確保標記為已開始
-        hostRematch: null,    // 使用null而非false
-        clientRematch: null   // 使用null而非false
-    }).then(() => {
-        // 重置本地狀態
-        gameOver = false;
-        answered = false;
-        timeLeft = 15;
-        
-        // 強制重新監聽房間變化
-        listenToRoomChanges();
-        
-        // 隱藏勝利畫面
-        const victoryOverlay = document.querySelector('.victory-overlay');
-        victoryOverlay.style.display = 'none';
-        victoryOverlay.querySelector('.rematch-buttons')?.remove();
-        
-        // 強制重新載入問題
-        setTimeout(() => {
-            loadNewQuestion();
-        }, 500);
+        hostRematch: false,
+        clientRematch: false
     });
+
+    // 重置本地状态
+    gameOver = false;
+    document.querySelector('.victory-overlay').style.display = 'none';
+    document.querySelectorAll('#options button').forEach(btn => btn.disabled = false);
+    loadNextQuestion();
 }
     
 </script>
