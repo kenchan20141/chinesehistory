@@ -403,6 +403,10 @@
 
 <script>
 
+// ▼▼▼ 修改1/4：在全局變數區新增狀態追蹤 ▼▼▼
+let answerLocked = false;  // 新增在文件最頂部變數區
+let currentButtons = [];
+    
 // 在全局變數新增按鈕鎖定狀態
 let buttonsLocked = false; // 新增全域變數
 
@@ -626,27 +630,51 @@ function loadNewQuestion() {
         };
 
         database.ref('rooms/' + currentRoomId).update({ currentQuestion: processedQuestion });
+  // 解鎖按鈕為下一題準備
+    answerLocked = false;
+    currentButtons.forEach(btn => {
+        btn.disabled = false;
+        btn.style.opacity = 1;
     });
 }
 
 function displayQuestion(question) {
-    this.answered = false; // 重置答題狀態
-    window.currentQuestion = question; // 必須用window保存
+    answerLocked = false; // 重置鎖定狀態
+    window.currentQuestion = question;
     document.getElementById('question').textContent = question.question;
     const optionsDiv = document.getElementById('options');
     optionsDiv.innerHTML = '';
     
+    // 清除舊按鈕引用
+    currentButtons = [];
+
     question.options.forEach((option, index) => {
         const button = document.createElement('button');
         button.textContent = option;
-        button.onclick = () => checkAnswer(index === question.correctIndex);
+        button.style.opacity = 1; // 確保可見
+        button.disabled = false; // 確保啟用
+        
+        // 綁定新版事件監聽
+        button.addEventListener('click', () => {
+            if (!answerLocked) {
+                answerLocked = true; // 立即鎖定
+                checkAnswer(index === question.correctIndex);
+                
+                // 禁用所有按鈕
+                currentButtons.forEach(btn => {
+                    btn.disabled = true;
+                    btn.style.opacity = 0.6;
+                });
+            }
+        });
+        
+        currentButtons.push(button);
         optionsDiv.appendChild(button);
     });
-    startTimer();
 }
 
 function checkAnswer(isCorrect) {
-    
+    if (answerLocked || gameOver) return; // 增加狀態檢查
     if (gameOver) return;
     clearInterval(timer);
     
