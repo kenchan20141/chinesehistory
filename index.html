@@ -568,11 +568,6 @@ function loadNewQuestion() {
         };
 
         database.ref('rooms/' + currentRoomId).update({ currentQuestion: processedQuestion });
-
-         // 新增：啟用所有答案按鈕
-    document.querySelectorAll('#options button').forEach(btn => {
-        btn.disabled = false;
-        btn.style.opacity = '1';
     });
 }
 
