@@ -4,7 +4,7 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     
-    <title>基元文史哲爭霸</title>
+    <title>基元文史爭霸</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
@@ -794,15 +794,6 @@ function listenToRoomChanges() {
         const room = snapshot.val();
         if (!room) return;
 
-// 新增重赛状态检查
-    if (room.hostRematch && room.clientRematch) {
-      // 双方都同意重赛
-      startNewGameSession();
-      // 重置重赛标记
-      database.ref('rooms/' + currentRoomId).update({
-        hostRematch: false,
-        clientRematch: false
-        
         if (room.gameEnded) {
             handleGameEnd(room.winner);
             return;
@@ -942,13 +933,6 @@ function checkGameOver() {
 function handleGameEnd(winnerType) {
     if (gameOver) return;
     gameOver = true;
-
-rematchBtn.onclick = () => {
-  // 标记当前玩家的重赛状态
-  const rematchKey = isHost ? 'hostRematch' : 'clientRematch';
-  database.ref('rooms/' + currentRoomId).update({
-    [rematchKey]: true
-  });
     
     clearInterval(timer);
     document.querySelectorAll('#options button').forEach(btn => btn.disabled = true);
@@ -1001,24 +985,6 @@ function handleRematchRequest() {
     if (isRematching) return;
     isRematching = true;
 
-// 在 handleRematchRequest 中添加
-const statusDiv = document.createElement('div');
-statusDiv.innerHTML = '🕒 等待對手確認...';
-statusDiv.style.cssText = `
-  position: fixed;
-  top: 20%;
-  left: 50%;
-  transform: translateX(-50%);
-  color: var(--gold);
-  font-size: 1.5rem;
-`;
-document.body.appendChild(statusDiv);
-
-    // 在 startNewGameSession 中移除
-document.querySelectorAll('body > div').forEach(el => {
-  if (el.textContent.includes('確認')) el.remove();
-});
-    
     // 强制移除胜利界面元素
     const victoryOverlay = document.querySelector('.victory-overlay');
     victoryOverlay.style.display = 'none';
@@ -1062,20 +1028,6 @@ document.querySelectorAll('body > div').forEach(el => {
 
 // 修正后的 startNewGameSession 函数
 function startNewGameSession() {
-    // 只保留核心重置逻辑
-  const updates = {
-    'player1/health': 100,
-    'player2/health': 100,
-    gameEnded: false,
-    currentQuestion: null,
-    winner: null
-  };
-
-  database.ref('rooms/' + currentRoomId).update(updates, () => {
-    gameOver = false;
-    document.querySelector('.victory-overlay').style.display = 'none';
-    loadNewQuestion();
-      
     // 确保移除所有旧监听器
     database.ref('rooms/' + currentRoomId).off();
 
