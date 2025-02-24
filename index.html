@@ -4,7 +4,7 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     
-    <title>基元文史哲爭霸</title>
+    <title>基元文史爭霸</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
@@ -68,7 +68,7 @@
     );
     filter: blur(2px); /* 添加模糊效果 */
 }
-    }
+
 
     /* 答題命中特效 */
     @keyframes hitMarker {
@@ -786,11 +786,10 @@ function joinRoom() {
 }
 
 function listenToRoomChanges() {
-      if (currentRoomId) {
-        database.ref('rooms/' + currentRoomId).off('value');
-    }
-    // 先移除旧的监听器
-    database.ref('rooms/' + currentRoomId).off('value');
+    const roomRef = database.ref('rooms/' + currentRoomId);
+    roomRef.off('value'); // 只保留一处移除
+    roomRef.on('value', callback);
+}
     const roomRef = database.ref('rooms/' + currentRoomId);
     roomRef.on('value', (snapshot) => {
         const room = snapshot.val();
@@ -1010,14 +1009,16 @@ function startNewGameSession() {
     });
 
     // 强制重新绑定监听
-    setTimeout(() => listenToRoomChanges(), 500); // 新增延迟确保更新
-    });
+    setTimeout(() => {
+        listenToRoomChanges();
+        loadNewQuestion(); // 新增加载题目
+    }, 500);
 
     // 重置本地状态
     gameOver = false;
     answered = false;
-    document.getElementById('gameArea').style.display = 'block'; // 确保游戏区域显示
-    document.querySelector('.victory-overlay').style.display = 'none';
+   document.querySelector('.victory-overlay').style.display = 'none';
+    document.getElementById('gameArea').style.display = 'block';
     document.querySelectorAll('#options button').forEach(btn => btn.disabled = false);
 
     // 强制重新绑定监听器
