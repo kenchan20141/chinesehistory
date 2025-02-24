@@ -366,7 +366,7 @@
     box-shadow: 0 0 20px rgba(212, 175, 55, 0.5);
     text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
 ">
-    🏯 戰場 <span id="displayRoomId" style="
+    🏯 戰閣 <span id="displayRoomId" style="
         color: var(--main-red);
         font-weight: bold;
         text-shadow: 0 0 10px rgba(195, 39, 43, 0.8);
@@ -420,7 +420,7 @@ function updateHealthDisplay(room) {
         document.getElementById('myHealth').textContent = `${myHealth}%`;
     }
 }
-
+    
 
 function stopDangerAlert() {
     document.getElementById('gameArea').classList.remove('danger-pulse');
@@ -446,7 +446,6 @@ let isHost = false;
 let timer;
 let timeLeft = 15;
 let gameOver = false;
-let hasAnswered = false; // 新增變數，防止多次提交
 
 const bgMusic = new Audio('https://freepd.com/music/Coy%20Koi.mp3');
 let isMusicPlaying = false;
@@ -590,17 +589,15 @@ function displayQuestion(question) {
 
 function checkAnswer(isCorrect) {
     // 新增防重複提交檢查 ▼
-   if (hasAnswered) return; // 防止重複提交
-        hasAnswered = true; // 標記已回答
+    if (this.answered) return;
+    this.answered = true;
     
     // 啟用按鈕 ▼
     const buttons = document.querySelectorAll('#options button');
-        buttons.forEach((btn, index) => {
-            btn.disabled = true; // 禁用所有按鈕
-            if (index === window.currentQuestion.correctIndex) {
-                btn.style.backgroundColor = '#2ecc71'; // 正確答案顯示綠色
-            }
-        });
+    buttons.forEach(btn => {
+        btn.style.pointerEvents = 'auto';
+        btn.style.opacity = '1';
+    });
 
     
     if (gameOver) return;
