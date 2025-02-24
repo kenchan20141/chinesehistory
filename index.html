@@ -402,6 +402,17 @@
     </div>
 
 <script>
+
+   firebase.initializeApp(firebaseConfig);
+    const database = firebase.database();
+
+    let currentRoomId = null;
+    let isHost = false;
+    let timer;
+    let timeLeft = 15;
+    let gameOver = false;
+    let hasAnswered = false; // 新增變數，防止多次提交
+    
     
 // 修改 updateHealthDisplay 函數
 function updateHealthDisplay(room) {
