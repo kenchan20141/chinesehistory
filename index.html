@@ -34,16 +34,13 @@
     opacity: 0;
 }
 
-/* 正确动画样式 */
+/* 修改刀光動畫類 */
 .correct-slash {
-    animation: correctSlash 0.6s;
-    background: linear-gradient(45deg, rgba(0,255,0,0.3), rgba(0,200,0,0.2));
+    animation: correctSlash 0.6s !important;
 }
 
-/* 扣血动画样式 */
 .damage-slash {
-    animation: damageSlash 0.4s;
-    background: linear-gradient(45deg, rgba(255,0,0,0.3), rgba(200,0,0,0.2));
+    animation: damageSlash 0.4s !important;
 }
 
         
@@ -653,17 +650,22 @@ function checkAnswer(isCorrect) {
     // 傷害計算
     const damage = Math.floor((timeLeft / 15) * 13);
 
-    // ======= 新增刀光動畫效果 ======= 
+   // ======= 修改後的刀光動畫觸發方式 =======
+    const correctSlash = document.getElementById('correctSlash');
+    const damageSlash = document.getElementById('damageSlash');
+
     if (isCorrect) {
-        document.getElementById('correctSlash').style.animation = 'none';
-        setTimeout(() => {
-            document.getElementById('correctSlash').style.animation = 'correctSlash 0.6s';
-        }, 10);
+        correctSlash.style.display = 'block';
+        correctSlash.classList.remove('correct-slash');
+        void correctSlash.offsetWidth; // 觸發重繪
+        correctSlash.classList.add('correct-slash');
+        setTimeout(() => correctSlash.style.display = 'none', 600);
     } else {
-        document.getElementById('damageSlash').style.animation = 'none';
-        setTimeout(() => {
-            document.getElementById('damageSlash').style.animation = 'damageSlash 0.4s';
-        }, 10);
+        damageSlash.style.display = 'block';
+        damageSlash.classList.remove('damage-slash');
+        void damageSlash.offsetWidth;
+        damageSlash.classList.add('damage-slash');
+        setTimeout(() => damageSlash.style.display = 'none', 400);
     }
 
     // 以下保持原有邏輯
@@ -783,8 +785,9 @@ function handleGameEnd(winnerType) {
 }
 </script>
 
-<div id="correctSlash" class="slash-effect"></div>
-<div id="damageSlash" class="slash-effect"></div>
+<!-- 修改後的刀光元素 -->
+<div id="correctSlash" class="slash-effect correct-slash"></div>
+<div id="damageSlash" class="slash-effect damage-slash"></div>
     
 </body>
 </html>
