@@ -796,6 +796,11 @@ function listenToRoomChanges() {
         if (room.gameEnded) {
             handleGameEnd(room.winner);
             return;
+            if ((room.player1 && !room.player2) || (!room.player1 && room.player2)) {
+    console.error('检测到玩家不同步状态');
+    database.ref('rooms/' + currentRoomId).remove();
+    alert('房间状态异常，已重置！');
+    window.location.reload();
 
  // 新增：检测房间异常状态
         if (!room.player1 || !room.player2) {
