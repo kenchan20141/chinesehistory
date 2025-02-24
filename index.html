@@ -588,12 +588,6 @@ function displayQuestion(question) {
 }
 
 function checkAnswer(isCorrect) {
-    // 新增：立即禁用所有答案按鈕
-    document.querySelectorAll('#options button').forEach(btn => {
-        btn.disabled = true;
-        btn.style.opacity = '0.5'; // 視覺反饋
-    });
-}
     
     if (gameOver) return;
     clearInterval(timer);
