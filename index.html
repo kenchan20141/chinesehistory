@@ -4,7 +4,7 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     
-    <title>基元文史爭霸</title>
+    <title>基元文史哲爭霸</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
@@ -722,7 +722,7 @@ const firebaseConfig = {
 };
 
 firebase.initializeApp(firebaseConfig);
-const database = firebase.database();
+const database = firebase.database;
 
 let currentRoomId = null;
 let isHost = false;
@@ -755,7 +755,7 @@ function toggleMusic() {
 }
 
 function createRoom() {
-    currentRoomId = document.getElementById('roomId').value || Math.floor(1000 + Math.random() * 9000);
+    currentRoomId = document.getElementById('roomId').value || String(Math.floor(1000 + Math.random() * 9000));
     isHost = true;
     document.getElementById('roomControl').style.display = 'none';
     document.getElementById('waitingArea').style.display = 'block';
@@ -968,9 +968,7 @@ const buttonContainer = document.createElement('div');
 }
 
 function handleRematchRequest() {
-    // 清除本地殘留狀態 ▼
-document.querySelectorAll('.rematch-buttons').forEach(btn => btn.remove());
-document.querySelector('.victory-overlay').style.display = 'none'; 
+
      // 在函数开头新增清理代码
     const rematchPath = isHost ? 'clientRematch' : 'hostRematch';
     database.ref('rooms/' + currentRoomId + '/' + rematchPath).off();
