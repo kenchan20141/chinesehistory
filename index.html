@@ -786,8 +786,9 @@ function joinRoom() {
 }
 
 function listenToRoomChanges() {
-    // 先移除旧的监听器
+     // 新增清理旧监听
     database.ref('rooms/' + currentRoomId).off('value');
+    
     const roomRef = database.ref('rooms/' + currentRoomId);
     roomRef.on('value', (snapshot) => {
         const room = snapshot.val();
@@ -915,6 +916,10 @@ function checkGameOver() {
 }
 
 function handleGameEnd(winnerType) {
+     // 在函数开头添加清理代码
+    const existingButtons = document.querySelector('.rematch-buttons');
+    if (existingButtons) existingButtons.remove();
+    
     if (gameOver) return;
     gameOver = true;
     
@@ -939,6 +944,11 @@ function handleGameEnd(winnerType) {
 
     victoryText.style.animation = 'none';
     setTimeout(() => victoryText.style.animation = 'victoryPulse 1s ease-out', 10);
+
+ // 修改按钮创建逻辑 ▼
+    const buttonContainer = document.createElement('div');
+    buttonContainer.className = 'rematch-buttons';
+    
 // 新增重赛按钮容器
    // 先移除已存在的按钮
 const existingButtons = document.querySelector('.rematch-buttons');
@@ -965,7 +975,8 @@ const buttonContainer = document.createElement('div');
 }
 
 function handleRematchRequest() {
-     // 在函数开头新增清理代码
+
+  // 新增清理监听代码
     const rematchPath = isHost ? 'clientRematch' : 'hostRematch';
     database.ref('rooms/' + currentRoomId + '/' + rematchPath).off();
     
@@ -978,9 +989,11 @@ function handleRematchRequest() {
         gameEnded: false, // 重置游戏结束状态
         winner: null
     }).then(() => {
-        // 监听对方重赛状态
-        roomRef.child(isHost ? 'clientRematch' : 'hostRematch').on('value', (snapshot) => {
+    // 添加一次性监听 ▼
+        roomRef.child(isHost ? 'clientRematch' : 'hostRematch').once('value', (snapshot) => {
             if (snapshot.val() === true) {
+                startNewGameSession();
+                
                 // 双方都同意重赛
                 startNewGameSession();
             }
@@ -989,20 +1002,29 @@ function handleRematchRequest() {
 }
 
 function startNewGameSession() {
-     // 新增以下代码清除旧监听器
+
+        // 新增清理代码
     database.ref('rooms/' + currentRoomId).off();
-    // 修改后的重置代码
     const roomRef = database.ref('rooms/' + currentRoomId);
     
     // 重置游戏数据
-    roomRef.update({
+  roomRef.update({
         player1: { health: 100 },
         player2: { health: 100 },
         currentQuestion: null,
         gameEnded: false,
-        hostRematch: false,
-        clientRematch: false,
-        gameStarted: true // 确保游戏状态保持开启
+        hostRematch: null,  // 改为null而不是false
+        clientRematch: null,
+        gameStarted: true
+    }).then(() => {
+        // 重置本地状态
+        gameOver = false;
+        answered = false;
+        document.getElementById('gameArea').style.display = 'block';
+        document.querySelector('.victory-overlay').style.display = 'none';
+        
+        // 强制重新绑定监听
+        listenToRoomChanges();
     });
 
     // 重置本地状态
