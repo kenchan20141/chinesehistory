@@ -446,6 +446,22 @@
     </div>
 
 <script>
+
+function createSlashEffect(type, x, y) {
+  const slash = document.createElement('div');
+  slash.className = `slash-effect ${type}`;
+  slash.style.top = `${y}px`;
+  slash.style.left = `${x}px`;
+  document.body.appendChild(slash);
+  
+  slash.addEventListener('animationend', () => {
+    slash.remove();
+  });
+}
+
+// 使用示例
+createSlashEffect('correct-slash', 100, 100);
+    
     
 // 修改 updateHealthDisplay 函數
 function updateHealthDisplay(room) {
