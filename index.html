@@ -4,7 +4,7 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     
-    <title>基元文史哲爭霸</title>
+    <title>基元文史爭霸</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
@@ -986,13 +986,18 @@ function handleRematchRequest() {
         gameEnded: false, // 重置遊戲結束狀態
         winner: null
     }).then(() => {
+            console.log('重賽請求已發送：', rematchKey);
+}).catch(error => {
+    console.error('重賽請求失敗：', error);
+});
         // 監聽對方重賽狀態
         roomRef.child(opponentRematchKey).on('value', (snapshot) => {
-            if (snapshot.val() === true) {
-                // 雙方都同意重賽
-                startNewGameSession();
-            }
-        });
+          console.log('對方重賽狀態：', snapshot.val());
+    if (snapshot.val() === true) {
+        console.log('雙方同意重賽，開始新遊戲');
+        startNewGameSession();
+    }
+});
     }).catch(error => {
         console.error('更新重賽狀態失敗：', error);
     });
