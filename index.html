@@ -4,7 +4,7 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     
-    <title>基元文史哲爭霸</title>
+    <title>基元中史爭霸</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
@@ -14,11 +14,6 @@
     margin-top: 30px;
     display: flex;
     gap: 20px;
-    position: absolute; /* 新增定位 */
-    bottom: 30px;      /* 固定在底部 */
-    left: 50%;
-    transform: translateX(-50%);
-    z-index: 1000;     /* 确保在最上层 */
 }
 
 .rematch-buttons button {
@@ -786,8 +781,6 @@ function joinRoom() {
 }
 
 function listenToRoomChanges() {
-    // 先移除旧的监听器
-    database.ref('rooms/' + currentRoomId).off('value');
     const roomRef = database.ref('rooms/' + currentRoomId);
     roomRef.on('value', (snapshot) => {
         const room = snapshot.val();
@@ -940,11 +933,7 @@ function handleGameEnd(winnerType) {
     victoryText.style.animation = 'none';
     setTimeout(() => victoryText.style.animation = 'victoryPulse 1s ease-out', 10);
 // 新增重赛按钮容器
-   // 先移除已存在的按钮
-const existingButtons = document.querySelector('.rematch-buttons');
-if (existingButtons) existingButtons.remove();
-
-const buttonContainer = document.createElement('div');
+    const buttonContainer = document.createElement('div');
     buttonContainer.className = 'rematch-buttons';
     
     const rematchBtn = document.createElement('button');
@@ -965,10 +954,6 @@ const buttonContainer = document.createElement('div');
 }
 
 function handleRematchRequest() {
-     // 在函数开头新增清理代码
-    const rematchPath = isHost ? 'clientRematch' : 'hostRematch';
-    database.ref('rooms/' + currentRoomId + '/' + rematchPath).off();
-    
     const roomRef = database.ref('rooms/' + currentRoomId);
     const rematchKey = isHost ? 'hostRematch' : 'clientRematch';
     
@@ -989,9 +974,6 @@ function handleRematchRequest() {
 }
 
 function startNewGameSession() {
-     // 新增以下代码清除旧监听器
-    database.ref('rooms/' + currentRoomId).off();
-    // 修改后的重置代码
     const roomRef = database.ref('rooms/' + currentRoomId);
     
     // 重置游戏数据
@@ -1001,19 +983,14 @@ function startNewGameSession() {
         currentQuestion: null,
         gameEnded: false,
         hostRematch: false,
-        clientRematch: false,
-        gameStarted: true // 确保游戏状态保持开启
+        clientRematch: false
     });
 
     // 重置本地状态
     gameOver = false;
-    answered = false;
-    document.getElementById('gameArea').style.display = 'block'; // 确保游戏区域显示
     document.querySelector('.victory-overlay').style.display = 'none';
     document.querySelectorAll('#options button').forEach(btn => btn.disabled = false);
-
-    // 强制重新绑定监听器
-    listenToRoomChanges(); 
+    loadNextQuestion();
 }
     
 </script>
