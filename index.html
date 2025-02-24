@@ -4,7 +4,7 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     
-    <title>基元中史爭霸</title>
+    <title>基元文史哲爭霸</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
@@ -786,9 +786,9 @@ function joinRoom() {
 }
 
 function listenToRoomChanges() {
-    // 新增：移除所有旧的监听器
+    // 先移除旧的监听器
+    database.ref('rooms/' + currentRoomId).off('value');
     const roomRef = database.ref('rooms/' + currentRoomId);
-    roomRef.off('value'); // 清理所有旧的value监听
     roomRef.on('value', (snapshot) => {
         const room = snapshot.val();
         if (!room) return;
@@ -796,19 +796,6 @@ function listenToRoomChanges() {
         if (room.gameEnded) {
             handleGameEnd(room.winner);
             return;
-            if ((room.player1 && !room.player2) || (!room.player1 && room.player2)) {
-    console.error('检测到玩家不同步状态');
-    database.ref('rooms/' + currentRoomId).remove();
-    alert('房间状态异常，已重置！');
-    window.location.reload();
-
- // 新增：检测房间异常状态
-        if (!room.player1 || !room.player2) {
-            console.log('检测到无效房间状态，重置游戏');
-            handleGameEnd('draw');
-            return;
-        }
-            
         }
 
         if (room.gameStarted && !gameOver) {
@@ -978,35 +965,6 @@ const buttonContainer = document.createElement('div');
 }
 
 function handleRematchRequest() {
-
-const roomRef = database.ref('rooms/' + currentRoomId);
-    const rematchKey = isHost ? 'hostRematch' : 'clientRematch';
-    
-    // 新增：移除旧监听器
-    roomRef.child(rematchKey).off('value');
-
-    roomRef.update({
-        [rematchKey]: true,
-        gameEnded: false
-    }).then(() => {
-        // 修改监听逻辑
-        const opponentRematchKey = isHost ? 'clientRematch' : 'hostRematch';
-        roomRef.child(opponentRematchKey).on('value', (snapshot) => {
-            if (snapshot.val() === true) {
-                // 新增：同步等待机制
-                const syncCheck = setInterval(() => {
-                    roomRef.once('value').then(syncSnapshot => {
-                        if (syncSnapshot.child('lastReset').exists()) {
-                            clearInterval(syncCheck);
-                            startNewGameSession();
-                        }
-                    });
-                }, 300);
-            }
-        });
-    });
-}
-    
      // 在函数开头新增清理代码
     const rematchPath = isHost ? 'clientRematch' : 'hostRematch';
     database.ref('rooms/' + currentRoomId + '/' + rematchPath).off();
@@ -1031,40 +989,6 @@ const roomRef = database.ref('rooms/' + currentRoomId);
 }
 
 function startNewGameSession() {
-    // 新增：强制重置本地状态
-    gameOver = false;
-    answered = false;
-    timeLeft = 15;
-    
-    // 新增：清理旧界面元素
-    const overlay = document.querySelector('.victory-overlay');
-    overlay.style.display = 'none';
-    overlay.querySelector('.rematch-buttons')?.remove();
-
-    // 修改数据库重置逻辑
-    const roomRef = database.ref('rooms/' + currentRoomId);
-    roomRef.transaction((currentData) => {
-        if (!currentData) return;
-        
-        return {
-            ...currentData,
-            player1: { health: 100 },
-            player2: { health: 100 },
-            currentQuestion: null,
-            gameEnded: false,
-            hostRematch: false,
-            clientRematch: false,
-            gameStarted: true, // 强制保持游戏开始状态
-            lastReset: firebase.database.ServerValue.TIMESTAMP // 新增重置时间戳
-        };
-    }).then(() => {
-        // 新增：延迟重新绑定监听器
-        setTimeout(() => {
-            listenToRoomChanges();
-            loadNewQuestion();
-        }, 500); // 确保数据库更新完成
-    });
-}
      // 新增以下代码清除旧监听器
     database.ref('rooms/' + currentRoomId).off();
     // 修改后的重置代码
