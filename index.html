@@ -343,6 +343,8 @@
             justify-content: center;
             align-items: center;
             z-index: 999;
+            flex-direction: column; /* 改為縱向排列 */
+            backdrop-filter: blur(5px); /* 新增背景模糊 */
         }
 
         .victory-text {
@@ -420,6 +422,37 @@
 }
 
 
+        /* 新增結束選單樣式 */
+.restart-menu {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    margin-top: 3rem;
+}
+
+.menu-btn {
+    font-size: 2.5rem !important;
+    padding: 1.5rem 3rem !important;
+    border-radius: 25px !important;
+    background: linear-gradient(145deg, 
+        rgba(212,175,55,0.9) 0%,
+        rgba(195,39,43,0.9) 100%) !important;
+    border: 3px solid #d4af37 !important;
+    transition: all 0.3s ease !important;
+    animation: buttonPulse 2s infinite;
+}
+
+.menu-btn:hover {
+    transform: scale(1.1) rotate(-2deg);
+    filter: hue-rotate(15deg);
+}
+
+@keyframes buttonPulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+
         
     </style>
 </head>
@@ -481,8 +514,12 @@
 </div>
 
     <div class="victory-overlay">
-        <div class="victory-text"></div>
+    <div class="victory-text"></div>
+    <div class="restart-menu">
+        <button id="rematchBtn" class="menu-btn">⚔️ 再戰江湖</button>
+        <button id="mainMenuBtn" class="menu-btn">🏯 歸隱山林</button>
     </div>
+</div>
 
     
 <script>
@@ -883,6 +920,11 @@ function checkGameOver() {
 function handleGameEnd(winnerType) {
     if (gameOver) return;
     gameOver = true;
+
+  // 新增以下代碼 ▼
+    // 移除舊事件監聽
+    document.getElementById('rematchBtn').onclick = null;
+    document.getElementById('mainMenuBtn').onclick = null;
     
     clearInterval(timer);
     document.querySelectorAll('#options button').forEach(btn => btn.disabled = true);
@@ -906,10 +948,21 @@ function handleGameEnd(winnerType) {
     victoryText.style.animation = 'none';
     setTimeout(() => victoryText.style.animation = 'victoryPulse 1s ease-out', 10);
 
-    setTimeout(() => {
+   // 綁定按鈕事件
+    document.getElementById('rematchBtn').onclick = () => {
+        database.ref('rooms/' + currentRoomId).remove().then(() => {
+            currentRoomId = null;
+            gameOver = false;
+            document.querySelector('.victory-overlay').style.display = 'none';
+            document.getElementById('roomControl').style.display = 'block';
+            createRoom(); // 自動建立新房間
+        });
+    };
+
+    document.getElementById('mainMenuBtn').onclick = () => {
         database.ref('rooms/' + currentRoomId).remove();
         window.location.reload();
-    }, 5000);
+    };
 }
 </script>
 </body>
