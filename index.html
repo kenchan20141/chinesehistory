@@ -4,7 +4,7 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     
-    <title>基元文史爭霸</title>
+    <title>基元文史哲爭霸</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
@@ -989,20 +989,24 @@ function handleRematchRequest() {
 }
 
 function startNewGameSession() {
-     // 新增以下代码清除旧监听器
-    database.ref('rooms/' + currentRoomId).off();
-    // 修改后的重置代码
-    const roomRef = database.ref('rooms/' + currentRoomId);
+     // 新增状态重置代码
+    gameOver = false;
+    answered = false;
+    timeLeft = 15;
     
-    // 重置游戏数据
-    roomRef.update({
+    // 修改数据库重置逻辑
+    database.ref('rooms/' + currentRoomId).update({
         player1: { health: 100 },
         player2: { health: 100 },
         currentQuestion: null,
         gameEnded: false,
-        hostRematch: false,
-        clientRematch: false,
-        gameStarted: true // 确保游戏状态保持开启
+        hostRematch: null,  // 改为null而非false
+        clientRematch: null, // 改为null而非false
+        gameStarted: true
+    });
+
+    // 强制重新绑定监听
+    setTimeout(() => listenToRoomChanges(), 500); // 新增延迟确保更新
     });
 
     // 重置本地状态
