@@ -769,8 +769,6 @@ function createRoom() {
         gameStarted: false,
         gameEnded: false,
         winner: null
-        hostRematch: false,
-    clientRematch: false
     });
     listenToRoomChanges();
 }
@@ -807,8 +805,6 @@ function listenToRoomChanges() {
             startGame(room);
         }
         updateHealthDisplay(room);
-        if (room.hostRematch && room.clientRematch) {
-    startNewGameSession();
     });
 }
 
@@ -982,30 +978,10 @@ const buttonContainer = document.createElement('div');
     buttonContainer.appendChild(rematchBtn);
     buttonContainer.appendChild(mainMenuBtn);
     victoryOverlay.appendChild(buttonContainer);
-    rematchBtn.textContent = '再戰江湖 (等待確認)';
-rematchBtn.disabled = true;
-
-    // 添加数据库监听
-database.ref('rooms/' + currentRoomId).on('value', snap => {
-    const room = snap.val();
-    if (!room) return;
-    
-    const hostReady = room.hostRematch || false;
-    const clientReady = room.clientRematch || false;
-    
-    rematchBtn.textContent = `再戰江湖 (${hostReady && isHost ? '已準備' : ''}${clientReady && !isHost ? '已準備' : ''})`;
-    
-    if ((isHost && room.clientRematch) || (!isHost && room.hostRematch)) {
-        rematchBtn.disabled = false;
-    }
-});
 }
 
 // 修正后的 handleRematchRequest 函数
 function handleRematchRequest() {
-    const rematchField = isHost ? 'hostRematch' : 'clientRematch';
-    database.ref('rooms/' + currentRoomId).update({ [rematchField]: true });
-}
     if (isRematching) return;
     isRematching = true;
 
@@ -1052,19 +1028,6 @@ function handleRematchRequest() {
 
 // 修正后的 startNewGameSession 函数
 function startNewGameSession() {
-     database.ref('rooms/' + currentRoomId).update({
-        'player1/health': 100,
-        'player2/health': 100,
-        gameEnded: false,
-        currentQuestion: null,
-        winner: null,
-        hostRematch: false,
-        clientRematch: false
-    });
-    
-    gameOver = false;
-    document.querySelector('.victory-overlay').style.display = 'none';
-    loadNewQuestion();
     // 确保移除所有旧监听器
     database.ref('rooms/' + currentRoomId).off();
 
