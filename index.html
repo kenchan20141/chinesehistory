@@ -573,7 +573,7 @@ function loadNewQuestion() {
 }
 
 function displayQuestion(question) {
-    this.answered = false; // 重置答題狀態
+    hasAnswered = false; // 重置答題狀態
     window.currentQuestion = question; // 必須用window保存
     document.getElementById('question').textContent = question.question;
     const optionsDiv = document.getElementById('options');
