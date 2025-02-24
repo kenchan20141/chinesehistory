@@ -9,7 +9,7 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
     <style>        
-/* 新增两种刀光动画 */
+/* 新增三种关键帧动画 */
 @keyframes correctSlash {
     0% { opacity: 0; transform: translateY(-50px) rotate(45deg); }
     50% { opacity: 1; transform: translateY(0) rotate(45deg); }
@@ -22,49 +22,59 @@
     100% { opacity: 0; transform: translateX(100%); }
 }
 
-/* 刀光通用样式 */
-.slash-effect {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    pointer-events: none;
-    z-index: 9999;
-    opacity: 0;
+@keyframes damageShake { /* 新增缺失的震动动画 */
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-5px); }
+    75% { transform: translateX(5px); }
 }
 
-/* 修改刀光動畫類 */
-.correct-slash {
-    animation: correctSlash 0.6s !important;
-}
-
-.damage-slash {
-    animation: damageSlash 0.4s !important;
-}
-
-        
-        /* 新增動畫效果 */
 @keyframes damageFlash {
     0% { filter: brightness(1); }
     50% { filter: brightness(1.5); }
     100% { filter: brightness(1); }
 }
 
+/* 刀光基础样式 */
+.slash-effect {
+    position: absolute; /* 改为绝对定位 */
+    pointer-events: none;
+    z-index: 9999;
+    width: 100px; /* 需要具体尺寸 */
+    height: 100px;
+    background: transparent;
+    opacity: 0; /* 初始透明 */
+    background-repeat: no-repeat;
+    background-position: center;
+}
+
+/* 动画类 */
+.correct-slash {
+    animation: 
+        correctSlash 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+.damage-slash {
+    animation: 
+        damageSlash 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
 .damage-flash {
     animation: 
         damageFlash 0.3s ease-in-out,
-        damageShake 0.3s ease-in-out; /* 新增此行 */
+        damageShake 0.3s ease-in-out;
 }
 
-        /* 新增至CSS動畫區塊 */
-@keyframes damageShake {
-    0% { transform: translateX(0); }
-    25% { transform: translateX(3px); }
-    75% { transform: translateX(-3px); }
-    100% { transform: translateX(0); }
+/* 可选：添加材质样式 */
+.correct-slash::after {
+    content: "";
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(45deg, 
+        rgba(255,255,255,0.8) 0%,
+        rgba(200,200,255,0.6) 100%);
+    mask-image: url(slash-texture.png); /* 需要准备贴图 */
 }
-        
         /* 新增动画效果 */
     @keyframes fadeInUp {
         from { opacity: 0; transform: translateY(20px); }
