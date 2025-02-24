@@ -481,8 +481,6 @@ function loadNewQuestion() {
         btn.style.background = 'rgba(255,255,255,0.1)'; // 重置按鈕樣式
     });
 
-      const questionsRef = database.ref('questions');
-    questionsRef.once('value').then(snapshot => {
 
     // 保留原有題目載入邏輯
     currentQuestionIndex++;
