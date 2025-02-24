@@ -442,7 +442,7 @@ function checkAnswer(isCorrect) {
     
     // 顯示正確答案樣式
     buttons.forEach((btn, index) => {
-        btn.style.pointerEvents = 'none';
+        btn.style.pointerEvents = 'none'; // 立即禁止點擊
         if (index === correctIndex) {
             btn.style.cssText = `
                 background: #2ecc71 !important;
@@ -495,17 +495,17 @@ function checkAnswer(isCorrect) {
         checkGameOver();
         if (!gameOver) {
             setTimeout(() => {
-                // 重置按鈕樣式
+                // 重置按鈕樣式和互動狀態
                 buttons.forEach(btn => {
                     btn.style.cssText = '';
-                    btn.style.pointerEvents = 'auto';
+                    btn.style.pointerEvents = 'auto'; // 重新啟用點擊
                 });
+                answered = false; // 新增：重置回答狀態
                 loadNewQuestion();
             }, 700);
         }
     });
 }
-
     
     
 // 修改 updateHealthDisplay 函數
