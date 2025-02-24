@@ -4,7 +4,7 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     
-    <title>基元文史哲爭霸</title>
+    <title>基元文史爭霸</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
@@ -977,14 +977,30 @@ function handleRematchRequest() {
     const roomRef = database.ref('rooms/' + currentRoomId);
     roomRef.off();
 
+    // 根据当前玩家设置重赛键
     const rematchKey = isHost ? 'hostRematch' : 'clientRematch';
+    const opponentRematchKey = isHost ? 'clientRematch' : 'hostRematch';
+
+    // 监听对方的重赛状态
     roomRef.child(opponentRematchKey).on('value', (snapshot) => {
-    console.log('對方重賽狀態：', snapshot.val());
-    if (snapshot.val() === true) {
-        console.log('雙方同意重賽，開始新遊戲');
-        startNewGameSession();
-    }
-});
+        console.log('對方重賽狀態：', snapshot.val());
+        if (snapshot.val() === true) {
+            console.log('雙方同意重賽，開始新遊戲');
+            startNewGameSession();
+        }
+    });
+
+    // 更新重赛状态
+    roomRef.update({
+        [rematchKey]: true,
+        gameEnded: false, // 重置游戏结束状态
+        winner: null
+    }).then(() => {
+        console.log('重赛请求已发送');
+    }).catch(error => {
+        console.error('更新重赛状态失败：', error);
+    });
+}
 
     // 更新重赛状态
     roomRef.update({
