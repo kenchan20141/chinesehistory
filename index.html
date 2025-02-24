@@ -4,7 +4,7 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     
-    <title>基元文史哲爭霸</title>
+    <title>基元文史爭霸</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
@@ -451,11 +451,31 @@
     top: 50%; /* 初始垂直居中 */
 }
 
+#combo {
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    font-size: 2rem;
+    color: #ffd700;
+    text-shadow: 0 0 10px rgba(255,215,0,0.3);
+    display: none;
+}
 
+/* 连击特效 */
+@keyframes comboPop {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.2); }
+    100% { transform: scale(1); }
+}
+
+.combo-effect {
+    animation: comboPop 0.3s ease;
+}
         
     </style>
 </head>
 <body>
+    <div id="combo">連擊 ✕<span>0</span></div>
     <button class="music-control" onclick="toggleMusic()">🎵</button>
     
     <div id="roomControl">
@@ -518,6 +538,7 @@
 
     
 <script>
+    let comboCount = 0; // 新增连击计数器
     let isRematching = false;
 let answered = false; // 用於追蹤當前問題是否已回答
 
@@ -551,6 +572,27 @@ function checkAnswer(isCorrect) {
     answered = true;
 
     clearInterval(timer);
+
+   // 在此处插入连击逻辑 ▼
+    if(isCorrect) {
+        comboCount++;
+        // 显示连击数
+        document.getElementById('combo').style.display = 'block';
+        document.getElementById('combo').querySelector('span').textContent = comboCount;
+        // 触发特效
+        document.getElementById('combo').classList.add('combo-effect');
+        setTimeout(() => {
+            document.getElementById('combo').classList.remove('combo-effect');
+        }, 300);
+    } else {
+        comboCount = 0; // 错误时重置
+        document.getElementById('combo').style.display = 'none';
+    }
+
+    // 修改伤害计算（找到原伤害计算行）▼
+    let damage = Math.floor((timeLeft / 15) * 13); // 原代码
+    damage = Math.floor(damage * (1 + comboCount * 0.1)); // 改为这行
+    // ...后续代码保持不变...
     
     // 樣式處理
     const buttons = document.querySelectorAll('#options button');
