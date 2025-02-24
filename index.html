@@ -402,6 +402,101 @@
     </div>
 
 <script>
+// 新增全域回答鎖定變數
+let hasAnswered = false;
+
+// 修改後的 displayQuestion 函數
+function displayQuestion(question) {
+    hasAnswered = false; // 重置鎖定狀態
+    window.currentQuestion = question;
+    document.getElementById('question').textContent = question.question;
+    const optionsDiv = document.getElementById('options');
+    optionsDiv.innerHTML = '';
+
+    question.options.forEach((option, index) => {
+        const button = document.createElement('button');
+        button.textContent = option;
+        button.onclick = () => {
+            if (!hasAnswered) checkAnswer(index === question.correctIndex);
+        };
+        optionsDiv.appendChild(button);
+    });
+    
+    // 啟用所有按鈕互動
+    document.querySelectorAll('#options button').forEach(btn => {
+        btn.style.pointerEvents = 'auto';
+        btn.style.opacity = '1';
+    });
+    startTimer();
+}
+
+// 修改後的 checkAnswer 函數
+function checkAnswer(isCorrect) {
+    if (hasAnswered || gameOver) return;
+    hasAnswered = true; // 立即鎖定回答
+    
+    // 禁用所有按鈕
+    const buttons = document.querySelectorAll('#options button');
+    buttons.forEach(btn => {
+        btn.style.pointerEvents = 'none';
+        btn.style.opacity = '0.6';
+    });
+
+    clearInterval(timer);
+    
+    // 顯示正確答案
+    const correctIndex = window.currentQuestion.correctIndex;
+    buttons[correctIndex].style.cssText = `
+        background: #2ecc71 !important;
+        border: 2px solid #27ae60 !important;
+        transform: scale(1.05);
+    `;
+
+    // 傷害計算與效果
+    const damage = Math.floor((timeLeft / 15) * 13);
+    const targetElement = isCorrect ? 
+        document.getElementById('opponentHealthBar') : 
+        document.getElementById('myHealthBar');
+
+    targetElement.classList.add('damage-flash');
+    navigator.vibrate && navigator.vibrate(200);
+    document.getElementById('gameArea').classList.add('screen-shake');
+    soundEffects.attack.play();
+
+    // 更新血量
+    const updates = {};
+    const playerPath = isHost ? 'player1' : 'player2';
+    const opponentPath = isHost ? 'player2' : 'player1';
+    
+    if (isCorrect) {
+        updates[`${opponentPath}/health`] = firebase.database.ServerValue.increment(-damage);
+    } else {
+        updates[`${playerPath}/health`] = firebase.database.ServerValue.increment(-damage);
+    }
+
+    database.ref('rooms/' + currentRoomId).update(updates, () => {
+        checkGameOver();
+        if (!gameOver) setTimeout(loadNewQuestion, 1000);
+    });
+
+    // 清除動畫
+    setTimeout(() => {
+        targetElement.classList.remove('damage-flash');
+        document.getElementById('gameArea').classList.remove('screen-shake');
+    }, 500);
+}
+
+// 修改後的 startTimer 函數
+function startTimer() {
+    clearInterval(timer);
+    timeLeft = 15;
+    document.getElementById('timer').textContent = `🕒${timeLeft}`;
+    timer = setInterval(() => {
+        timeLeft--;
+        document.getElementById('timer').textContent = `🕒${timeLeft}`;
+        if (timeLeft <= 0 && !hasAnswered) checkAnswer(false);
+    }, 1000);
+}
     
 // 修改 updateHealthDisplay 函數
 function updateHealthDisplay(room) {
