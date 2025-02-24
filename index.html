@@ -625,23 +625,20 @@ function displayQuestion(question) {
 }
 
 function checkAnswer(isCorrect) {
-    // 新增防重複提交檢查 ▼
     if (this.answered) return;
     this.answered = true;
-    
-    // 啟用按鈕 ▼
+
     const buttons = document.querySelectorAll('#options button');
     buttons.forEach(btn => {
         btn.style.pointerEvents = 'auto';
         btn.style.opacity = '1';
     });
 
-    
     if (gameOver) return;
     clearInterval(timer);
-    
-    // 修正後的代碼 ▼
-    setTimeout(() => { // 延遲確保DOM已更新
+
+    // 正確答案高亮顯示（保持不變）
+    setTimeout(() => {
         const buttons = document.querySelectorAll('#options button');
         const correctIndex = window.currentQuestion.correctIndex;
         if (buttons[correctIndex]) {
@@ -653,24 +650,43 @@ function checkAnswer(isCorrect) {
         }
     }, 50);
 
-    // 保持原有傷害計算
+    // 傷害計算
     const damage = Math.floor((timeLeft / 15) * 13);
-      const targetElement = isCorrect ? 
+
+    // ======= 新增刀光動畫效果 ======= 
+    if (isCorrect) {
+        document.getElementById('correctSlash').style.animation = 'none';
+        setTimeout(() => {
+            document.getElementById('correctSlash').style.animation = 'correctSlash 0.6s';
+        }, 10);
+    } else {
+        document.getElementById('damageSlash').style.animation = 'none';
+        setTimeout(() => {
+            document.getElementById('damageSlash').style.animation = 'damageSlash 0.4s';
+        }, 10);
+    }
+
+    // 以下保持原有邏輯
+    const targetElement = isCorrect ? 
         document.getElementById('opponentHealthBar') : 
         document.getElementById('myHealthBar');
 
     targetElement.classList.add('damage-flash');
     setTimeout(() => targetElement.classList.remove('damage-flash'), 300);
     
+    // 裝置震動
     navigator.vibrate = navigator.vibrate || navigator.webkitVibrate || navigator.mozVibrate || navigator.msVibrate;
     if (navigator.vibrate) navigator.vibrate(200);
 
+    // 畫面效果
     document.getElementById('gameArea').classList.add('screen-shake');
     document.querySelectorAll('.health-fill').forEach(bar => bar.classList.add('damage-effect'));
 
+    // 音效
     soundEffects.attack.currentTime = 0;
     soundEffects.attack.play();
 
+    // 數據庫更新
     const updates = {};
     const playerPath = isHost ? 'player1' : 'player2';
     const opponentPath = isHost ? 'player2' : 'player1';
@@ -682,30 +698,15 @@ function checkAnswer(isCorrect) {
     }
     
     database.ref('rooms/' + currentRoomId).update(updates, () => {
-    checkGameOver();
-    if (!gameOver) setTimeout(() => loadNewQuestion(), 700); // 增加400毫秒延遲
-});
+        checkGameOver();
+        if (!gameOver) setTimeout(() => loadNewQuestion(), 700);
+    });
 
+    // 移除畫面效果
     setTimeout(() => {
         document.getElementById('gameArea').classList.remove('screen-shake');
         document.querySelectorAll('.health-fill').forEach(bar => bar.classList.remove('damage-effect'));
     }, 500);
-
-// 在伤害计算后添加以下代码
-if (isCorrect) {
-    // 正确时触发绿色刀光
-    document.getElementById('correctSlash').style.animation = 'none';
-    setTimeout(() => {
-        document.getElementById('correctSlash').style.animation = 'correctSlash 0.6s';
-    }, 10);
-} else {
-    // 错误时触发红色刀光
-    document.getElementById('damageSlash').style.animation = 'none';
-    setTimeout(() => {
-        document.getElementById('damageSlash').style.animation = 'damageSlash 0.4s';
-    }, 10);
-}
-    
 }
 
 function startTimer() {
