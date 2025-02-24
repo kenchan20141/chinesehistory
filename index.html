@@ -473,6 +473,73 @@ function checkAnswer(isCorrect) {
         checkGameOver();
         if (!gameOver) setTimeout(() => loadNewQuestion(), 1000); // 新問題延遲 1 秒
     });
+
+ // 新增防重複提交檢查 ▼
+    if (this.answered) return;
+    this.answered = true;
+    
+    // 啟用按鈕 ▼
+    const buttons = document.querySelectorAll('#options button');
+    buttons.forEach(btn => {
+        btn.style.pointerEvents = 'auto';
+        btn.style.opacity = '1';
+    });
+
+    
+    if (gameOver) return;
+    clearInterval(timer);
+    
+    // 修正後的代碼 ▼
+    setTimeout(() => { // 延遲確保DOM已更新
+        const buttons = document.querySelectorAll('#options button');
+        const correctIndex = window.currentQuestion.correctIndex;
+        if (buttons[correctIndex]) {
+            buttons[correctIndex].style.cssText = `
+                background: #2ecc71 !important;
+                border: 2px solid #27ae60 !important;
+                transform: scale(1.05);
+            `;
+        }
+    }, 50);
+
+    // 保持原有傷害計算
+    const damage = Math.floor((timeLeft / 15) * 13);
+      const targetElement = isCorrect ? 
+        document.getElementById('opponentHealthBar') : 
+        document.getElementById('myHealthBar');
+
+    targetElement.classList.add('damage-flash');
+    setTimeout(() => targetElement.classList.remove('damage-flash'), 300);
+    
+    navigator.vibrate = navigator.vibrate || navigator.webkitVibrate || navigator.mozVibrate || navigator.msVibrate;
+    if (navigator.vibrate) navigator.vibrate(200);
+
+    document.getElementById('gameArea').classList.add('screen-shake');
+    document.querySelectorAll('.health-fill').forEach(bar => bar.classList.add('damage-effect'));
+
+    soundEffects.attack.currentTime = 0;
+    soundEffects.attack.play();
+
+    const updates = {};
+    const playerPath = isHost ? 'player1' : 'player2';
+    const opponentPath = isHost ? 'player2' : 'player1';
+    
+    if (isCorrect) {
+        updates[`${opponentPath}/health`] = firebase.database.ServerValue.increment(-damage);
+    } else {
+        updates[`${playerPath}/health`] = firebase.database.ServerValue.increment(-damage);
+    }
+    
+    database.ref('rooms/' + currentRoomId).update(updates, () => {
+    checkGameOver();
+    if (!gameOver) setTimeout(() => loadNewQuestion(), 700); // 增加400毫秒延遲
+});
+
+    setTimeout(() => {
+        document.getElementById('gameArea').classList.remove('screen-shake');
+        document.querySelectorAll('.health-fill').forEach(bar => bar.classList.remove('damage-effect'));
+    }, 500);
+    
 }
 
     
@@ -660,73 +727,6 @@ function displayQuestion(question) {
     startTimer();
 }
 
-function checkAnswer(isCorrect) {
-    // 新增防重複提交檢查 ▼
-    if (this.answered) return;
-    this.answered = true;
-    
-    // 啟用按鈕 ▼
-    const buttons = document.querySelectorAll('#options button');
-    buttons.forEach(btn => {
-        btn.style.pointerEvents = 'auto';
-        btn.style.opacity = '1';
-    });
-
-    
-    if (gameOver) return;
-    clearInterval(timer);
-    
-    // 修正後的代碼 ▼
-    setTimeout(() => { // 延遲確保DOM已更新
-        const buttons = document.querySelectorAll('#options button');
-        const correctIndex = window.currentQuestion.correctIndex;
-        if (buttons[correctIndex]) {
-            buttons[correctIndex].style.cssText = `
-                background: #2ecc71 !important;
-                border: 2px solid #27ae60 !important;
-                transform: scale(1.05);
-            `;
-        }
-    }, 50);
-
-    // 保持原有傷害計算
-    const damage = Math.floor((timeLeft / 15) * 13);
-      const targetElement = isCorrect ? 
-        document.getElementById('opponentHealthBar') : 
-        document.getElementById('myHealthBar');
-
-    targetElement.classList.add('damage-flash');
-    setTimeout(() => targetElement.classList.remove('damage-flash'), 300);
-    
-    navigator.vibrate = navigator.vibrate || navigator.webkitVibrate || navigator.mozVibrate || navigator.msVibrate;
-    if (navigator.vibrate) navigator.vibrate(200);
-
-    document.getElementById('gameArea').classList.add('screen-shake');
-    document.querySelectorAll('.health-fill').forEach(bar => bar.classList.add('damage-effect'));
-
-    soundEffects.attack.currentTime = 0;
-    soundEffects.attack.play();
-
-    const updates = {};
-    const playerPath = isHost ? 'player1' : 'player2';
-    const opponentPath = isHost ? 'player2' : 'player1';
-    
-    if (isCorrect) {
-        updates[`${opponentPath}/health`] = firebase.database.ServerValue.increment(-damage);
-    } else {
-        updates[`${playerPath}/health`] = firebase.database.ServerValue.increment(-damage);
-    }
-    
-    database.ref('rooms/' + currentRoomId).update(updates, () => {
-    checkGameOver();
-    if (!gameOver) setTimeout(() => loadNewQuestion(), 700); // 增加400毫秒延遲
-});
-
-    setTimeout(() => {
-        document.getElementById('gameArea').classList.remove('screen-shake');
-        document.querySelectorAll('.health-fill').forEach(bar => bar.classList.remove('damage-effect'));
-    }, 500);
-}
 
 function startTimer() {
     clearInterval(timer);
