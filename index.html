@@ -9,7 +9,60 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
     <style>        
-    
+      /* 基本遊戲容器樣式 */
+        .game-container {
+            width: 300px;
+            height: 200px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* 正確答案的動畫效果（綠色刀光） */
+        .correct-animation::before {
+            content: "";
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, rgba(0,255,0,0.3) 25%, transparent 50%);
+            animation: slash 0.5s linear;
+        }
+
+        /* 扣血時的動畫效果（紅色刀光） */
+        .damage-animation::after {
+            content: "";
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(-45deg, rgba(255,0,0,0.3) 25%, transparent 50%);
+            animation: slash 0.5s linear;
+        }
+
+        /* 刀光動畫關鍵幀 */
+        @keyframes slash {
+            0% {
+                transform: rotate(0deg) scale(0);
+            }
+            50% {
+                transform: rotate(180deg) scale(1);
+            }
+            100% {
+                transform: rotate(360deg) scale(0);
+            }
+        }
+
+        /* 玩家區域樣式 */
+        .player {
+            padding: 20px;
+            margin: 10px;
+            border: 2px solid #333;
+        }
+
+
+        
         /* 新增動畫效果 */
 @keyframes damageFlash {
     0% { filter: brightness(1); }
@@ -341,6 +394,15 @@
     </style>
 </head>
 <body>
+       <!-- 遊戲容器 -->
+    <div class="game-container">
+        <!-- 玩家1區域 -->
+        <div class="player" id="player1">
+            <h3>玩家1 血量: <span id="hp1">100</span></h3>
+        </div>
+    </div>
+    
+    
     <button class="music-control" onclick="toggleMusic()">🎵</button>
     
     <div id="roomControl">
@@ -780,84 +842,9 @@ function handleGameEnd(winnerType) {
         window.location.reload();
     }, 5000);
 }
-</script>
-</body>
-</html>
 
 
-
-
-
-
-
-<!DOCTYPE html>
-<html>
-<head>
-    <style>
-        /* 基本遊戲容器樣式 */
-        .game-container {
-            width: 300px;
-            height: 200px;
-            position: relative;
-            overflow: hidden;
-        }
-
-        /* 正確答案的動畫效果（綠色刀光） */
-        .correct-animation::before {
-            content: "";
-            position: absolute;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: linear-gradient(45deg, rgba(0,255,0,0.3) 25%, transparent 50%);
-            animation: slash 0.5s linear;
-        }
-
-        /* 扣血時的動畫效果（紅色刀光） */
-        .damage-animation::after {
-            content: "";
-            position: absolute;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: linear-gradient(-45deg, rgba(255,0,0,0.3) 25%, transparent 50%);
-            animation: slash 0.5s linear;
-        }
-
-        /* 刀光動畫關鍵幀 */
-        @keyframes slash {
-            0% {
-                transform: rotate(0deg) scale(0);
-            }
-            50% {
-                transform: rotate(180deg) scale(1);
-            }
-            100% {
-                transform: rotate(360deg) scale(0);
-            }
-        }
-
-        /* 玩家區域樣式 */
-        .player {
-            padding: 20px;
-            margin: 10px;
-            border: 2px solid #333;
-        }
-    </style>
-</head>
-<body>
-    <!-- 遊戲容器 -->
-    <div class="game-container">
-        <!-- 玩家1區域 -->
-        <div class="player" id="player1">
-            <h3>玩家1 血量: <span id="hp1">100</span></h3>
-        </div>
-    </div>
-
-    <script>
-        // 觸發正確答案動畫的函數
+ // 觸發正確答案動畫的函數
         function playCorrectAnimation() {
             const container = document.querySelector('.game-container');
             
@@ -888,6 +875,11 @@ function handleGameEnd(winnerType) {
             <button onclick="playCorrectAnimation()">測試正確答案</button>
             <button onclick="playDamageAnimation()">測試扣血效果</button>
         `;
-    </script>
+
+
+    
+</script>
 </body>
 </html>
+
+
