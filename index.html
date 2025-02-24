@@ -4,27 +4,12 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     
-    <title>基元文史哲爭霸</title>
+    <title>基元文史爭霸</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
     <style>        
 
-#roomControl {
-    transition: opacity 0.5s ease;
-}
-
-.auto-join-effect {
-    animation: autoJoinPulse 1s ease-out;
-}
-
-@keyframes autoJoinPulse {
-    0% { transform: scale(1); opacity: 1; }
-    50% { transform: scale(1.05); opacity: 0.8; }
-    100% { transform: scale(1); opacity: 1; }
-}
-
-        
 .rematch-buttons {
     margin-top: 30px;
     display: flex;
@@ -533,147 +518,7 @@
 
     
 <script>
-
-    let previousRoomId = null; // 新增全局变量
-
-// 新增共用函数
-function generateRoomCode() {
-    const hash = Math.abs(hashCode(currentRoomId)); // 基于旧房间ID生成哈希
-    return String(hash % 9000 + 1000).padStart(4, '0');
-}
-
-function hashCode(str) {
-    let hash = 0;
-    for (let i = 0; i < str.length; i++) {
-        hash = (hash << 5) - hash + str.charCodeAt(i);
-        hash |= 0;
-    }
-    return hash;
-}
-
-// 修改游戏结束处理
-function handleGameEnd(winnerType) {
-    // ...原有代码...
-
-    // 修改重赛按钮点击处理
-   rematchBtn.onclick = () => {
-    cleanupListeners(); // 新增
-    hardResetGameState(); // 新增
-    
-    const newRoomId = generateNewRoomId();
-    database.ref(`rooms/${previousRoomId}/rematch`) // 使用旧房间号
-           .update({ [isHost ? 'hostCode' : 'clientCode']: newRoomId });
-    
-    // 添加超时保护
-    const timeout = setTimeout(() => {
-        alert('對手無回應');
-        window.location.reload();
-    }, 10000);
-    
-    database.ref(`rooms/${previousRoomId}/rematch`)
-           .on('value', snap => {
-        if(/* 验证通过 */) {
-            clearTimeout(timeout); // 清除超时
-            // 跳转逻辑...
-        }
-    });
-};
-
-// 新增智能重赛逻辑
-function handleAutoRematch() {
-    const newRoomId = generateRoomCode();
-    
-    // 同步写入玩家准备状态
-    const rematchRef = database.ref(`rooms/${currentRoomId}/rematch`);
-    rematchRef.child(isHost ? 'host' : 'client').set(newRoomId);
-
-    // 监听双方状态
-    rematchRef.on('value', snapshot => {
-        const data = snapshot.val();
-        if (!data) return;
-
-        const codes = Object.values(data);
-        if (codes.length === 2 && codes[0] === codes[1]) {
-            performAutoJoin(codes[0]);
-            rematchRef.off(); // 移除监听
-            database.ref(`rooms/${currentRoomId}/rematch`).remove();
-        }
-    });
-}
-
-function cleanupListeners() {
-    const roomRef = database.ref('rooms/' + currentRoomId);
-    roomRef.off(); // 移除所有监听
-    roomRef.child('rematch').off();
-    roomRef.child('currentQuestion').off();
-}
-
-// 在 handleAutoRematch 调用
-cleanupListeners();
-
-function loadNewQuestion() {
-    // 新增验证
-    database.ref('rooms/'+currentRoomId).once('value').then(snap => {
-        const room = snap.val();
-        if (!room.player1 || !room.player2) {
-            console.log('对手尚未加入，延迟加载');
-            setTimeout(loadNewQuestion, 1000);
-            return;
-        }
-        // 原有加载逻辑...
-    });
-}
-
-    
-function generateNewRoomId() {
-    previousRoomId = currentRoomId; // 保存旧房间号
-    return /* 生成算法 */; 
-}
-    
-    function hardResetGameState() {
-    gameOver = false;
-    answered = false;
-    timeLeft = 15;
-    clearInterval(timer);
-    document.getElementById('timer').textContent = '🕒15';
-    document.querySelectorAll('.health-wave, .hit-marker').forEach(e => e.remove());
-}
-    
-function performAutoJoin(roomId) {
-    // 保存状态到本地存储
-    localStorage.setItem('autoRematch', JSON.stringify({
-        roomId: roomId,
-        timestamp: Date.now(),
-        isHost: isHost
-    }));
-
-    // 跳转动画处理
-    document.getElementById('roomControl').style.opacity = '0';
-    setTimeout(() => {
-        window.location.href = window.location.href.split('?')[0];
-    }, 500);
-}
-
-// 初始化时检查自动加入
-document.addEventListener('DOMContentLoaded', () => {
-    const autoData = localStorage.getItem('autoRematch');
-    if (autoData) {
-        const { roomId, timestamp, isHost } = JSON.parse(autoData);
-        
-        // 30秒内有效
-        if (Date.now() - timestamp < 30000) {
-            document.getElementById('roomId').value = roomId;
-            document.getElementById('roomControl').classList.add('auto-join-effect');
-            
-            // 自动触发对应操作
-            setTimeout(() => {
-                isHost ? createRoom() : joinRoom();
-                localStorage.removeItem('autoRematch');
-            }, 300);
-        }
-    }
-});
-    
+    let isRematching = false;
 let answered = false; // 用於追蹤當前問題是否已回答
 
 function displayQuestion(question) {
@@ -911,7 +756,7 @@ function toggleMusic() {
 }
 
 function createRoom() {
-    currentRoomId = document.getElementById('roomId').value;
+    currentRoomId = document.getElementById('roomId').value || Math.floor(1000 + Math.random() * 9000);
     isHost = true;
     document.getElementById('roomControl').style.display = 'none';
     document.getElementById('waitingArea').style.display = 'block';
@@ -942,8 +787,6 @@ function joinRoom() {
 }
 
 function listenToRoomChanges() {
-    // 确保每次监听前清除旧监听
-cleanupListeners(); 
     // 先移除旧的监听器
     database.ref('rooms/' + currentRoomId).off('value');
     const roomRef = database.ref('rooms/' + currentRoomId);
@@ -976,12 +819,27 @@ function updateHealthDisplay(room) {
 }
 
 function startGame(room) {
+  // 檢查雙方玩家存在
+  if (!room.player1 || !room.player2) {
+    console.log('等待對手加入...');
+    return;
+  }
+
+  // 重置本地計時器
+  clearInterval(timer);
+  timeLeft = 15;
+  
+  // 強制顯示遊戲區域
+  document.getElementById('gameArea').style.display = 'block';
+  
+  // 延遲載入新題目避免競態
+  setTimeout(() => {
     if (!room.currentQuestion) {
-        loadNewQuestion();
+      loadNewQuestion();
     } else {
-        displayQuestion(room.currentQuestion);
-        startTimer();
+      displayQuestion(room.currentQuestion);
     }
+  }, 500);
 }
 
 function shuffleArray(array) {
@@ -1123,6 +981,38 @@ const buttonContainer = document.createElement('div');
 }
 
 function handleRematchRequest() {
+    if (isRematching) return;
+  isRematching = true;
+    // 強制移除勝利界面元素
+  const victoryOverlay = document.querySelector('.victory-overlay');
+  victoryOverlay.style.display = 'none';
+  const buttons = victoryOverlay.querySelector('.rematch-buttons');
+  if (buttons) buttons.remove();
+
+  // 原子性重置數據庫狀態
+  const updates = {
+    'player1/health': 100,
+    'player2/health': 100,
+    gameEnded: false,
+    currentQuestion: null,
+    winner: null,
+    gameStarted: true  // 確保遊戲標記為已開始
+  };
+
+  database.ref('rooms/' + currentRoomId).update(updates, (error) => {
+         isRematching = false; // 重置標記
+    if (error) return;
+    
+    // 本地強制重置
+    gameOver = false;
+    answered = false;
+    
+    // 移除舊問題顯示
+    document.getElementById('question').textContent = '';
+    document.getElementById('options').innerHTML = '';
+    
+    // 重新綁定監聽器
+    listenToRoomChanges();
      // 在函数开头新增清理代码
     const rematchPath = isHost ? 'clientRematch' : 'hostRematch';
     database.ref('rooms/' + currentRoomId + '/' + rematchPath).off();
