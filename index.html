@@ -430,6 +430,20 @@
     margin-top: 3rem;
 }
 
+        .rematch-waiting {
+    margin-top: 2rem;
+    text-align: center;
+}
+
+.waiting-text {
+    font-size: 2rem;
+    color: #d4af37;
+    text-shadow: 0 0 10px rgba(212,175,55,0.5);
+    margin-bottom: 1.5rem;
+}
+
+
+
 .menu-btn {
     font-size: 2.5rem !important;
     padding: 1.5rem 3rem !important;
@@ -519,10 +533,17 @@
         <button id="rematchBtn" class="menu-btn">⚔️ 再戰江湖</button>
         <button id="mainMenuBtn" class="menu-btn">🏯 歸隱山林</button>
     </div>
+                <div class="rematch-waiting" style="display:none;">
+    <div class="waiting-text">⚔️ 等待對方應戰...</div>
+    <button onclick="cancelRematch()" class="menu-btn">🚫 取消約戰</button>
+</div>
 </div>
 
     
 <script>
+let isRematchInitiator = false;
+let rematchTimeout = null;
+    
 let answered = false; // 用於追蹤當前問題是否已回答
 
 function displayQuestion(question) {
@@ -805,6 +826,7 @@ function listenToRoomChanges() {
             document.getElementById('waitingArea').style.display = 'none';
             document.getElementById('gameArea').style.display = 'block';
             startGame(room);
+            listenToRematch(); // 開始監聽重賽請求
         }
         updateHealthDisplay(room);
     });
@@ -950,13 +972,84 @@ function handleGameEnd(winnerType) {
 
    // 綁定按鈕事件
     document.getElementById('rematchBtn').onclick = () => {
-        database.ref('rooms/' + currentRoomId).remove().then(() => {
-            currentRoomId = null;
-            gameOver = false;
-            document.querySelector('.victory-overlay').style.display = 'none';
-            document.getElementById('roomControl').style.display = 'block';
-            createRoom(); // 自動建立新房間
-        });
+    // 隱藏按鈕顯示等待
+    document.querySelector('.restart-menu').style.display = 'none';
+    document.querySelector('.rematch-waiting').style.display = 'block';
+    
+    // 建立重賽請求
+    const rematchRef = database.ref('rematchRequests/' + currentRoomId);
+    isRematchInitiator = true;
+    
+    // 寫入請求
+    rematchRef.set({
+        player1: isHost ? 'host' : 'guest',
+        player2: null,
+        createdAt: firebase.database.ServerValue.TIMESTAMP
+    });
+    
+    // 監聽對方響應
+    rematchRef.on('value', (snapshot) => {
+        const data = snapshot.val();
+        if (data && data.player2) {
+            startRematch(data.newRoomId);
+        }
+    });
+    
+    // 設定超時
+    rematchTimeout = setTimeout(() => {
+        rematchRef.off();
+        rematchRef.remove();
+        alert('對方未回應，自動返回主頁');
+        window.location.reload();
+    }, 30000);
+};
+
+// 新增取消約戰函數 ▼
+function cancelRematch() {
+    if (isRematchInitiator) {
+        database.ref('rematchRequests/' + currentRoomId).remove();
+    }
+    window.location.reload();
+}
+
+// 新增處理對方約戰的監聽 ▼ (加在listenToRoomChanges函數下方)
+function listenToRematch() {
+    database.ref('rematchRequests').orderByChild('player1').equalTo(isHost ? 'guest' : 'host').on('child_added', (snapshot) => {
+        const request = snapshot.val();
+        if (!request.player2) {
+            // 同意約戰
+            database.ref('rematchRequests/' + snapshot.key).update({
+                player2: isHost ? 'host' : 'guest',
+                newRoomId: generateNewRoomId()
+            });
+        }
+    });
+}
+
+// 新增生成新房間ID的函數 ▼
+function generateNewRoomId() {
+    return Math.floor(1000 + Math.random() * 9000).toString();
+}
+
+// 新增開始重賽的函數 ▼
+function startRematch(newRoomId) {
+    // 清除舊房間
+    database.ref('rooms/' + currentRoomId).remove();
+    
+    // 重置狀態
+    gameOver = false;
+    document.querySelector('.victory-overlay').style.display = 'none';
+    
+    if (isRematchInitiator) {
+        // 發起方加入新房間
+        currentRoomId = newRoomId;
+        isHost = false; // 發起方變為玩家2
+        joinRoom();
+    } else {
+        // 應戰方建立新房間
+        currentRoomId = newRoomId;
+        isHost = true;
+        createRoom();
     };
 
     document.getElementById('mainMenuBtn').onclick = () => {
