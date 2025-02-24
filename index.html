@@ -1008,17 +1008,9 @@ function startNewGameSession() {
     // 重置本地状态
     gameOver = false;
     answered = false;
-     timeLeft = 15;
-     document.getElementById('gameArea').style.display = 'block';
-        document.querySelector('.victory-overlay').style.display = 'none';
-        document.querySelectorAll('#options button').forEach(btn => {
-            btn.disabled = false;
-            btn.style.cssText = ''; // 清除殘留樣式
-        });
-
-     // 新增延遲確保資料庫更新
-        setTimeout(() => listenToRoomChanges(), 500);
-    });
+    document.getElementById('gameArea').style.display = 'block'; // 确保游戏区域显示
+    document.querySelector('.victory-overlay').style.display = 'none';
+    document.querySelectorAll('#options button').forEach(btn => btn.disabled = false);
 
     // 强制重新绑定监听器
     listenToRoomChanges(); 
