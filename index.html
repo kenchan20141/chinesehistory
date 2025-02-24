@@ -4,12 +4,27 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     
-    <title>基元文史哲爭霸</title>
+    <title>基元文史爭霸</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
     <style>        
 
+#roomControl {
+    transition: opacity 0.5s ease;
+}
+
+.auto-join-effect {
+    animation: autoJoinPulse 1s ease-out;
+}
+
+@keyframes autoJoinPulse {
+    0% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.05); opacity: 0.8; }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+        
 .rematch-buttons {
     margin-top: 30px;
     display: flex;
@@ -518,6 +533,90 @@
 
     
 <script>
+
+// 新增共用函数
+function generateRoomCode() {
+    const hash = Math.abs(hashCode(currentRoomId)); // 基于旧房间ID生成哈希
+    return String(hash % 9000 + 1000).padStart(4, '0');
+}
+
+function hashCode(str) {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+        hash = (hash << 5) - hash + str.charCodeAt(i);
+        hash |= 0;
+    }
+    return hash;
+}
+
+// 修改游戏结束处理
+function handleGameEnd(winnerType) {
+    // ...原有代码...
+
+    // 修改重赛按钮点击处理
+    rematchBtn.onclick = () => {
+        victoryOverlay.style.opacity = '0.5'; // 半透明效果
+        handleAutoRematch();
+    };
+}
+
+// 新增智能重赛逻辑
+function handleAutoRematch() {
+    const newRoomId = generateRoomCode();
+    
+    // 同步写入玩家准备状态
+    const rematchRef = database.ref(`rooms/${currentRoomId}/rematch`);
+    rematchRef.child(isHost ? 'host' : 'client').set(newRoomId);
+
+    // 监听双方状态
+    rematchRef.on('value', snapshot => {
+        const data = snapshot.val();
+        if (!data) return;
+
+        const codes = Object.values(data);
+        if (codes.length === 2 && codes[0] === codes[1]) {
+            performAutoJoin(codes[0]);
+            rematchRef.off(); // 移除监听
+            database.ref(`rooms/${currentRoomId}/rematch`).remove();
+        }
+    });
+}
+
+function performAutoJoin(roomId) {
+    // 保存状态到本地存储
+    localStorage.setItem('autoRematch', JSON.stringify({
+        roomId: roomId,
+        timestamp: Date.now(),
+        isHost: isHost
+    }));
+
+    // 跳转动画处理
+    document.getElementById('roomControl').style.opacity = '0';
+    setTimeout(() => {
+        window.location.href = window.location.href.split('?')[0];
+    }, 500);
+}
+
+// 初始化时检查自动加入
+document.addEventListener('DOMContentLoaded', () => {
+    const autoData = localStorage.getItem('autoRematch');
+    if (autoData) {
+        const { roomId, timestamp, isHost } = JSON.parse(autoData);
+        
+        // 30秒内有效
+        if (Date.now() - timestamp < 30000) {
+            document.getElementById('roomId').value = roomId;
+            document.getElementById('roomControl').classList.add('auto-join-effect');
+            
+            // 自动触发对应操作
+            setTimeout(() => {
+                isHost ? createRoom() : joinRoom();
+                localStorage.removeItem('autoRematch');
+            }, 300);
+        }
+    }
+});
+    
 let answered = false; // 用於追蹤當前問題是否已回答
 
 function displayQuestion(question) {
@@ -755,7 +854,7 @@ function toggleMusic() {
 }
 
 function createRoom() {
-    currentRoomId = document.getElementById('roomId').value || Math.floor(1000 + Math.random() * 9000);
+    currentRoomId = document.getElementById('roomId').value;
     isHost = true;
     document.getElementById('roomControl').style.display = 'none';
     document.getElementById('waitingArea').style.display = 'block';
