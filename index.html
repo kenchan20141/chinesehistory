@@ -552,25 +552,7 @@
     top: 50%; /* 初始垂直居中 */
 }
 
-/* 选中勾号 */
-.selected-tick {
-    position: absolute;
-    top: -10px;
-    right: -10px;
-    width: 30px;
-    height: 30px;
-    background: #2ecc71;
-    border-radius: 50%;
-    display: none;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.5em;
-    box-shadow: 0 0 10px rgba(46,204,113,0.5);
-}
 
-.class-card.selected .selected-tick {
-    display: flex; /* 显示勾号 */
-}
         
     </style>
 </head>
@@ -593,7 +575,6 @@
     <div class="class-grid">
         <!-- 战士 -->
         <div class="class-card" onclick="selectClass('warrior')">
-             <div class="selected-tick">✓</div> <!-- 新增此行 -->
             <img src="https://example.com/warrior.png" class="class-icon">
             <h3>霸刀門</h3>
             <p>攻擊+30% 防禦-10%</p>
@@ -603,7 +584,6 @@
         </div>
         <!-- 坦克 -->
         <div class="class-card" onclick="selectClass('tank')">
-             <div class="selected-tick">✓</div> <!-- 新增此行 -->
             <img src="https://example.com/tank.png" class="class-icon">
             <h3>鐵甲宗</h3>
             <p>防禦+30% 攻擊-10%</p>
@@ -613,7 +593,6 @@
         </div>
         <!-- 刺客 -->
         <div class="class-card" onclick="selectClass('assassin')">
-             <div class="selected-tick">✓</div> <!-- 新增此行 -->
             <img src="https://example.com/assassin.png" class="class-icon">
             <h3>影流教</h3>
             <p>閃避+20% 防禦-10%</p>
@@ -623,7 +602,6 @@
         </div>
         <!-- 法师 -->
         <div class="class-card" onclick="selectClass('mage')">
-             <div class="selected-tick">✓</div> <!-- 新增此行 -->
             <img src="https://example.com/mage.png" class="class-icon">
             <h3>玄天閣</h3>
             <p>技能+30% 氣血-10%</p>
@@ -707,11 +685,10 @@ function selectClass(className) {
         <p>等待對手選擇流派...</p>
     `;
 
-  const selectedCard = document.querySelector(`.class-card[onclick="selectClass('${className}')"]`);
-selectedCard.classList.add('selected'); // 添加selected类
-document.querySelectorAll('.class-card').forEach(card => {
-    if(card !== selectedCard) card.classList.remove('selected');
-});
+     // 添加确认反馈
+    const selectedCard = document.querySelector(`.class-card[onclick="selectClass('${className}')"]`);
+    selectedCard.classList.add('selected-confirm');
+    setTimeout(() => selectedCard.classList.remove('selected-confirm'), 500);
 
     // 显示确认信息
     document.getElementById('selectedClassInfo').innerHTML = `
