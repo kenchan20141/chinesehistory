@@ -1,10 +1,12 @@
+
+
 <!DOCTYPE html>
 <html>
 <head>
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     
-    <title>基元中國史爭霸</title>
+    <title>基元中史爭霸</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
@@ -583,17 +585,7 @@
   animation: dodgeFade 1s ease-out;
   pointer-events: none;
 
-        /* 新增恢复提示动画 */
-@keyframes healFade {
-  0% { opacity: 0; transform: translate(-50%,-50%) scale(0.8); }
-  50% { opacity: 1; transform: translate(-50%,-50%) scale(1.1); }
-  100% { opacity: 0; transform: translate(-50%,-50%) scale(0.5); }
-}
-
-#healText {
-  animation: healFade 1s ease-out;
-  pointer-events: none;
-}
+        
         
     </style>
 </head>
@@ -809,35 +801,6 @@ else if(playerClass.type === 'tank' && !isCorrect) {
 if(effectElement.className) {
     document.body.appendChild(effectElement);
     setTimeout(() => effectElement.remove(), 1000);
-}
-
-    // 新增铁甲宗恢复逻辑 ▼▼▼
-if (playerClass.type === 'tank') {
-    // 获取当前血量
-    const currentHealth = isHost ? room.player1.health : room.player2.health;
-    // 计算恢复量（不超过100）
-    const healAmount = Math.min(Math.floor(currentHealth * 0.02), 100 - currentHealth);
-    
-    if(healAmount > 0) {
-        // 更新数据库
-        const playerPath = isHost ? 'player1/health' : 'player2/health';
-        database.ref('rooms/' + currentRoomId).update({
-            [playerPath]: firebase.database.ServerValue.increment(healAmount)
-        });
-
-        // 显示恢复提示
-        const healDisplay = document.getElementById('healText');
-        healDisplay.style.display = 'block';
-        healDisplay.textContent = `+${healAmount}`;
-        setTimeout(() => healDisplay.style.display = 'none', 1000);
-
-        // 添加绿色特效
-        const myHealthBar = document.getElementById('myHealthBar');
-        myHealthBar.style.background = '#2ecc71';
-        setTimeout(() => {
-            myHealthBar.style.background = 'linear-gradient(90deg, #27ae60 0%, #2ecc71 100%)';
-        }, 300);
-    }
 }
     
     if (answered || gameOver) return;
@@ -1448,10 +1411,6 @@ function startNewGameSession() {
     });
 }
 </script>
-
-<!-- 新增恢复提示 -->
-<div id="healText" style="display:none; position:fixed; top:60%; left:50%; transform:translate(-50%,-50%); font-size:2rem; color:#00ff00; text-shadow:0 0 10px rgba(0,255,0,0.5);">恢復2%氣血</div>
-    
 </body>
 
 <div id="dodgeText" style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); font-size:3rem; color:#00ff00; text-shadow:0 0 10px rgba(0,255,0,0.5);">閃避成功！</div>
