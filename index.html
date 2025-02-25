@@ -4,7 +4,7 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     
-    <title>基元中史爭霸</title>
+    <title>基元文史爭霸</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
@@ -150,6 +150,21 @@
 
 /* 己方血條定位 */
 #myHealthContainer {
+
+<!-- 敵方血條 -->
+<div id="enemyHealthContainer">
+    <div class="class-display">
+        <img id="enemyClassIcon" src="">
+        <span id="enemyClassName"></span>
+    </div>
+        
+<div id="myHealthContainer">
+    <div class="class-display">
+        <img id="myClassIcon" src="">
+        <span id="myClassName"></span>
+    </div>
+
+        
     position: absolute;
     bottom: 80px; /* 根據答案區高度調整 */
     left: 1rem;
@@ -452,6 +467,68 @@
 }
 
 
+        /* 職業選擇界面 */
+#classSelection {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(45, 41, 38, 0.95);
+    padding: 2rem;
+    border: 3px solid var(--gold);
+    border-radius: 15px;
+    z-index: 1000;
+    max-width: 90%;
+}
+
+.class-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+    margin-top: 1.5rem;
+}
+
+.class-card {
+    background: rgba(0,0,0,0.7);
+    padding: 1rem;
+    border-radius: 10px;
+    text-align: center;
+    transition: transform 0.3s;
+}
+
+.class-card:hover {
+    transform: translateY(-5px);
+}
+
+.class-icon {
+    width: 80px;
+    height: 80px;
+    margin-bottom: 0.5rem;
+    border: 2px solid var(--gold);
+    border-radius: 50%;
+}
+
+.class-card button {
+    margin-top: 0.5rem;
+    font-size: 1rem;
+    padding: 0.5rem 1rem;
+}
+
+/* 遊戲中的職業顯示 */
+.class-display {
+    position: absolute;
+    top: -25px;
+    left: 0;
+    font-size: 0.9rem;
+    color: var(--gold);
+}
+
+.class-display img {
+    width: 30px;
+    vertical-align: middle;
+    margin-right: 5px;
+}
+
         
     </style>
 </head>
@@ -459,6 +536,42 @@
     <button class="music-control" onclick="toggleMusic()">🎵</button>
     
     <div id="roomControl">
+
+<!-- 新增職業選擇界面 -->
+<div id="classSelection" style="display:none;">
+    <h2 style="color:var(--gold);">選擇你的武道流派</h2>
+    <div class="class-grid">
+        <!-- 劍客 -->
+        <div class="class-card" data-class="swordsman">
+            <img src="https://example.com/swordsman.png" class="class-icon">
+            <h3>劍宗傳人</h3>
+            <p>⚔ 攻擊+30% ✨ 10%機率連擊</p>
+            <button onclick="selectClass('swordsman')">御劍而行</button>
+        </div>
+        <!-- 鐵衛 -->
+        <div class="class-card" data-class="guardian">
+            <img src="https://example.com/guardian.png" class="class-icon">
+            <h3>鐵壁衛</h3>
+            <p>🛡 防禦+40% ❤ 傷害減免20%</p>
+            <button onclick="selectClass('guardian')">不動如山</button>
+        </div>
+        <!-- 影襲 -->
+        <div class="class-card" data-class="assassin">
+            <img src="https://example.com/assassin.png" class="class-icon">
+            <h3>影襲者</h3>
+            <p>👟 閃避率+25% ☠ 暴擊傷害+50%</p>
+            <button onclick="selectClass('assassin')">暗夜潛行</button>
+        </div>
+        <!-- 醫仙 -->
+        <div class="class-card" data-class="healer">
+            <img src="https://example.com/healer.png" class="class-icon">
+            <h3>百草醫仙</h3>
+            <p>🌿 每秒回復1%血量 💫 治療效果+30%</p>
+            <button onclick="selectClass('healer')">妙手回春</button>
+        </div>
+    </div>
+</div>
+        
         <h1 style="font-size:2.5rem; color:var(--gold); margin-bottom:1.5rem;">基元中史爭霸</h1>
         <input type="text" id="roomId" placeholder="輸入四位戰場編號">
         <div style="margin:1.5rem 0;">
@@ -555,6 +668,28 @@ function checkAnswer(isCorrect) {
     // 樣式處理
     const buttons = document.querySelectorAll('#options button');
     const correctIndex = window.currentQuestion.correctIndex;
+
+
+     // 修改傷害計算部分
+    let baseDamage = Math.floor((timeLeft / 15) * 13);
+    const myClass = isHost ? currentRoomData.player1.class : currentRoomData.player2.class;
+    const enemyClass = isHost ? currentRoomData.player2.class : currentRoomData.player1.class;
+
+    // 應用攻擊方職業加成
+    if(isCorrect) {
+        baseDamage *= classData[myClass].attack;
+        
+        // 處理特殊技能
+        if(Math.random() < classData[myClass].special.chance) {
+            handleSpecialSkill(myClass);
+        }
+    } else {
+        // 處理防禦方閃避
+        if(Math.random() < classData[enemyClass].dodge) {
+            baseDamage = 0;
+            showDodgeEffect();
+        }
+    }
     
     // 顯示正確答案樣式
     buttons.forEach((btn, index) => {
@@ -703,6 +838,16 @@ function updateHealthDisplay(room) {
         myHealthBar.style.background = 'linear-gradient(90deg, var(--main-red) 0%, #ff6b6b 100%)';
         document.getElementById('myHealth').textContent = `${myHealth}%`;
     }
+
+        // 新增職業顯示
+    const myClass = isHost ? room.player1.class : room.player2.class;
+    const enemyClass = isHost ? room.player2.class : room.player1.class;
+    
+    document.getElementById('myClassIcon').src = `https://example.com/${myClass}.png`;
+    document.getElementById('enemyClassIcon').src = `https://example.com/${enemyClass}.png`;
+    document.getElementById('myClassName').textContent = myClass;
+    document.getElementById('enemyClassName').textContent = enemyClass;
+
 }
     
 
@@ -723,6 +868,38 @@ const firebaseConfig = {
 };
 
 firebase.initializeApp(firebaseConfig);
+    // 新增職業數據
+const classData = {
+    swordsman: {
+        attack: 1.3,
+        defense: 0.9,
+        dodge: 0,
+        heal: 0,
+        special: { chance: 0.1, effect: 'doubleAttack' }
+    },
+    guardian: {
+        attack: 0.9,
+        defense: 1.4,
+        dodge: 0,
+        heal: 0,
+        special: { chance: 0.2, effect: 'damageReduce' }
+    },
+    assassin: {
+        attack: 1.0,
+        defense: 0.8,
+        dodge: 0.25,
+        heal: 0,
+        special: { chance: 0.15, effect: 'critical' }
+    },
+    healer: {
+        attack: 0.8,
+        defense: 1.0,
+        dodge: 0.1,
+        heal: 1.3,
+        special: { chance: 0.1, effect: 'hot' }
+    }
+};
+    
 const database = firebase.database();
 
 let currentRoomId = null;
@@ -759,7 +936,7 @@ function createRoom() {
     currentRoomId = document.getElementById('roomId').value || Math.floor(1000 + Math.random() * 9000);
     isHost = true;
     document.getElementById('roomControl').style.display = 'none';
-    document.getElementById('waitingArea').style.display = 'block';
+    document.getElementById('classSelection').style.display = 'block'; // 新增這行
     document.getElementById('displayRoomId').textContent = currentRoomId;
 
     database.ref('rooms/' + currentRoomId).set({
@@ -783,7 +960,22 @@ function joinRoom() {
         return room;
     });
     document.getElementById('roomControl').style.display = 'none';
+    document.getElementById('classSelection').style.display = 'block'; // 新增這行
     listenToRoomChanges();
+}
+
+    function selectClass(className) {
+    const playerPath = isHost ? 'player1' : 'player2';
+    database.ref(`rooms/${currentRoomId}/${playerPath}`).update({
+        class: className,
+        health: 100,
+        ready: true
+    });
+    
+    // 顯示選擇確認
+    document.querySelectorAll('.class-card').forEach(card => {
+        card.style.opacity = card.dataset.class === className ? 1 : 0.5;
+    });
 }
 
 function listenToRoomChanges() {
@@ -799,6 +991,11 @@ function listenToRoomChanges() {
             return;
         }
 
+if (room.player1?.ready && room.player2?.ready) {
+            document.getElementById('classSelection').style.display = 'none';
+            startGame(room);
+        }
+        
         if (room.gameStarted && !gameOver) {
             document.getElementById('waitingArea').style.display = 'none';
             document.getElementById('gameArea').style.display = 'block';
