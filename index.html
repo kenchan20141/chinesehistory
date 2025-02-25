@@ -4,7 +4,7 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     
-    <title>基元文史爭霸</title>
+    <title>基元中史爭霸</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
@@ -707,10 +707,11 @@ function selectClass(className) {
         <p>等待對手選擇流派...</p>
     `;
 
-     // 添加确认反馈
-    const selectedCard = document.querySelector(`.class-card[onclick="selectClass('${className}')"]`);
-    selectedCard.classList.add('selected-confirm');
-    setTimeout(() => selectedCard.classList.remove('selected-confirm'), 500);
+  const selectedCard = document.querySelector(`.class-card[onclick="selectClass('${className}')"]`);
+selectedCard.classList.add('selected'); // 添加selected类
+document.querySelectorAll('.class-card').forEach(card => {
+    if(card !== selectedCard) card.classList.remove('selected');
+});
 
     // 显示确认信息
     document.getElementById('selectedClassInfo').innerHTML = `
