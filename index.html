@@ -4,7 +4,7 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     
-    <title>基元中史爭霸</title>
+    <title>基元中國史爭霸</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
@@ -714,16 +714,19 @@ event.currentTarget.classList.add('selected');
     dodge: 0, 
     skill: 'counter',
     counterChance: 0.3 // 新增30%反击概率
-};
-// 在 selectClass 函数结尾添加：
+  }
+
 setTimeout(() => {
   const optionsDiv = document.getElementById('options');
   if (optionsDiv) {
     optionsDiv.style.pointerEvents = 'auto'; // 确保选项按钮可点击
   }
 }, 500);
-             
+        
 };
+
+             
+
 
     
     playerClass = classData[className];
