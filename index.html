@@ -4,7 +4,7 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     
-    <title>基元文史爭霸</title>
+    <title>基元中史爭霸</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
@@ -452,51 +452,6 @@
 }
 
 
-        /* 新增职业选择样式 */
-#roleSelection {
-    display: none;
-    text-align: center;
-    padding: 2rem;
-}
-
-.role-option {
-    display: inline-block;
-    width: 200px;
-    margin: 1rem;
-    padding: 1rem;
-    background: rgba(0,0,0,0.7);
-    border: 2px solid var(--gold);
-    border-radius: 10px;
-    cursor: pointer;
-    transition: transform 0.3s;
-}
-
-.role-option:hover {
-    transform: scale(1.05);
-}
-
-.role-option img {
-    width: 150px;
-    height: 150px;
-    object-fit: cover;
-    border-radius: 50%;
-    margin-bottom: 1rem;
-}
-
-.role-stats {
-    font-size: 1.1rem;
-    color: #d4af37;
-}
-
-.selected-role {
-    position: absolute;
-    top: 10px;
-    width: 50px;
-    height: 50px;
-    border-radius: 50%;
-    border: 2px solid var(--gold);
-}
-
         
     </style>
 </head>
@@ -509,36 +464,8 @@
         <div style="margin:1.5rem 0;">
             <button onclick="createRoom()">⚔️ 開闢戰場</button>
             <button onclick="joinRoom()">🛡️ 加入征伐</button>
-
-        </div>
-
-        <!-- 新增职业选择界面 -->
-<div id="roleSelection">
-    <h2>選擇你的武道傳承</h2>
-    <div class="roles-container">
-        <div class="role-option" onclick="selectRole('swordsman')">
-            <img src="https://example.com/swordsman.png" alt="劍客">
-            <h3>⚔️ 凌雲劍客</h3>
-            <div class="role-stats">攻擊+30% 防禦-10%<br>技能：劍氣縱橫</div>
-        </div>
-        <div class="role-option" onclick="selectRole('shieldbearer')">
-            <img src="https://example.com/shieldbearer.png" alt="鐵衛">
-            <h3>🛡️ 玄武鐵衛</h3>
-            <div class="role-stats">防禦+30% 攻擊-10%<br>技能：銅牆鐵壁</div>
-        </div>
-        <div class="role-option" onclick="selectRole('monk')">
-            <img src="https://example.com/monk.png" alt="禪師">
-            <h3>🧘 靈虛禪師</h3>
-            <div class="role-stats">閃避+20%<br>技能：金鐘護體</div>
-        </div>
-        <div class="role-option" onclick="selectRole('archer')">
-            <img src="https://example.com/archer.png" alt="神射">
-            <h3>🏹 穿雲神射</h3>
-            <div class="role-stats">暴擊+15%<br>技能：百步穿楊</div>
         </div>
     </div>
-</div>
-
 
    <div id="waitingArea" style="
     text-align: center;
@@ -624,29 +551,6 @@ function checkAnswer(isCorrect) {
     answered = true;
 
     clearInterval(timer);
-
-// 修改伤害计算部分
-    const baseDamage = Math.floor((timeLeft / 15) * 13);
-    let damage = baseDamage;
-    
-    // 应用角色能力
-    const myRole = isHost ? roles[room.player1.role] : roles[room.player2.role];
-    const enemyRole = isHost ? roles[room.player2.role] : roles[room.player1.role];
-    
-    if(isCorrect) {
-        damage = Math.floor(damage * myRole.atk * (1 - enemyRole.def));
-        // 处理暴击
-        if(myRole.crit && Math.random() < myRole.crit) {
-            damage *= 2;
-            showCriticalEffect();
-        }
-    } else {
-        // 处理闪避
-        if(Math.random() < enemyRole.dodge) {
-            damage = 0;
-            showDodgeEffect();
-        }
-    }
     
     // 樣式處理
     const buttons = document.querySelectorAll('#options button');
@@ -807,22 +711,6 @@ function stopDangerAlert() {
     soundEffects.lowHealth.pause();
 }
 
-    // 新增职业数据
-const roles = {
-    swordsman: { atk: 1.3, def: 0.9, dodge: 0, skill: '劍氣縱橫' },
-    shieldbearer: { atk: 0.9, def: 1.3, dodge: 0, skill: '銅牆鐵壁' },
-    monk: { atk: 1.0, def: 1.0, dodge: 0.2, skill: '金鐘護體' },
-    archer: { atk: 1.15, def: 1.0, dodge: 0, skill: '百步穿楊', crit: 0.15 }
-};
-let selectedRole = null;
-// 新增职业数据
-const roles = {
-    swordsman: { atk: 1.3, def: 0.9, dodge: 0, skill: '劍氣縱橫' },
-    shieldbearer: { atk: 0.9, def: 1.3, dodge: 0, skill: '銅牆鐵壁' },
-    monk: { atk: 1.0, def: 1.0, dodge: 0.2, skill: '金鐘護體' },
-    archer: { atk: 1.15, def: 1.0, dodge: 0, skill: '百步穿楊', crit: 0.15 }
-};
-let selectedRole = null;
     
 const firebaseConfig = {
   apiKey: "AIzaSyBi9IEquAN1JPQTA2FVylSheVCtuAG8ZoY",
@@ -875,61 +763,35 @@ function createRoom() {
     document.getElementById('displayRoomId').textContent = currentRoomId;
 
     database.ref('rooms/' + currentRoomId).set({
-        player1: { health: 100, role: null }, // 添加role字段
+        player1: { health: 100 },
         player2: null,
         currentQuestion: null,
         gameStarted: false,
         gameEnded: false,
         winner: null
-       });
-    showRoleSelection(); // 新增这行
+    });
+    listenToRoomChanges();
 }
 
 function joinRoom() {
     currentRoomId = document.getElementById('roomId').value;
     database.ref('rooms/' + currentRoomId).transaction(room => {
-         if (room && !room.gameStarted) {
-            room.player2 = { health: 100, role: null }; // 添加role字段
+        if (room && !room.gameStarted) {
+            room.player2 = { health: 100 };
             room.gameStarted = true;
         }
         return room;
-       });
-    showRoleSelection(); // 新增这行
- }
-  
-    
-// 新增显示职业选择函数
-function showRoleSelection() {
+    });
     document.getElementById('roomControl').style.display = 'none';
-    document.getElementById('roleSelection').style.display = 'block';
+    listenToRoomChanges();
 }
 
-function selectRole(roleType) {
-    selectedRole = roleType;
-    // 更新数据库
-    const playerPath = isHost ? 'player1' : 'player2';
-    database.ref(`rooms/${currentRoomId}/${playerPath}/role`).set(roleType);
-    
-    // 显示选择效果
-    document.querySelectorAll('.role-option').forEach(opt => 
-        opt.style.border = roleType === opt.dataset.role ? '3px solid #d4af37' : ''
-    );
-}
-    
-    
 function listenToRoomChanges() {
     // 先移除旧的监听器
     database.ref('rooms/' + currentRoomId).off('value');
     const roomRef = database.ref('rooms/' + currentRoomId);
     roomRef.on('value', (snapshot) => {
         const room = snapshot.val();
-
- // 检查双方是否都选择了角色
-        if (room.player1?.role && room.player2?.role) {
-            document.getElementById('roleSelection').style.display = 'none';
-            startGame(room);
-        }
-        
         if (!room) return;
 
         if (room.gameEnded) {
