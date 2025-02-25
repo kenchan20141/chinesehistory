@@ -4,7 +4,7 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     
-    <title>基元文史爭霸</title>
+    <title>基元中史爭霸</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
@@ -784,52 +784,26 @@ function displayQuestion(question) {
 }
 
 function checkAnswer(isCorrect) {
-
-// 在伤害计算后添加：
-let effectElement = document.createElement('div');
-if(playerClass.type === 'warrior' && isCorrect) {
-    effectElement.className = 'sword-animation';
-    effectElement.style.background = 'linear-gradient(90deg, transparent 0%, rgba(255,215,0,0.7) 50%, transparent 100%)';
-    effectElement.style.width = '150px';
-    effectElement.style.height = '30px';
-    effectElement.style.position = 'fixed';
-    effectElement.style.top = '50%';
-} 
-else if(playerClass.type === 'tank' && !isCorrect) {
-    effectElement.className = 'shield-animation';
-    effectElement.innerHTML = '🛡️';
-    effectElement.style.fontSize = '4rem';
-    effectElement.style.position = 'fixed';
-    effectElement.style.left = '50%';
-    effectElement.style.transform = 'translateX(-50%)';
-}
-if(effectElement.className) {
-    document.body.appendChild(effectElement);
-    setTimeout(() => effectElement.remove(), 1000);
-}
-    
     if (answered || gameOver) return;
     answered = true;
-
     clearInterval(timer);
-    
-    // 樣式處理
-    const buttons = document.querySelectorAll('#options button');
-    const correctIndex = window.currentQuestion.correctIndex;
-    
-    // 顯示正確答案樣式
-    buttons.forEach((btn, index) => {
-        btn.style.pointerEvents = 'none'; // 立即禁止點擊
-        if (index === correctIndex) {
-            btn.style.cssText = `
-                background: #2ecc71 !important;
-                border: 2px solid #27ae60 !important;
-                transform: scale(1.05);
-            `;
-        } else {
-            btn.style.background = '#e74c3c';
+
+    // 新增閃避判斷 ▼▼▼▼▼▼
+    let isDodged = false;
+    if (!isCorrect && playerClass.dodge > 0) {
+        if (Math.random() < playerClass.dodge) {
+            isDodged = true;
+            // 閃避特效
+            const dodgeText = document.createElement('div');
+            dodgeText.className = 'dodge-effect';
+            dodgeText.textContent = '閃避！';
+            dodgeText.style.left = `${Math.random() * 70 + 15}%`;
+            dodgeText.style.top = `${Math.random() * 50 + 25}%`;
+            document.getElementById('gameArea').appendChild(dodgeText);
+            setTimeout(() => dodgeText.remove(), 1000);
         }
-    });
+    }
+
 
     // 傷害計算與動畫
 // 修改为：
