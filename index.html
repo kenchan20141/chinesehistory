@@ -4,7 +4,7 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     
-    <title>基元文史爭霸</title>
+    <title>基元中史爭霸</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
@@ -145,6 +145,16 @@
     0% { transform: scale(0); }
     50% { transform: scale(1.2); }
     100% { transform: scale(1); }
+}
+
+        /* 新增鬼影步特效 */
+@keyframes ghostEffect {
+    0% { opacity: 1; }
+    50% { opacity: 0.3; transform: scale(1.2); }
+    100% { opacity: 1; }
+}
+.ghost-effect {
+    animation: ghostEffect 1s infinite;
 }
 
 .sword-animation {
@@ -613,26 +623,28 @@
                 <li>🛡️ 金鐘罩：每回合自動恢復5%氣血</li>
             </ul>
         </div>
-        <!-- 刺客 -->
-        <div class="class-card" onclick="selectClass('assassin')">
-            <img src="https://example.com/assassin.png" class="class-icon">
+      <!-- 修改刺客职业描述 -->
+<div class="class-card" onclick="selectClass('assassin')">
+           <img src="https://example.com/tank.png" class="class-icon">
             <div class="selected-tick">✓</div>
-            <h3>影流教</h3>
-            <p>閃避+20% 防禦-10%</p>
-            <ul class="class-stats">
-                <li>🎯 鬼影步：15%機率完全閃避傷害</li>
-            </ul>
-        </div>
-        <!-- 法师 -->
-        <div class="class-card" onclick="selectClass('mage')">
-            <img src="https://example.com/mage.png" class="class-icon">
+    <h3>影流教</h3>
+    <p>閃避+20% 防禦-10%</p>
+    <ul class="class-stats">
+        <li>🎯 鬼影步：2回合完全闪避，每次答题20%触发</li>
+        <li>🔥 離火訣：20%概率回復15%氣血</li>
+    </ul>
+</div>
+
+<!-- 修改法师职业描述 -->
+<div class="class-card" onclick="selectClass('mage')">
+           <img src="https://example.com/tank.png" class="class-icon">
             <div class="selected-tick">✓</div>
-            <h3>玄天閣</h3>
-            <p>技能+30% 氣血-10%</p>
-            <ul class="class-stats">
-                <li>🔥 離火訣：錯誤答案也會造成少量傷害</li>
-            </ul>
-        </div>
+    <h3>玄天閣</h3>
+    <p>反擊+30% 氣血-10%</p>
+    <ul class="class-stats">
+        <li>🛡️ 反擊訣：30%概率反彈50%傷害</li>
+    </ul>
+</div>
     </div>
     <div id="selectedClassInfo" style="margin-top: 2rem;"></div>
 </div>
@@ -696,8 +708,18 @@ function selectClass(className) {
     const classData = {
         warrior: { attack: 1.3, defense: 0.9, dodge: 0, skill: 'doubleDamage' },
         tank: { attack: 0.9, defense: 1.3, dodge: 0, skill: 'heal' },
-        assassin: { attack: 1.0, defense: 0.9, dodge: 0.15, skill: 'dodge' },
-        mage: { attack: 1.2, defense: 0.9, dodge: 0, skill: 'counter' }
+        assassin: { 
+            attack: 1.0, 
+            defense: 0.9, 
+            dodge: 0.2, // 修改闪避率20%
+            skill: 'ghostSteps' // 新增鬼影步技能类型
+        },
+        mage: { 
+            attack: 1.0,  // 移除原有效果
+            defense: 0.9, 
+            dodge: 0, 
+            skill: 'counter' // 修改为反击技能
+        }
     };
     
     playerClass = classData[className];
@@ -763,7 +785,64 @@ function displayQuestion(question) {
 }
 
 function checkAnswer(isCorrect) {
+    // 在計算傷害前新增以下判斷
+    let isDodged = false;
+    
+    // 影流教被動閃避 (20%)
+    if (playerClass.type === 'assassin' && Math.random() < playerClass.dodge) {
+        isDodged = true;
+    }
+    
+    // 鬼影步主動閃避
+    if (ghostStepsActive > 0) {
+        isDodged = true;
+        ghostStepsActive--;
+    }
 
+    // 如果閃避成功
+    if (isDodged) {
+        showDodgeEffect();
+        return; // 直接返回不計算傷害
+    }
+
+// 鬼影步触发檢測 (每次答題20%)
+    if (playerClass.type === 'assassin' && Math.random() < 0.2) {
+        ghostStepsActive = 2; // 持續2回合
+        showGhostStepEffect();
+    }
+
+    // 離火訣回血檢測 (每次答題20%)
+    if (playerClass.type === 'assassin' && Math.random() < 0.2) {
+        const healAmount = Math.ceil(currentHealth * 0.15);
+        database.ref(`rooms/${currentRoomId}/${playerPath}/health`)
+            .set(firebase.database.ServerValue.increment(healAmount));
+    }
+
+    // 玄天閣反擊檢測 (30%)
+    if (!isCorrect && playerClass.type === 'mage' && Math.random() < 0.3) {
+        const counterDamage = Math.floor(damage * 0.5);
+        database.ref(`rooms/${currentRoomId}/${opponentPath}/health`)
+            .set(firebase.database.ServerValue.increment(-counterDamage));
+    }
+}
+
+    function showDodgeEffect() {
+    const effect = document.createElement('div');
+    effect.className = 'ghost-effect';
+    effect.textContent = '幻影閃避！';
+    effect.style.cssText = 'position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); font-size:3em; color:#00ffff;';
+    document.body.appendChild(effect);
+    setTimeout(() => effect.remove(), 1000);
+}
+
+function showGhostStepEffect() {
+    const effect = document.createElement('div');
+    effect.textContent = '鬼影步發動！';
+    effect.style.cssText = 'position:fixed; top:30%; left:50%; transform:translateX(-50%); font-size:2em; color:#ffffff; text-shadow:0 0 10px #0000ff;';
+    document.body.appendChild(effect);
+    setTimeout(() => effect.remove(), 1500);
+}
+    
 // 在伤害计算后添加：
 let effectElement = document.createElement('div');
 if(playerClass.type === 'warrior' && isCorrect) {
@@ -855,7 +934,9 @@ const damage = Math.floor(baseDamage * playerClass.attack);
 
     database.ref('rooms/' + currentRoomId).update(updates, (error) => {
     if (error) return;
-    
+
+
+        
     // 強制立即檢查遊戲狀態
     checkGameOver();
     
@@ -952,6 +1033,18 @@ function updateHealthDisplay(room) {
     } else {
         myHealthBar.style.background = 'linear-gradient(90deg, var(--main-red) 0%, #ff6b6b 100%)';
         document.getElementById('myHealth').textContent = `${myHealth}%`;
+
+        function updateHealthDisplay(room) {
+    // 鐵甲宗每回合回血
+    if (playerClass.type === 'tank') {
+        const currentHealth = isHost ? room.player1.health : room.player2.health;
+        if (currentHealth < 100) {
+            const healAmount = Math.ceil(currentHealth * 0.05);
+            database.ref(`rooms/${currentRoomId}/${playerPath}/health`)
+                .set(firebase.database.ServerValue.increment(healAmount));
+        }
+    }
+
     }
 }
     
@@ -981,6 +1074,8 @@ let timer;
 let timeLeft = 15;
 let gameOver = false;
 let playerClass = null; // 存储玩家选择的职业
+    let ghostStepsActive = 0; // 鬼影步剩余回合数
+let isGhostStepTriggered = false; // 是否触发鬼影步
 
 const bgMusic = new Audio('https://incompetech.com/music/royalty-free/mp3-royaltyfree/Clash%20Defiant.mp3');
 let isMusicPlaying = false;
