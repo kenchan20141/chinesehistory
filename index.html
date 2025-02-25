@@ -4,7 +4,7 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     
-    <title>基元文史爭霸</title>
+    <title>基元中史爭霸</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
@@ -623,6 +623,7 @@
                 <li>🎯 鬼影步：20%機率完全閃避傷害</li>
             </ul>
         </div>
+        
         <!-- 法师 -->
         <div class="class-card" onclick="selectClass('mage')">
             <img src="https://example.com/mage.png" class="class-icon">
@@ -689,9 +690,10 @@
     
 <script>
     let isRematching = false;
-    let ghostStepsActive = false;
-let ghostStepsTurns = 0;
 let answered = false; // 用於追蹤當前問題是否已回答
+     let ghostStepsActive = false;
+let ghostStepsTurns = 0;
+    
 
 
 function selectClass(className) {
@@ -786,7 +788,7 @@ function checkAnswer(isCorrect) {
             ghostStepsTurns = 2;
             showEffect('👻 鬼影步發動！2回合無敵', '#8e44ad');
         }
-    }
+    
     
 // 在伤害计算后添加：
 let effectElement = document.createElement('div');
