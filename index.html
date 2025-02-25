@@ -4,7 +4,7 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     
-    <title>基元中史爭霸</title>
+    <title>基元文史爭霸</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
@@ -572,26 +572,7 @@
     top: 50%; /* 初始垂直居中 */
 }
 
-/* 添加在 CSS 动画区块 */
-/* 鬼影步特效 */
-@keyframes ghostStep {
-    0% { opacity: 0; transform: translateY(-20px); }
-    50% { opacity: 1; transform: translateY(0); }
-    100% { opacity: 0; transform: translateY(20px); }
-}
 
-.ghost-step-effect {
-    position: fixed;
-    top: 20%;
-    left: 50%;
-    transform: translateX(-50%);
-    color: #00ffff;
-    font-size: 2em;
-    z-index: 9999;
-    text-shadow: 0 0 10px rgba(0,255,255,0.5);
-    animation: ghostStep 1.5s ease-out;
-    pointer-events: none;
-}
         
     </style>
 </head>
@@ -647,7 +628,7 @@
             <img src="https://example.com/mage.png" class="class-icon">
             <div class="selected-tick">✓</div>
             <h3>玄天閣</h3>
-            <p>技能+30% 氣血-10%</p>
+            <p>攻擊+10%</p>
             <ul class="class-stats">
                 <li>🔥 離火訣：錯誤答案也會造成少量傷害</li>
             </ul>
@@ -709,21 +690,14 @@
 <script>
     let isRematching = false;
 let answered = false; // 用於追蹤當前問題是否已回答
-    let isGhostStepActive = false;
 
 
 function selectClass(className) {
     const classData = {
-        warrior: { attack: 1.3, defense: 0.9, dodge: 0, skill: 'doubleDamage' },
-        tank: { attack: 0.9, defense: 1.3, dodge: 0, skill: 'heal' },
-        assassin: { 
-    attack: 1.0, 
-    defense: 0.9, 
-    dodge: 0,       // 原闪避率归零
-    skill: 'ghostStep', 
-    skillChance: 0.2 // 新增 20% 触发率
-}
-        mage: { attack: 1.2, defense: 0.9, dodge: 0, skill: 'counter' }
+        warrior: { attack: 1.2, defense: 0.9, dodge: 0, skill: 'doubleDamage' },
+        tank: { attack: 0.9, defense: 1.2, dodge: 0, skill: 'heal' },
+        assassin: { attack: 1.0, defense: 0.9, dodge: 0.2, skill: 'dodge' },
+        mage: { attack: 1.1, defense: 1, dodge: 0, skill: 'counter' }
     };
     
     playerClass = classData[className];
@@ -765,18 +739,6 @@ selectedCard.querySelector('.selected-tick').style.display = 'flex';
     
 function displayQuestion(question) {
     answered = false; // 重置答題狀態
-
- // 新增代码 ▼
-    isGhostStepActive = false; // 重置状态
-    if (playerClass && playerClass.skill === 'ghostStep') {
-        if (Math.random() < playerClass.skillChance) {
-            isGhostStepActive = true;
-            showGhostStepEffect();
-        }
-    }
-    // 新增代码 ▲
-
-    
     document.getElementById('question').textContent = question.question;
 
     const optionsDiv = document.getElementById('options');
@@ -856,23 +818,10 @@ if(playerClass.skill === 'doubleDamage' && Math.random() < 0.3) {
     baseDamage *= 2; // 30%几率双倍伤害
 }
 const damage = Math.floor(baseDamage * playerClass.attack);
-
-// 新增伤害免疫判断 ▼
-    if (!isCorrect && isGhostStepActive) {
-        damage = 0;
-        showGhostStepEffect(); // 显示免疫特效
-    }
-    // 新增代码 ▲
-
-    // ...后续代码保持不变
-    
     const targetElement = isCorrect 
         ? document.getElementById('opponentHealthBar')
         : document.getElementById('myHealthBar');
 
-
-
-    
     // 觸發動畫效果
     targetElement.classList.add('damage-flash');
     document.getElementById('gameArea').classList.add('screen-shake');
@@ -898,27 +847,11 @@ const damage = Math.floor(baseDamage * playerClass.attack);
     const playerPath = isHost ? 'player1' : 'player2';
     const opponentPath = isHost ? 'player2' : 'player1';
     
-  if (isCorrect) {
-    updates[`${opponentPath}/health`] = firebase.database.ServerValue.increment(-damage);
-} else if (damage > 0) { // 新增伤害大于0判断
-    updates[`${playerPath}/health`] = firebase.database.ServerValue.increment(-damage);
-}
-
-
-// 只有当有实际伤害时才更新数据库
-if (damage > 0) {
-    database.ref('rooms/' + currentRoomId).update(updates, (error) => {
-        // ...原有代码保持不变
-    });
-} else {
-    // 无伤害时直接进入后续流程
-    checkGameOver();
-    if (!gameOver) {
-        setTimeout(() => {
-            // ...原有重置代码保持不变
-        }, 700);
+    if (isCorrect) {
+        updates[`${opponentPath}/health`] = firebase.database.ServerValue.increment(-damage);
+    } else {
+        updates[`${playerPath}/health`] = firebase.database.ServerValue.increment(-damage);
     }
-}
 
     database.ref('rooms/' + currentRoomId).update(updates, (error) => {
     if (error) return;
@@ -1428,17 +1361,6 @@ function startNewGameSession() {
         }, 500);
     });
 }
-
-// 新增鬼影步特效函数
-function showGhostStepEffect() {
-    const effect = document.createElement('div');
-    effect.className = 'ghost-step-effect';
-    effect.textContent = '鬼影步發動！';
-    document.body.appendChild(effect);
-    setTimeout(() => effect.remove(), 1500);
-}
-步骤 7：修
-    
 </script>
 </body>
 </html>
