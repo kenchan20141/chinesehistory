@@ -714,8 +714,16 @@ event.currentTarget.classList.add('selected');
     dodge: 0, 
     skill: 'counter',
     counterChance: 0.3 // 新增30%反击概率
+
   }
 };
+    // 在 selectClass 函数结尾添加：
+setTimeout(() => {
+  const optionsDiv = document.getElementById('options');
+  if (optionsDiv) {
+    optionsDiv.style.pointerEvents = 'auto'; // 确保选项按钮可点击
+  }
+}, 500);
 
     
     playerClass = classData[className];
@@ -764,7 +772,7 @@ function displayQuestion(question) {
 }
 
 function checkAnswer(isCorrect) {
-    if (answered || gameOver) return;
+   if ((answered && !playerClass.skill === 'heal') || gameOver) return; // 允许治疗技能触发多次
     answered = true;
 
     clearInterval(timer);
