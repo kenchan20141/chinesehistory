@@ -4,11 +4,17 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     
-    <title>基元文史爭霸</title>
+    <title>基元中史爭霸</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
-    <style>        
+    <style>       
+
+        options button {
+    /* 新增以下屬性 */
+    transition: all 0.3s ease !important;
+    pointer-events: auto !important; /* 強制覆蓋其他樣式 */
+}
 
 .rematch-buttons {
     margin-top: 30px;
@@ -871,13 +877,22 @@ if (isDodged) {
     if (!gameOver) {
             setTimeout(() => {
                 // 重置按鈕樣式和互動狀態
-                buttons.forEach(btn => {
-                    btn.style.cssText = '';
-                    btn.style.pointerEvents = 'auto'; // 重新啟用點擊
+                  buttons.forEach(btn => {
+        btn.style.background = '';  // 清空背景色
+        btn.style.pointerEvents = 'auto'; // 啟用點擊
+        btn.style.opacity = '1';    // 恢復透明度
                 });
-                answered = false; // 新增：重置回答狀態
-                loadNewQuestion();
-            }, 700);
+                answered = false;
+    
+    // 新增延遲後重置
+    setTimeout(() => {
+        // 再次確保按鈕狀態
+        buttons.forEach(btn => {
+            btn.disabled = false;
+            btn.style.pointerEvents = 'auto';
+        });
+        loadNewQuestion();
+    }, 300);  // 等待動畫結束
         }
     });
 
@@ -1168,6 +1183,15 @@ function loadNewQuestion() {
 }
 
 function displayQuestion(question) {
+
+ // 新增：強制啟用所有按鈕
+    const buttons = document.querySelectorAll('#options button');
+    buttons.forEach(btn => {
+        btn.disabled = false;
+        btn.style.pointerEvents = 'auto';
+        btn.style.opacity = '1';
+    });
+    
     this.answered = false; // 重置答題狀態
     window.currentQuestion = question; // 必須用window保存
     document.getElementById('question').textContent = question.question;
