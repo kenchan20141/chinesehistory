@@ -6,7 +6,7 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     
-    <title>基元中史爭霸</title>
+    <title>基元中史爭霸錄</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
@@ -585,7 +585,17 @@
   animation: dodgeFade 1s ease-out;
   pointer-events: none;
 
-        
+        /* 新增治疗提示动画 */
+@keyframes healFade {
+  0% { opacity: 0; transform: translate(-50%,-50%) scale(0.8); }
+  50% { opacity: 1; transform: translate(-50%,-50%) scale(1.1); }
+  100% { opacity: 0; transform: translate(-50%,-50%) scale(1); }
+}
+
+#healText {
+  animation: healFade 1s ease-out;
+  pointer-events: none;
+}
         
     </style>
 </head>
@@ -754,6 +764,25 @@ selectedCard.querySelector('.selected-tick').style.display = 'flex';
 }
     
 function displayQuestion(question) {
+
+function displayQuestion(question) {
+    // 新增铁甲宗治疗代码 ▼▼▼
+    if (playerClass && playerClass.type === 'tank') {
+        const currentHealth = parseInt(document.getElementById('myHealth').textContent);
+        const healAmount = Math.max(1, Math.ceil(currentHealth * 0.02)); // 至少恢复1点
+        
+        // 更新数据库
+        const playerPath = isHost ? 'player1' : 'player2';
+        database.ref(`rooms/${currentRoomId}/${playerPath}/health`).set(
+            firebase.database.ServerValue.increment(healAmount)
+        );
+        
+        // 显示治疗提示
+        const healDisplay = document.getElementById('healText');
+        healDisplay.style.display = 'block';
+        setTimeout(() => healDisplay.style.display = 'none', 1000);
+    }
+    
     answered = false; // 重置答題狀態
     document.getElementById('question').textContent = question.question;
 
@@ -1411,6 +1440,10 @@ function startNewGameSession() {
     });
 }
 </script>
+
+<!-- 新增治疗提示 -->
+<div id="healText" style="display:none; position:fixed; top:30%; left:50%; transform:translate(-50%,-50%); font-size:2rem; color:#00ff00; text-shadow:0 0 10px rgba(0,255,0,0.5);">🛡️ 氣血恢復2%</div>
+    
 </body>
 
 <div id="dodgeText" style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); font-size:3rem; color:#00ff00; text-shadow:0 0 10px rgba(0,255,0,0.5);">閃避成功！</div>
