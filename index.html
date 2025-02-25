@@ -885,6 +885,7 @@ function createRoom() {
         winner: null
        });
     showRoleSelection(); // 新增这行
+    
     listenToRoomChanges();
 }
 
@@ -898,14 +899,14 @@ function joinRoom() {
         return room;
        });
     showRoleSelection(); // 新增这行
-    document.getElementById('roomControl').style.display = 'none';
+ 
     listenToRoomChanges();
-}
-
+    
 // 新增显示职业选择函数
 function showRoleSelection() {
     document.getElementById('roomControl').style.display = 'none';
     document.getElementById('roleSelection').style.display = 'block';
+}
 
 function selectRole(roleType) {
     selectedRole = roleType;
