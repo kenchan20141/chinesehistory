@@ -4,7 +4,7 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     
-    <title>基元中史爭霸</title>
+    <title>基元文史爭霸</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
@@ -132,11 +132,7 @@
     100% { transform: scale(1); }
 }
 
-.selected-confirm {
-    animation: selectionPulse 0.5s ease-out;
-    color: #2ecc71;
-    border: 2px solid #27ae60 !important;
-}
+
 
 /* 新增职业特效动画 */
 @keyframes swordEffect {
@@ -449,6 +445,30 @@
     text-align: center;
 }
 
+        /* 选中状态常亮 */
+.class-card.selected {
+    border-color: #2ecc71 !important;
+    box-shadow: 0 0 15px rgba(46,204,113,0.5);
+}
+
+/* 勾号样式 */
+.selected-tick {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 30px;
+    height: 30px;
+    background: #2ecc71;
+    border-radius: 50%;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    color: white;
+    text-shadow: 0 0 5px rgba(0,0,0,0.5);
+}
+
+
 .class-card:hover {
     transform: scale(1.05);
     border-color: #fff;
@@ -576,6 +596,7 @@
         <!-- 战士 -->
         <div class="class-card" onclick="selectClass('warrior')">
             <img src="https://example.com/warrior.png" class="class-icon">
+            <div class="selected-tick">✓</div>
             <h3>霸刀門</h3>
             <p>攻擊+30% 防禦-10%</p>
             <ul class="class-stats">
@@ -585,6 +606,7 @@
         <!-- 坦克 -->
         <div class="class-card" onclick="selectClass('tank')">
             <img src="https://example.com/tank.png" class="class-icon">
+            <div class="selected-tick">✓</div>
             <h3>鐵甲宗</h3>
             <p>防禦+30% 攻擊-10%</p>
             <ul class="class-stats">
@@ -594,6 +616,7 @@
         <!-- 刺客 -->
         <div class="class-card" onclick="selectClass('assassin')">
             <img src="https://example.com/assassin.png" class="class-icon">
+            <div class="selected-tick">✓</div>
             <h3>影流教</h3>
             <p>閃避+20% 防禦-10%</p>
             <ul class="class-stats">
@@ -603,6 +626,7 @@
         <!-- 法师 -->
         <div class="class-card" onclick="selectClass('mage')">
             <img src="https://example.com/mage.png" class="class-icon">
+            <div class="selected-tick">✓</div>
             <h3>玄天閣</h3>
             <p>技能+30% 氣血-10%</p>
             <ul class="class-stats">
@@ -685,10 +709,16 @@ function selectClass(className) {
         <p>等待對手選擇流派...</p>
     `;
 
-     // 添加确认反馈
-    const selectedCard = document.querySelector(`.class-card[onclick="selectClass('${className}')"]`);
-    selectedCard.classList.add('selected-confirm');
-    setTimeout(() => selectedCard.classList.remove('selected-confirm'), 500);
+// 移除所有卡片的选中状态
+document.querySelectorAll('.class-card').forEach(card => {
+    card.classList.remove('selected');
+    card.querySelector('.selected-tick').style.display = 'none';
+});
+
+// 设置当前选中卡片
+const selectedCard = document.querySelector(`.class-card[onclick="selectClass('${className}')"]`);
+selectedCard.classList.add('selected');
+selectedCard.querySelector('.selected-tick').style.display = 'flex';
 
     // 显示确认信息
     document.getElementById('selectedClassInfo').innerHTML = `
