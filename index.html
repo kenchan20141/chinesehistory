@@ -4,7 +4,7 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     
-    <title>基元文史爭霸</title>
+    <title>基元中史爭霸</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
@@ -124,6 +124,40 @@
         50% { box-shadow: 0 0 20px var(--gold); }
         100% { box-shadow: 0 0 10px var(--gold); }
     }
+
+        /* 新增选择职业后的确认动画 */
+@keyframes selectionPulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+}
+
+.selected-confirm {
+    animation: selectionPulse 0.5s ease-out;
+    color: #2ecc71;
+    border: 2px solid #27ae60 !important;
+}
+
+/* 新增职业特效动画 */
+@keyframes swordEffect {
+    0% { opacity: 0; left: -100px; }
+    50% { opacity: 1; left: 50%; }
+    100% { opacity: 0; left: 100%; }
+}
+
+@keyframes shieldEffect {
+    0% { transform: scale(0); }
+    50% { transform: scale(1.2); }
+    100% { transform: scale(1); }
+}
+
+.sword-animation {
+    animation: swordEffect 0.8s ease-out;
+}
+
+.shield-animation {
+    animation: shieldEffect 0.5s ease-out;
+}
 
     /* 修改现有元素样式 */
     #roomControl {
@@ -650,6 +684,17 @@ function selectClass(className) {
         <p>已選擇：${document.querySelector(`.class-card[onclick="selectClass('${className}')"] h3`).textContent}</p>
         <p>等待對手選擇流派...</p>
     `;
+
+     // 添加确认反馈
+    const selectedCard = document.querySelector(`.class-card[onclick="selectClass('${className}')"]`);
+    selectedCard.classList.add('selected-confirm');
+    setTimeout(() => selectedCard.classList.remove('selected-confirm'), 500);
+
+    // 显示确认信息
+    document.getElementById('selectedClassInfo').innerHTML = `
+        <p style="font-size:1.5em;color:#2ecc71;">✓ 已選擇：${selectedCard.querySelector('h3').textContent}</p>
+        <p>等待對手選擇流派...</p>
+    `;
     
     // 更新数据库
     const playerPath = isHost ? 'player1' : 'player2';
@@ -688,6 +733,30 @@ function displayQuestion(question) {
 }
 
 function checkAnswer(isCorrect) {
+
+// 在伤害计算后添加：
+let effectElement = document.createElement('div');
+if(playerClass.type === 'warrior' && isCorrect) {
+    effectElement.className = 'sword-animation';
+    effectElement.style.background = 'linear-gradient(90deg, transparent 0%, rgba(255,215,0,0.7) 50%, transparent 100%)';
+    effectElement.style.width = '150px';
+    effectElement.style.height = '30px';
+    effectElement.style.position = 'fixed';
+    effectElement.style.top = '50%';
+} 
+else if(playerClass.type === 'tank' && !isCorrect) {
+    effectElement.className = 'shield-animation';
+    effectElement.innerHTML = '🛡️';
+    effectElement.style.fontSize = '4rem';
+    effectElement.style.position = 'fixed';
+    effectElement.style.left = '50%';
+    effectElement.style.transform = 'translateX(-50%)';
+}
+if(effectElement.className) {
+    document.body.appendChild(effectElement);
+    setTimeout(() => effectElement.remove(), 1000);
+}
+    
     if (answered || gameOver) return;
     answered = true;
 
@@ -943,6 +1012,11 @@ function listenToRoomChanges() {
         const room = snapshot.val();
         if (!room) return;
 
+// 添加此行隐藏等待通知
+        if(room.player1?.class && room.player2?.class) {
+            document.getElementById('waitingArea').style.display = 'none';
+        }
+        
         // 新增遊戲結束監聽
         if (room.gameEnded) {
             handleGameEnd(room.winner);
