@@ -608,7 +608,7 @@
             <img src="https://example.com/tank.png" class="class-icon">
             <div class="selected-tick">✓</div>
             <h3>鐵甲宗</h3>
-            <p>防禦+20% 攻擊-10%</p>
+            <p>防禦+30% 攻擊-10%</p>
             <ul class="class-stats">
                 <li>🛡️ 金鐘罩：每回合自動恢復5%氣血</li>
             </ul>
@@ -696,7 +696,7 @@ function selectClass(className) {
     const classData = {
         warrior: { attack: 1.2, defense: 0.9, dodge: 0, skill: 'doubleDamage' },
         tank: { attack: 0.9, defense: 1.3, dodge: 0, skill: 'heal' },
-        assassin: { attack: 1.0, defense: 0.9, dodge: 1, skill: 'dodge' },
+        assassin: { attack: 1.0, defense: 0.9, dodge: 0.3, skill: 'dodge' },
         mage: { attack: 1.1, defense: 1, dodge: 0, skill: 'counter' }
     };
     
