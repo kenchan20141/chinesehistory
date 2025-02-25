@@ -4,7 +4,7 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     
-    <title>基元中史爭霸</title>
+    <title>基元文史爭霸</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
@@ -124,44 +124,6 @@
         50% { box-shadow: 0 0 20px var(--gold); }
         100% { box-shadow: 0 0 10px var(--gold); }
     }
-
-        /* 新增技能动画 */
-@keyframes healEffect {
-  0% { background: rgba(0,255,0,0.2); }
-  100% { background: transparent; }
-}
-
-@keyframes dodgeEffect {
-  0% { opacity: 1; transform: translateX(0); }
-  100% { opacity: 0; transform: translateX(100%); }
-}
-
-@keyframes skillBoost {
-  0% { filter: brightness(1); }
-  50% { filter: brightness(1.5); }
-  100% { filter: brightness(1); }
-}
-
-.skill-heal {
-  animation: healEffect 1s ease-out;
-}
-
-.skill-dodge {
-  position: relative;
-  overflow: hidden;
-}
-
-.skill-dodge::after {
-  content: "闪避成功！";
-  position: absolute;
-  right: -100%;
-  color: #00ffff;
-  animation: dodgeEffect 0.8s ease-out;
-}
-
-.skill-boost {
-  animation: skillBoost 0.5s 2;
-}
 
     /* 修改现有元素样式 */
     #roomControl {
@@ -488,29 +450,6 @@
     color: var(--gold);
     animation: pulseGlow 2s infinite;
 }
-
-
-        /* 选中状态 */
-.class-card.selected {
-  border-color: #ffd700 !important;
-  box-shadow: 0 0 15px #ffd700;
-  transform: scale(1.02);
-}
-
-.class-card.selected::after {
-  content: "✓";
-  position: absolute;
-  top: -10px;
-  right: -10px;
-  background: #4CAF50;
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  font-size: 1.5rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
         
         @media (max-width: 480px) {
             .music-control {
@@ -696,35 +635,12 @@ let answered = false; // 用於追蹤當前問題是否已回答
 
 
 function selectClass(className) {
-    // 移除所有已选状态
-document.querySelectorAll('.class-card').forEach(card => {
-  card.classList.remove('selected');
-});
-
-// 添加当前选中状态
-event.currentTarget.classList.add('selected');
-    
     const classData = {
-        warrior: { attack: 1.2, defense: 0.9, dodge: 0, skill: 'doubleDamage' },
+        warrior: { attack: 1.3, defense: 0.9, dodge: 0, skill: 'doubleDamage' },
         tank: { attack: 0.9, defense: 1.3, dodge: 0, skill: 'heal' },
         assassin: { attack: 1.0, defense: 0.9, dodge: 0.15, skill: 'dodge' },
-         mage: { 
-    attack: 1.0, 
-    defense: 0.9, 
-    dodge: 0, 
-    skill: 'counter',
-    counterChance: 0.3 // 新增30%反击概率
-
-  }
-};
-    // 在 selectClass 函数结尾添加：
-setTimeout(() => {
-  const optionsDiv = document.getElementById('options');
-  if (optionsDiv) {
-    optionsDiv.style.pointerEvents = 'auto'; // 确保选项按钮可点击
-  }
-}, 500);
-
+        mage: { attack: 1.2, defense: 0.9, dodge: 0, skill: 'counter' }
+    };
     
     playerClass = classData[className];
     playerClass.type = className;
@@ -772,7 +688,7 @@ function displayQuestion(question) {
 }
 
 function checkAnswer(isCorrect) {
-   if ((answered && !playerClass.skill === 'heal') || gameOver) return; // 允许治疗技能触发多次
+    if (answered || gameOver) return;
     answered = true;
 
     clearInterval(timer);
@@ -799,48 +715,14 @@ function checkAnswer(isCorrect) {
 // 修改为：
 let baseDamage = Math.floor((timeLeft / 15) * 13);
 // 应用职业加成
-if(playerClass.skill === 'doubleDamage' && Math.random() < 0.15) {
-    baseDamage *= 2; // 15%几率双倍伤害
+if(playerClass.skill === 'doubleDamage' && Math.random() < 0.3) {
+    baseDamage *= 2; // 30%几率双倍伤害
 }
 const damage = Math.floor(baseDamage * playerClass.attack);
     const targetElement = isCorrect 
         ? document.getElementById('opponentHealthBar')
         : document.getElementById('myHealthBar');
 
-    
-// 在基础伤害计算后添加
-if (playerClass.skill === 'counter' && Math.random() < 0.3) {
-  baseDamage += Math.floor(baseDamage * 0.3); // 30%额外伤害
-  document.getElementById('gameArea').classList.add('skill-boost');
-  setTimeout(() => {
-    document.getElementById('gameArea').classList.remove('skill-boost');
-  }, 1000);
-}
-
-
-// 在伤害计算之后添加以下代码
-if (isCorrect) {
-  // 金钟罩治疗触发
-  if (playerClass.skill === 'heal') {
-    const healAmount = Math.ceil(myHealth * 0.05);
-    database.ref(`rooms/${currentRoomId}/${playerPath}/health`).set(myHealth + healAmount);
-    document.getElementById('myHealthContainer').classList.add('skill-heal');
-    setTimeout(() => {
-      document.getElementById('myHealthContainer').classList.remove('skill-heal');
-    }, 1000);
-  }
-
-  // 影教流闪避触发
-  if (playerClass.skill === 'dodge' && Math.random() < playerClass.dodge) {
-    const optionsDiv = document.getElementById('options');
-    optionsDiv.classList.add('skill-dodge');
-    setTimeout(() => {
-      optionsDiv.classList.remove('skill-dodge');
-    }, 800);
-  }
-}
-
-    
     // 觸發動畫效果
     targetElement.classList.add('damage-flash');
     document.getElementById('gameArea').classList.add('screen-shake');
