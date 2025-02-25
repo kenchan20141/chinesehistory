@@ -4,7 +4,7 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     
-    <title>基元文史爭霸</title>
+    <title>基元中史爭霸</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
@@ -899,18 +899,29 @@ if (isDodged) {
     // 強制立即檢查遊戲狀態
     checkGameOver();
     
+    // 無論是否gameOver都強制載入新題目
     if (!gameOver) {
-            setTimeout(() => {
-                // 重置按鈕樣式和互動狀態
-                buttons.forEach(btn => {
-                    btn.style.cssText = '';
-                    btn.style.pointerEvents = 'auto'; // 重新啟用點擊
-                });
-                answered = false; // 新增：重置回答狀態
+        // 先重置界面狀態
+        buttons.forEach(btn => {
+            btn.style.cssText = '';
+            btn.style.pointerEvents = 'auto';
+        });
+        answered = false;
+        
+        // 新增強制題目更新機制
+        setTimeout(() => {
+            // 先清除當前題目
+            document.getElementById('question').textContent = '載入新題目中...';
+            document.getElementById('options').innerHTML = '';
+            
+            // 雙重觸發題目更新
+            loadNewQuestion();
+            database.ref('rooms/' + currentRoomId).once('value').then(() => {
                 loadNewQuestion();
-            }, 700);
-        }
-    });
+            });
+        }, 1000); // 延遲1秒確保數據庫狀態更新
+    }
+});
 
  // 修正後的代碼 ▼
     setTimeout(() => { // 延遲確保DOM已更新
