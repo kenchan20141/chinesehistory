@@ -710,7 +710,7 @@ function selectClass(className) {
     const classData = {
         warrior: { attack: 1.2, defense: 0.9, dodge: 0, skill: 'doubleDamage' },
         tank: { attack: 0.9, defense: 1.2, dodge: 0, skill: 'heal' },
-        assassin: { attack: 1.0, defense: 0.9, dodge: 1.0, skill: 'dodge' },
+        assassin: { attack: 1.0, defense: 0.9, dodge: 0.3, skill: 'dodge' },
         mage: { attack: 1.1, defense: 1, dodge: 0, skill: 'counter' }
     };
     
@@ -841,7 +841,7 @@ if(playerClass.type === 'warrior' && isCorrect && Math.random() < 0.3) {
 }
 
 // 影流教闪避判定（30%概率）
-if(playerClass.type === 'assassin' && !isCorrect && Math.random() < 1.0) {
+if(playerClass.type === 'assassin' && !isCorrect && Math.random() < 0.3) {
     baseDamage = 0; // 完全闪避
     // 显示闪避提示
     const dodgeDisplay = document.getElementById('dodgeText');
