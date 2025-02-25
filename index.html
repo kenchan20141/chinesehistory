@@ -4,7 +4,7 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     
-    <title>基元中史爭霸</title>
+    <title>基元文史爭霸</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
@@ -811,24 +811,6 @@ let baseDamage = Math.floor((timeLeft / 15) * 13);
 // 应用职业加成
 if(playerClass.skill === 'doubleDamage' && Math.random() < 0.3) {
     baseDamage *= 2;
-}
-
-// 添加閃避判斷（只在受到傷害時觸發）
-let isDodged = false;
-if (!isCorrect && playerClass.dodge > 0) {
-    if (Math.random() < playerClass.dodge) {
-        damage = 0;  // 完全閃避傷害
-        isDodged = true;
-        
-        // 添加閃避特效
-        const dodgeText = document.createElement('div');
-        dodgeText.className = 'dodge-effect';
-        dodgeText.textContent = '閃避！';
-        dodgeText.style.left = `${Math.random() * 70 + 15}%`;
-        dodgeText.style.top = `${Math.random() * 50 + 25}%`;
-        document.getElementById('gameArea').appendChild(dodgeText);
-        setTimeout(() => dodgeText.remove(), 1000);
-    }
 }
     
 let damage;
