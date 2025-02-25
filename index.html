@@ -4,7 +4,7 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     
-    <title>基元文史爭霸</title>
+    <title>基元中史爭霸</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
@@ -691,6 +691,9 @@
     let isRematching = false;
 let answered = false; // 用於追蹤當前問題是否已回答
 
+    // 新增这行 ▼▼▼
+let opponentDefense = 1.0; // 存储对手的防御力
+
 
 function selectClass(className) {
     const classData = {
@@ -815,9 +818,17 @@ if(effectElement.className) {
 let baseDamage = Math.floor((timeLeft / 15) * 13);
 // 应用职业加成
 if(playerClass.skill === 'doubleDamage' && Math.random() < 0.3) {
-    baseDamage *= 2; // 30%几率双倍伤害
+    baseDamage *= 2;
 }
-const damage = Math.floor(baseDamage * playerClass.attack);
+
+let damage;
+if (isCorrect) {
+    // 攻击敌人：攻击力加成 × 敌人防御减免
+    damage = Math.floor(baseDamage * playerClass.attack / opponentDefense);
+} else {
+    // 自己受伤：基础伤害 ÷ 自身防御减免
+    damage = Math.floor(baseDamage / playerClass.defense);
+}
     const targetElement = isCorrect 
         ? document.getElementById('opponentHealthBar')
         : document.getElementById('myHealthBar');
@@ -1042,6 +1053,14 @@ function listenToRoomChanges() {
         const room = snapshot.val();
         if (!room) return;
 
+    // 新增这行代码 ▼▼▼
+    // 实时更新对手防御力数值
+    if (isHost) {
+        opponentDefense = room.player2?.defense || 1.0;
+    } else {
+        opponentDefense = room.player1?.defense || 1.0;
+    }
+        
 // 添加此行隐藏等待通知
         if(room.player1?.class && room.player2?.class) {
             document.getElementById('waitingArea').style.display = 'none';
