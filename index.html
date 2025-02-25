@@ -4,7 +4,7 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     
-    <title>基元文史爭霸</title>
+    <title>基元中史爭霸</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
@@ -928,14 +928,6 @@ function joinRoom() {
     document.getElementById('roomControl').style.display = 'none';
     // 显示职业选择界面
     document.getElementById('classSelection').style.display = 'block';
-    database.ref('rooms/' + currentRoomId).transaction(room => {
-        if (room && !room.gameStarted) {
-            room.player2 = { health: 100 };
-            room.gameStarted = true;
-        }
-        return room;
-    });
-    document.getElementById('roomControl').style.display = 'none';
     listenToRoomChanges();
 }
 
@@ -947,7 +939,7 @@ function listenToRoomChanges() {
         const room = snapshot.val();
         if (!room) return;
 
-// 检查是否双方都选择了职业
+  // 检查是否双方都选择了职业
         if (room.player1?.class && room.player2?.class) {
             document.getElementById('classSelection').style.display = 'none';
             document.getElementById('gameArea').style.display = 'block';
@@ -955,18 +947,6 @@ function listenToRoomChanges() {
         }
         
         // 更新血条显示时加入职业信息
-        updateHealthDisplay(room);
-        
-        if (room.gameEnded) {
-            handleGameEnd(room.winner);
-            return;
-        }
-
-        if (room.gameStarted && !gameOver) {
-            document.getElementById('waitingArea').style.display = 'none';
-            document.getElementById('gameArea').style.display = 'block';
-            startGame(room);
-        }
         updateHealthDisplay(room);
     });
 }
