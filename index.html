@@ -4,7 +4,7 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     
-    <title>基元中史爭霸</title>
+    <title>基元文史爭霸</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
@@ -620,10 +620,9 @@
             <h3>影流教</h3>
             <p>閃避+20% 防禦-10%</p>
             <ul class="class-stats">
-                <li>🎯 鬼影步：20%機率完全閃避傷害</li>
+                <li>🎯 鬼影步：15%機率完全閃避傷害</li>
             </ul>
         </div>
-        
         <!-- 法师 -->
         <div class="class-card" onclick="selectClass('mage')">
             <img src="https://example.com/mage.png" class="class-icon">
@@ -691,16 +690,13 @@
 <script>
     let isRematching = false;
 let answered = false; // 用於追蹤當前問題是否已回答
-     let ghostStepsActive = false;
-let ghostStepsTurns = 0;
-    
 
 
 function selectClass(className) {
     const classData = {
         warrior: { attack: 1.3, defense: 0.9, dodge: 0, skill: 'doubleDamage' },
         tank: { attack: 0.9, defense: 1.3, dodge: 0, skill: 'heal' },
-        assassin: { attack: 1.0, defense: 0.9, dodge: 0.2, skill: 'ghostStep' },
+        assassin: { attack: 1.0, defense: 0.9, dodge: 0.15, skill: 'dodge' },
         mage: { attack: 1.2, defense: 0.9, dodge: 0, skill: 'counter' }
     };
     
@@ -768,28 +764,6 @@ function displayQuestion(question) {
 
 function checkAnswer(isCorrect) {
 
-// 在计算伤害前添加以下判断
-    // 鬼影步激活时免除伤害
-    if(ghostStepsActive) {
-        showEffect('🎭 鬼影步發動！', '#9b59b6');
-        return; // 直接结束不处理伤害
-    }
-
-    // 闪避判断
-    if(!isCorrect && Math.random() < playerClass.dodge) {
-        showEffect('🌀 幻影閃避！', '#3498db');
-        return; // 直接结束不处理伤害
-    }
-
-     // 在每次答题后检查鬼影步触发（添加在伤害计算之后）
-    if(playerClass.skill === 'ghostStep' && !ghostStepsActive) {
-        if(Math.random() < 0.2) { // 20%触发几率
-            ghostStepsActive = true;
-            ghostStepsTurns = 2;
-            showEffect('👻 鬼影步發動！2回合無敵', '#8e44ad');
-        }
-    
-    
 // 在伤害计算后添加：
 let effectElement = document.createElement('div');
 if(playerClass.type === 'warrior' && isCorrect) {
@@ -1155,16 +1129,6 @@ function shuffleArray(array) {
 }
 
 function loadNewQuestion() {
-     // 鬼影步回合计数
-    if(ghostStepsActive) {
-        ghostStepsTurns--;
-        if(ghostStepsTurns <= 0) {
-            ghostStepsActive = false;
-            showEffect('👻 鬼影步效果結束', '#95a5a6');
-        }
-    }
-    //...原有代码...
-}
     const questionsRef = database.ref('questions');
     questionsRef.once('value').then(snapshot => {
         const questions = snapshot.val();
@@ -1397,26 +1361,6 @@ function startNewGameSession() {
         }, 500);
     });
 }
-
-
-function showEffect(text, color) {
-    const effect = document.createElement('div');
-    effect.style.cssText = `
-        position: fixed;
-        top: 30%;
-        left: 50%;
-        transform: translateX(-50%);
-        font-size: 2rem;
-        color: ${color};
-        text-shadow: 0 0 10px rgba(0,0,0,0.5);
-        animation: fadeInUp 0.5s ease-out;
-        z-index: 9999;
-    `;
-    effect.textContent = text;
-    document.body.appendChild(effect);
-    setTimeout(() => effect.remove(), 2000);
-}
-    
 </script>
 </body>
 </html>
