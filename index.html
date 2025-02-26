@@ -7,7 +7,7 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     
-    <title>基元文史爭霸</title>
+    <title>基元中史爭霸</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
@@ -1287,15 +1287,13 @@ function createRoom() {
     currentRoomId = document.getElementById('roomId').value || Math.floor(1000 + Math.random() * 9000);
     isHost = true;
     document.getElementById('roomControl').style.display = 'none';
-     // 显示职业选择界面
     document.getElementById('classSelection').style.display = 'block';
     document.getElementById('waitingArea').style.display = 'block';
     document.getElementById('displayRoomId').textContent = currentRoomId;
 
     database.ref('rooms/' + currentRoomId).set({
-        player1: { health: 100, class: null }, // 添加class字段
-        player2: null,
-        currentQuestion: null,
+        player1: { health: 100, class: null, currentQuestion: null }, // 添加 currentQuestion 字段
+        player2: { health: 100, class: null, currentQuestion: null }, // 添加 currentQuestion 字段
         gameStarted: false,
         gameEnded: false,
         winner: null
@@ -1306,46 +1304,39 @@ function createRoom() {
 function joinRoom() {
     currentRoomId = document.getElementById('roomId').value;
     document.getElementById('roomControl').style.display = 'none';
-    // 显示职业选择界面
     document.getElementById('classSelection').style.display = 'block';
     listenToRoomChanges();
 }
 
 function listenToRoomChanges() {
     const roomRef = database.ref('rooms/' + currentRoomId);
-    roomRef.off('value'); // 先移除舊監聽
+    roomRef.off('value');
 
     roomRef.on('value', (snapshot) => {
         const room = snapshot.val();
         if (!room) return;
 
-    // 新增这行代码 ▼▼▼
-    // 实时更新对手防御力数值
-    if (isHost) {
-        opponentDefense = room.player2?.defense || 1.0;
-    } else {
-        opponentDefense = room.player1?.defense || 1.0;
-    }
-        
-// 添加此行隐藏等待通知
+        if (isHost) {
+            opponentDefense = room.player2?.defense || 1.0;
+        } else {
+            opponentDefense = room.player1?.defense || 1.0;
+        }
+
         if(room.player1?.class && room.player2?.class) {
             document.getElementById('waitingArea').style.display = 'none';
         }
-        
-        // 新增遊戲結束監聽
+
         if (room.gameEnded) {
             handleGameEnd(room.winner);
             return;
         }
 
-  // 检查是否双方都选择了职业
         if (room.player1?.class && room.player2?.class) {
             document.getElementById('classSelection').style.display = 'none';
             document.getElementById('gameArea').style.display = 'block';
             startGame(room);
         }
-        
-        // 更新血条显示时加入职业信息
+
         updateHealthDisplay(room);
     });
 }
@@ -1382,27 +1373,24 @@ document.getElementById('opponentHealth').textContent = Math.max(opponentHealth,
 }
 
 function startGame(room) {
-  // 檢查雙方玩家存在
-  if (!room.player1 || !room.player2) {
-    console.log('等待對手加入...');
-    return;
-  }
-
-  // 重置本地計時器
-  clearInterval(timer);
-  timeLeft = 15;
-  
-  // 強制顯示遊戲區域
-  document.getElementById('gameArea').style.display = 'block';
-  
-  // 延遲載入新題目避免競態
-  setTimeout(() => {
-    if (!room.currentQuestion) {
-      loadNewQuestion();
-    } else {
-      displayQuestion(room.currentQuestion);
+    if (!room.player1 || !room.player2) {
+        console.log('等待对手加入...');
+        return;
     }
-  }, 500);
+
+    clearInterval(timer);
+    timeLeft = 15;
+    document.getElementById('gameArea').style.display = 'block';
+
+    setTimeout(() => {
+        const playerPath = isHost ? 'player1' : 'player2';
+        const question = room[playerPath].currentQuestion;
+        if (!question) {
+            loadNewQuestion();
+        } else {
+            displayQuestion(question);
+        }
+    }, 500);
 }
 
 function shuffleArray(array) {
@@ -1431,7 +1419,8 @@ function loadNewQuestion() {
             correctIndex: newCorrectIndex
         };
 
-        database.ref('rooms/' + currentRoomId).update({ currentQuestion: processedQuestion });
+        const playerPath = isHost ? 'player1' : 'player2';
+        database.ref('rooms/' + currentRoomId + '/' + playerPath).update({ currentQuestion: processedQuestion });
     });
 }
 
