@@ -7,7 +7,7 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     
-    <title>基元文史爭霸</title>
+    <title>基元中史爭霸</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
@@ -1639,7 +1639,9 @@ function handleRematchRequest() {
         winner: null,
         gameStarted: false, // 确保游戏在双方都同意重开前不开始
         [rematchField]: true, // 记录当前玩家同意重开
-        // 新增一个字段用于表示玩家B是否已经点击了“再戰江湖”
+        // 新增一个字段用于表示玩家是否已经重新进入游戏
+        'player1/reentered': isHost,
+        'player2/reentered':!isHost,
         clientEntered: isHost ? false : true 
     };
 
@@ -1756,26 +1758,26 @@ function listenToRoomChanges() {
             }
         }
 
-        // 新增：检查玩家B是否已经点击了“再戰江湖”
-     if (isHost && room.clientEntered && !room.gameStarted &&!opponentJoinedMessage) {
+        // 新增：检查玩家是否已经重新进入游戏
+        const opponentReentered = isHost? room.player2?.reentered : room.player1?.reentered;
+        if (opponentReentered &&!opponentJoinedMessage) {
             opponentJoinedMessage = document.createElement('div');
-         // 修改提示元素的样式，增加移动端适配
-opponentJoinedMessage.style.cssText = `
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background: rgba(0, 0, 0, 0.9);
-    color: #fff;
-    padding: 20px;
-    border-radius: 10px;
-    z-index: 9999;
-    font-size: 2rem;
-    text-align: center;
-    width: 80%;
-    max-width: 300px;
-    box-shadow: 0 0 20px rgba(212, 175, 55, 0.5);
-`;
+            opponentJoinedMessage.style.cssText = `
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                background: rgba(0, 0, 0, 0.9);
+                color: #fff;
+                padding: 20px;
+                border-radius: 10px;
+                z-index: 9999;
+                font-size: 2rem;
+                text-align: center;
+                width: 80%;
+                max-width: 300px;
+                box-shadow: 0 0 20px rgba(212, 175, 55, 0.5);
+            `;
             opponentJoinedMessage.textContent = '玩家已進場';
             document.body.appendChild(opponentJoinedMessage);
 
