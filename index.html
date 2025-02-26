@@ -7,7 +7,7 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     
-    <title>基元文史爭霸</title>
+    <title>基元中史爭霸</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
@@ -988,6 +988,25 @@ function displayQuestion(question) {
 
 function checkAnswer(isCorrect) {
 
+// 在函数开始立即禁用所有按钮
+    const buttons = document.querySelectorAll('#options button');
+    buttons.forEach(btn => btn.style.pointerEvents = 'none');
+
+    if (answered || gameOver) return;
+    answered = true;
+
+    clearInterval(timer);
+    
+    // 禁用按钮样式修改
+    buttons.forEach((btn, index) => {
+        btn.style.pointerEvents = 'none'; // 确保再次禁用
+        if (index === window.currentQuestion.correctIndex) {
+            btn.style.background = '#2ecc71';
+        } else {
+            btn.style.background = '#e74c3c';
+        }
+    });
+    
 // 在伤害计算后添加：
 let effectElement = document.createElement('div');
 if(playerClass.type === 'warrior' && isCorrect) {
@@ -1095,6 +1114,20 @@ if (isCorrect) {
         setTimeout(() => reduceDisplay.style.display = 'none', 1200);
     }
 }
+
+// 更新数据库后不再重新启用按钮
+    database.ref('rooms/' + currentRoomId).update(updates, (error) => {
+        if (error) return;
+        checkGameOver();
+        if (!gameOver) {
+            setTimeout(() => {
+                // 直接加载新问题，按钮将在新问题显示时重建
+                loadNewQuestion();
+            }, 700);
+        }
+    });
+    
+    
     const targetElement = isCorrect 
         ? document.getElementById('opponentHealthBar')
         : document.getElementById('myHealthBar');
@@ -1426,6 +1459,8 @@ function loadNewQuestion() {
 
 function displayQuestion(question) {
     this.answered = false; // 重置答題狀態
+    const optionsDiv = document.getElementById('options');
+    optionsDiv.innerHTML = ''; // 清除旧按钮
     window.currentQuestion = question; // 必須用window保存
     document.getElementById('question').textContent = question.question;
     const optionsDiv = document.getElementById('options');
