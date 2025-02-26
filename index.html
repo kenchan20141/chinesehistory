@@ -1321,10 +1321,6 @@ function checkGameOver() {
 }
 
 function handleGameEnd(winnerType) {
-    // 在函数开头添加：
-database.ref(`rooms/${currentRoomId}/player1/currentQuestion`).remove();
-database.ref(`rooms/${currentRoomId}/player2/currentQuestion`).remove();
-    
     if (gameOver) return;
     gameOver = true;
     
