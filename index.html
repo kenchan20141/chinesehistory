@@ -7,7 +7,7 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     
-    <title>基元文史爭霸</title>
+    <title>基元中史爭霸</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
@@ -45,6 +45,64 @@
     box-shadow: 0 0 15px rgba(0,0,0,0.3);
 }
 
+/* 新增遮罩背景 */
+.popup-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    z-index: 9998;
+    display: none;
+    animation: popImage 0.3s ease-out;
+}
+
+/* 調整現有彈出層樣式 */
+.popup-image {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    max-width: 90vw;
+    max-height: 90vh;
+    z-index: 9999;
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 0 30px rgba(212, 175, 55, 0.8);
+    padding: 20px;
+    display: none;
+}
+
+        /* 新增的弹出层打开时body的样式 */
+body.popup-open {
+    overflow: hidden;
+    position: fixed;
+    width: 100%;
+    height: 100%;
+
+.close-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 40px;
+    height: 40px;
+    border: none;
+    background: #e74c3c;
+    color: white;
+    border-radius: 50%;
+    font-size: 24px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.2s;
+}
+
+.close-btn:hover {
+    transform: scale(1.1);
+}
+        
 /* 弹出图片的动画关键帧 */
 @keyframes popImage {
     0% { transform: scale(0); opacity: 0; }
@@ -73,7 +131,19 @@
     height: auto;
 }
         
-        
+        @keyframes popImage {
+    0% { 
+        transform: translate(-50%, -50%) scale(0.5);
+        opacity: 0;
+    }
+    80% {
+        transform: translate(-50%, -50%) scale(1.05);
+    }
+    100% {
+        transform: translate(-50%, -50%) scale(1);
+        opacity: 1;
+    }
+}
 
 
     /* 血條衝擊波特效 */
@@ -851,6 +921,11 @@
             <ul class="class-stats">
                 <li>⚔️ 狂刀斬：命中後有機率造成雙倍傷害</li>
             </ul>
+            <!-- 新增彈出層結構 -->
+            <div class="popup-image" onclick="event.stopPropagation()">
+                <img src="戰士完整大圖URL">
+                <button class="close-btn" onclick="closePopup(this)">×</button>
+            </div>
         </div>
         <!-- 坦克 -->
         <div class="class-card" onclick="selectClass('tank')">
@@ -883,6 +958,8 @@
             </ul>
         </div>
     </div>
+    <div id="selectedClassInfo" style="margin-top: 2rem;"></div>
+</div>
     <div id="selectedClassInfo" style="margin-top: 2rem;"></div>
 </div>
     
@@ -973,11 +1050,13 @@ joinRoomBtn.onclick = function() {
 function openPopup(element) {
     const popup = element.querySelector('.popup-image');
     popup.style.display = 'block';
+    document.body.classList.add('popup-open'); // 添加这行代码
 }
 
 function closePopup(element) {
     const popup = element.closest('.popup-image');
     popup.style.display = 'none';
+    document.body.classList.remove('popup-open'); // 添加这行代码
 }
 
 // 修改class-card的点击事件，添加打开弹出图片的逻辑
@@ -991,6 +1070,24 @@ classCards.forEach(card => {
     
     
 function selectClass(className) {
+
+ // 顯示彈出層
+    const card = event.currentTarget;
+    const popup = card.querySelector('.popup-image');
+    const backdrop = document.createElement('div');
+    backdrop.className = 'popup-backdrop';
+    document.body.appendChild(backdrop);
+
+    // 顯示彈出層和背景
+    popup.style.display = 'block';
+    backdrop.style.display = 'block';
+
+    // 點擊背景關閉
+    backdrop.onclick = function() {
+        popup.style.display = 'none';
+        backdrop.remove();
+    };
+    
     const classData = {
         warrior: { attack: 1.2, defense: 0.9, dodge: 0, skill: 'doubleDamage' },
         tank: { attack: 0.9, defense: 1.2, dodge: 0, skill: 'heal' },
@@ -1035,6 +1132,13 @@ selectedCard.querySelector('.selected-tick').style.display = 'flex';
     });
 }
 
+    // 新增關閉函數
+function closePopup(btn) {
+    const popup = btn.closest('.popup-image');
+    const backdrop = document.querySelector('.popup-backdrop');
+    popup.style.display = 'none';
+    if (backdrop) backdrop.remove();
+    
 
 function displayQuestion(question) {
     
