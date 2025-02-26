@@ -7,7 +7,7 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     
-    <title>基元文史爭霸</title>
+    <title>基元中史爭霸</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
@@ -604,7 +604,7 @@
     width: 100%;
     height: 100%;
     background: rgba(0,0,0,0.9);
-    padding: 2rem;
+    padding: 0rem;
     z-index: 9999;
     overflow-y: auto;
 }
@@ -612,8 +612,8 @@
 .class-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 1.5rem;
-    max-width: 1000px;
+    gap: 1rem;
+    max-width: 100%;
     margin: 0 auto;
 }
 
@@ -621,7 +621,7 @@
     background: rgba(45, 41, 38, 0.95);
     border: 2px solid var(--gold);
     border-radius: 10px;
-    padding: 1.5rem;
+    padding: 1rem;
     cursor: pointer;
     transition: transform 0.3s;
     text-align: center;
@@ -657,8 +657,8 @@
 }
 
 .class-icon {
-    width: 80px;
-    height: 80px;
+    width: 100px;
+    height: 100px;
     object-fit: cover;
     border-radius: 50%;
     border: 2px solid var(--gold);
@@ -1276,14 +1276,26 @@ if(!isCorrect) {
     healthBar.appendChild(wave);
     setTimeout(() => wave.remove(), 500);
 
-    // 新增命中數字顯示
-    const hitText = document.createElement('div');
-    hitText.className = 'hit-marker';
-    hitText.textContent = `-${damage}`;
-    hitText.style.left = `${Math.random() * 80 + 10}%`;
-    hitText.style.top = `${Math.random() * 50 + 25}%`;
-    document.getElementById('gameArea').appendChild(hitText);
-    setTimeout(() => hitText.remove(), 300);
+   // 新增命中數字顯示
+const hitText = document.createElement('div');
+hitText.className = 'hit-marker';
+hitText.textContent = `-${damage}`;
+if (isCorrect) {
+    // 答对时，显示在对方气血条附近
+    const opponentHealthContainer = document.getElementById('enemyHealthContainer');
+    hitText.style.position = 'absolute';
+    hitText.style.left = `${Math.random() * opponentHealthContainer.offsetWidth + opponentHealthContainer.offsetLeft}px`;
+    hitText.style.top = `${opponentHealthContainer.offsetTop + opponentHealthContainer.offsetHeight / 2 - hitText.offsetHeight / 2}px`;
+    opponentHealthContainer.appendChild(hitText);
+} else {
+    // 答错时，显示在自己气血条附近
+    const myHealthContainer = document.getElementById('myHealthContainer');
+    hitText.style.position = 'absolute';
+    hitText.style.left = `${Math.random() * myHealthContainer.offsetWidth + myHealthContainer.offsetLeft}px`;
+    hitText.style.top = `${myHealthContainer.offsetTop + myHealthContainer.offsetHeight / 2 - hitText.offsetHeight / 2}px`;
+    myHealthContainer.appendChild(hitText);
+}
+setTimeout(() => hitText.remove(), 300);
     
     
 }
@@ -1807,34 +1819,34 @@ function listenToRoomChanges() {
         }
 
         // 新增：检查玩家是否已经重新进入游戏
-const opponentReentered = isHost? room.player2?.reentered : room.player1?.reentered;
-if (opponentReentered &&!opponentJoinedMessage) {
-    opponentJoinedMessage = document.createElement('div');
-    opponentJoinedMessage.style.cssText = `
-        position: fixed;
-        top: 80%;  // 修改此处的top值
-        left: 50%;
-        transform: translate(-50%, -50%);
-        background: rgba(0, 0, 0, 0.9);
-        color: #fff;
-        padding: 20px;
-        border-radius: 10px;
-        z-index: 9999;
-        font-size: 2rem;
-        text-align: center;
-        width: 80%;
-        max-width: 300px;
-        box-shadow: 0 0 20px rgba(212, 175, 55, 0.5);
-    `;
-    opponentJoinedMessage.textContent = '🎮玩家已進場';
-    document.body.appendChild(opponentJoinedMessage);
+        const opponentReentered = isHost? room.player2?.reentered : room.player1?.reentered;
+        if (opponentReentered &&!opponentJoinedMessage) {
+            opponentJoinedMessage = document.createElement('div');
+            opponentJoinedMessage.style.cssText = `
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                background: rgba(0, 0, 0, 0.9);
+                color: #fff;
+                padding: 20px;
+                border-radius: 10px;
+                z-index: 9999;
+                font-size: 2rem;
+                text-align: center;
+                width: 80%;
+                max-width: 300px;
+                box-shadow: 0 0 20px rgba(212, 175, 55, 0.5);
+            `;
+            opponentJoinedMessage.textContent = '🎮玩家已進場';
+            document.body.appendChild(opponentJoinedMessage);
 
-    // 一段时间后移除提示信息
-    setTimeout(() => {
-        opponentJoinedMessage.remove();
-        opponentJoinedMessage = null;
-    }, 3000);
-}
+            // 一段时间后移除提示信息
+            setTimeout(() => {
+                opponentJoinedMessage.remove();
+                opponentJoinedMessage = null;
+            }, 3000);
+        }
     });
 }
 </script>
@@ -1851,3 +1863,4 @@ if (opponentReentered &&!opponentJoinedMessage) {
 
     
 </html>
+
