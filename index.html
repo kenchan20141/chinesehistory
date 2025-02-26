@@ -7,7 +7,7 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     
-    <title>基元中史爭霸</title>
+    <title>基元文史爭霸</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
@@ -1446,7 +1446,12 @@ function listenToRoomChanges() {
 
 function startNewGameSession() {
 
+// 重置等待对方同意的标志位
+waitingForOpponent = false;
+// 新增：重置提示信息元素
+opponentJoinedMessage = null;
 
+    
     // 重置游戏状态
     gameOver = false;
     answered = false;
@@ -1703,10 +1708,7 @@ function handleRematchRequest() {
         'player1/reentered': isHost,
         'player2/reentered':!isHost,
         clientEntered: isHost ? false : true 
-        waitingForOpponent = false;
     };
-
-    
 
     database.ref('rooms/' + currentRoomId).update(updates, (error) => {
         isRematching = false;
@@ -1821,9 +1823,9 @@ function listenToRoomChanges() {
             }
         }
 
-       // 新增：检查玩家是否已经重新进入游戏
+     // 新增：检查玩家是否已经重新进入游戏
 const opponentReentered = isHost? room.player2?.reentered : room.player1?.reentered;
-if (opponentReentered &&!opponentJoinedMessage && (!room.gameStarted || room.gameEnded)) {
+if (opponentReentered &&!opponentJoinedMessage) {
     opponentJoinedMessage = document.createElement('div');
     opponentJoinedMessage.style.cssText = `
         position: fixed;
@@ -1843,7 +1845,6 @@ if (opponentReentered &&!opponentJoinedMessage && (!room.gameStarted || room.gam
     `;
     opponentJoinedMessage.textContent = '🎮玩家已進場';
     document.body.appendChild(opponentJoinedMessage);
-
     // 一段时间后移除提示信息
     setTimeout(() => {
         opponentJoinedMessage.remove();
