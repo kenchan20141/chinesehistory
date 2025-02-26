@@ -7,7 +7,7 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     
-    <title>基元文史爭霸</title>
+    <title>基元中史爭霸</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
@@ -138,16 +138,6 @@
     25% { transform: translateX(3px); }
     75% { transform: translateX(-3px); }
     100% { transform: translateX(0); }
-}
-
-        @keyframes myNewDamageEffect {
-    0% { transform: scale(1); }
-    50% { transform: scale(1.1); }
-    100% { transform: scale(1); }
-}
-
-.my-new-damage-effect {
-    animation: myNewDamageEffect 0.3s ease-in-out;
 }
         
         /* 新增动画效果 */
@@ -1164,44 +1154,20 @@ if(playerClass.type === 'assassin' && !isCorrect && Math.random() < 0.3) {
 }
 
 let damage;
-if (!isCorrect) {
-        // 自己受伤：基础伤害 ÷ 自身防御减免
-        damage = Math.floor(baseDamage / playerClass.defense);
-        
-        // 玄天阁减伤30%（新增代码）
-        if(playerClass.type === 'mage') {
-            damage = Math.floor(damage * 0.7);
-            // 显示减伤提示
-            const reduceDisplay = document.getElementById('reduceDamageText');
-            reduceDisplay.style.display = 'block';
-            setTimeout(() => reduceDisplay.style.display = 'none', 1200);
-        }
-
-        // 添加动画效果类名
-        const targetElement = document.getElementById('myHealthBar');
-        targetElement.classList.add('damage-flash');
-        document.getElementById('gameArea').classList.add('screen-shake');
-        document.querySelectorAll('.health-fill').forEach(bar => bar.classList.add('damage-effect'));
-
-        // 震动效果
-        navigator.vibrate = navigator.vibrate || navigator.webkitVibrate || navigator.mozVibrate || navigator.msVibrate;
-        if (navigator.vibrate) navigator.vibrate(200);
-
-        // 音效播放
-        soundEffects.attack.currentTime = 0;
-        soundEffects.attack.play();
-
-        // 移除动画
-        setTimeout(() => {
-            targetElement.classList.remove('damage-flash');
-            document.getElementById('gameArea').classList.remove('screen-shake');
-            document.querySelectorAll('.health-fill').forEach(bar => bar.classList.remove('damage-effect'));
-        }, 500);
-
-        targetElement.classList.add('my-new-damage-effect');
-        setTimeout(() => {
-            targetElement.classList.remove('my-new-damage-effect');
-        }, 300);
+if (isCorrect) {
+    // 攻击敌人：攻击力加成 × 敌人防御减免
+    damage = Math.floor(baseDamage * playerClass.attack / opponentDefense);
+} else {
+    // 自己受伤：基础伤害 ÷ 自身防御减免
+    damage = Math.floor(baseDamage / playerClass.defense);
+    
+    // 玄天阁减伤30%（新增代码）
+    if(playerClass.type === 'mage') {
+        damage = Math.floor(damage * 0.7);
+        // 显示减伤提示
+        const reduceDisplay = document.getElementById('reduceDamageText');
+        reduceDisplay.style.display = 'block';
+        setTimeout(() => reduceDisplay.style.display = 'none', 1200);
     }
 }
     const targetElement = isCorrect 
@@ -1899,4 +1865,3 @@ if (opponentReentered &&!opponentJoinedMessage && (!room.gameStarted || room.gam
 
     
 </html>
-
