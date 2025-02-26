@@ -1446,12 +1446,7 @@ function listenToRoomChanges() {
 
 function startNewGameSession() {
 
-// 重置等待对方同意的标志位
-waitingForOpponent = false;
-// 新增：重置提示信息元素
-opponentJoinedMessage = null;
 
-    
     // 重置游戏状态
     gameOver = false;
     answered = false;
@@ -1710,6 +1705,8 @@ function handleRematchRequest() {
         clientEntered: isHost ? false : true 
     };
 
+    waitingForOpponent = false;
+
     database.ref('rooms/' + currentRoomId).update(updates, (error) => {
         isRematching = false;
         if (error) {
@@ -1823,9 +1820,9 @@ function listenToRoomChanges() {
             }
         }
 
-     // 新增：检查玩家是否已经重新进入游戏
+       // 新增：检查玩家是否已经重新进入游戏
 const opponentReentered = isHost? room.player2?.reentered : room.player1?.reentered;
-if (opponentReentered &&!opponentJoinedMessage) {
+if (opponentReentered &&!opponentJoinedMessage && (!room.gameStarted || room.gameEnded)) {
     opponentJoinedMessage = document.createElement('div');
     opponentJoinedMessage.style.cssText = `
         position: fixed;
@@ -1845,6 +1842,7 @@ if (opponentReentered &&!opponentJoinedMessage) {
     `;
     opponentJoinedMessage.textContent = '🎮玩家已進場';
     document.body.appendChild(opponentJoinedMessage);
+
     // 一段时间后移除提示信息
     setTimeout(() => {
         opponentJoinedMessage.remove();
