@@ -6,7 +6,7 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     
-    <title>基元中史爭霸</title>
+    <title>基元文史爭霸</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
@@ -596,6 +596,18 @@
   animation: healFade 1s ease-out;
   pointer-events: none;
 }
+
+    /* 新增减伤提示动画 */
+@keyframes reduceDamageFade {
+  0% { opacity: 0; transform: translate(-50%,-50%) translateY(20px); }
+  50% { opacity: 1; transform: translate(-50%,-50%) translateY(0); }
+  100% { opacity: 0; transform: translate(-50%,-50%) translateY(-20px); }
+}
+
+#reduceDamageText {
+  animation: reduceDamageFade 1.2s ease-out;
+  pointer-events: none;
+}
         
     </style>
 </head>
@@ -889,6 +901,15 @@ if (isCorrect) {
 } else {
     // 自己受伤：基础伤害 ÷ 自身防御减免
     damage = Math.floor(baseDamage / playerClass.defense);
+    
+    // 玄天阁减伤30%（新增代码）
+    if(playerClass.type === 'mage') {
+        damage = Math.floor(damage * 0.7);
+        // 显示减伤提示
+        const reduceDisplay = document.getElementById('reduceDamageText');
+        reduceDisplay.style.display = 'block';
+        setTimeout(() => reduceDisplay.style.display = 'none', 1200);
+    }
 }
     const targetElement = isCorrect 
         ? document.getElementById('opponentHealthBar')
@@ -1445,6 +1466,9 @@ function startNewGameSession() {
 
 <!-- 新增治疗提示 -->
 <div id="healText" style="display:none; position:fixed; top:30%; left:50%; transform:translate(-50%,-50%); font-size:2rem; color:#00ff00; text-shadow:0 0 10px rgba(0,255,0,0.5);">🛡️ 氣血恢復2%</div>
+
+<!-- 新增减伤提示 -->
+<div id="reduceDamageText" style="display:none; position:fixed; top:40%; left:50%; transform:translate(-50%,-50%); font-size:2rem; color:#00ffff; text-shadow:0 0 10px rgba(0,255,255,0.5);">🔥 離火護體 傷害減少30%</div>
     
 </body>
 
