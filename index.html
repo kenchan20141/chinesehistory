@@ -1,5 +1,4 @@
 
-
 <!DOCTYPE html>
 <html>
 <head>
@@ -8,7 +7,7 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     
-    <title>基元文史爭霸</title>
+    <title>基元中史爭霸</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
@@ -759,21 +758,7 @@
   animation: reduceDamageFade 1.2s ease-out;
   pointer-events: none;
 }
-
-/* 新增等待提示样式 */
-#waitingRematch {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background: rgba(0,0,0,0.9);
-    padding: 2rem;
-    border-radius: 10px;
-    border: 2px solid gold;
-    z-index: 9999;
-    box-shadow: 0 0 20px rgba(255,215,0,0.5);
-}
-    
+        
     </style>
 </head>
 <body>
@@ -1373,11 +1358,7 @@ function listenToRoomChanges() {
 }
 
 function startNewGameSession() {
-       // 强制显示游戏界面
-    document.getElementById('gameArea').style.display = 'block';
-    
-    // 重置本地状态
-    isRematching = false;
+    // 重置游戏状态
     gameOver = false;
     answered = false;
 
@@ -1628,37 +1609,16 @@ function handleRematchRequest() {
         [rematchField]: true // 记录当前玩家同意重开
     };
 
-   // 移除胜利界面元素
-    const victoryOverlay = document.querySelector('.victory-overlay');
-    victoryOverlay.style.display = 'none';
-    const buttons = victoryOverlay.querySelector('.rematch-buttons');
-    if (buttons) buttons.remove();
-
-    // 获取当前玩家的重开字段
-    const rematchField = isHost ? 'hostRematch' : 'clientRematch';
-
-    const updates = {
-        [rematchField]: true,
-        gameStarted: false // 确保游戏不会自动开始
-    };
-
     database.ref('rooms/' + currentRoomId).update(updates, (error) => {
         isRematching = false;
-        if (error) return;
+        if (error) {
+            console.error('更新数据库时出错:', error);
+            return;
+        }
 
-        // 强制隐藏游戏界面
-        document.getElementById('gameArea').style.display = 'none';
-        
-        // 显示等待提示
-        const waitingDiv = document.createElement('div');
-        waitingDiv.id = 'waitingRematch';
-        waitingDiv.innerHTML = `
-            <div style="text-align:center; font-size:2rem; color:gold; margin-top:2rem;">
-                ⏳ 等待對手回應中...
-            </div>
-        `;
-        document.body.appendChild(waitingDiv);
-    });
+        // 本地强制重置
+        gameOver = false;
+        answered = false;
 
         // 清除旧问题显示
         document.getElementById('question').textContent = '';
@@ -1757,38 +1717,28 @@ function listenToRoomChanges() {
         const room = snapshot.val();
         if (!room) return;
 
-
-     // 新增重开同步检查
-        if (room.hostRematch && room.clientRematch) {
-            // 移除等待提示
-            const waitingDiv = document.getElementById('waitingRematch');
-            if (waitingDiv) waitingDiv.remove();
-
-            // 同步重置游戏状态
-            const resetData = {
-                gameEnded: false,
-                hostRematch: null,
-                clientRematch: null,
-                'player1/health': 100,
-                'player2/health': 100
-            };
-
-            // 原子更新
-            database.ref('rooms/' + currentRoomId).update(resetData, (error) => {
-                if (error) return;
-
-                // 同时显示游戏界面
-                document.getElementById('gameArea').style.display = 'block';
-                startNewGameSession();
-            });
-        }
-        else if (room.hostRematch || room.clientRematch) {
-            // 如果只有一方同意，保持等待状态
-            document.getElementById('gameArea').style.display = 'none';
+        if (isHost) {
+            opponentDefense = room.player2?.defense || 1.0;
+        } else {
+            opponentDefense = room.player1?.defense || 1.0;
         }
 
+        if (room.player1?.class && room.player2?.class) {
+            document.getElementById('waitingArea').style.display = 'none';
+        }
 
-        
+        if (room.gameEnded) {
+            handleGameEnd(room.winner);
+            return;
+        }
+
+        if (room.player1?.class && room.player2?.class) {
+            document.getElementById('classSelection').style.display = 'none';
+            document.getElementById('gameArea').style.display = 'block';
+            startGame(room);
+        }
+
+        updateHealthDisplay(room);
 
         // 检查双方是否都同意重开
         const bothAgreed = room.hostRematch && room.clientRematch;
@@ -1846,3 +1796,5 @@ function listenToRoomChanges() {
 
     
 </html>
+
+
