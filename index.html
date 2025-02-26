@@ -7,7 +7,7 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     
-    <title>基元中史爭霸</title>
+    <title>基元文史爭霸</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
@@ -907,6 +907,27 @@
 
     
 <script>
+
+// 修改 createRoom 函数的调用方式
+createRoomBtn.onclick = function() {
+    const roomId = roomIdInput.value;
+    if (roomId.trim() === "") {
+        alert("請輸入房間編號！");
+        return;
+    }
+    createRoom();
+};
+
+// 修改 joinRoom 函数的调用方式
+joinRoomBtn.onclick = function() {
+    const roomId = roomIdInput.value;
+    if (roomId.trim() === "") {
+        alert("請輸入房間編號！");
+        return;
+    }
+    joinRoom();
+};
+    
     let isRematching = false;
 let answered = false; 
 let opponentDefense = 1.0; 
@@ -918,25 +939,7 @@ const createRoomBtn = document.querySelector('button[onclick="createRoom()"]');
 const joinRoomBtn = document.querySelector('button[onclick="joinRoom()"]');
 const roomIdInput = document.getElementById('roomId');
 
-// 修改 createRoom 函数的调用方式
-createRoomBtn.onclick = function() {
-    const roomId = roomIdInput.value;
-    if (roomId.trim() === "") {
-        alert("请输入房间编号");
-        return;
-    }
-    createRoom();
-};
 
-// 修改 joinRoom 函数的调用方式
-joinRoomBtn.onclick = function() {
-    const roomId = roomIdInput.value;
-    if (roomId.trim() === "") {
-        alert("请输入房间编号");
-        return;
-    }
-    joinRoom();
-};
 
     
     
