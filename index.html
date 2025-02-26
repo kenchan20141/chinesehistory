@@ -1,11 +1,10 @@
 
-
 <!DOCTYPE html>
 <html>
 <head>
 
-<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     
     <title>基元文史爭霸</title>
@@ -239,7 +238,7 @@
             font-size: 16px;
         }
 
-#roomControl {
+       #roomControl {
     position: relative;
     background: linear-gradient(45deg, rgba(45, 41, 38, 0.95), rgba(25, 22, 20, 0.95)),
                 url('https://t.pimg.jp/076/481/852/1/76481852.jpg');
@@ -765,14 +764,17 @@
 <body>
     <button class="music-control" onclick="toggleMusic()">🎵</button>
     
-
- <div id="roomControl">
+     <div id="roomControl">
         <!-- 新增裝飾性邊框 -->
         <div class="main-border"></div>
         
-            
-         <!-- 原本的標題改成新結構，刪除這行 -->
-<h1 style="font-size:2.5rem; color:var(--gold); margin-bottom:1.5rem;">基元中史爭霸</h1>
+        <!-- 強化標題 -->
+        <div class="title-container">
+            <img src="https://static.vecteezy.com/system/resources/previews/023/999/232/non_2_x/chinese-dragon-logo-design-template-free-vector.jpg" 
+                 alt="龍紋圖騰" 
+                 class="dragon-icon">
+            <h1>
+                <span class="title-text">基元文史爭霸</span>
                 <span class="subtitle">群雄逐鹿·問鼎中原</span>
             </h1>
         </div>
@@ -806,7 +808,8 @@
             <p>⚔️ 選擇你的征戰之路 ⚔️</p>
         </div>
     </div>
-    
+
+
 
 <!-- 新增职业选择界面 -->
 <div id="classSelection" style="display: none;">
