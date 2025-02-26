@@ -1276,14 +1276,26 @@ if(!isCorrect) {
     healthBar.appendChild(wave);
     setTimeout(() => wave.remove(), 500);
 
-    // 新增命中數字顯示
-    const hitText = document.createElement('div');
-    hitText.className = 'hit-marker';
-    hitText.textContent = `-${damage}`;
-    hitText.style.left = `${Math.random() * 80 + 10}%`;
-    hitText.style.top = `${Math.random() * 50 + 25}%`;
-    document.getElementById('gameArea').appendChild(hitText);
-    setTimeout(() => hitText.remove(), 300);
+   // 新增命中數字顯示
+const hitText = document.createElement('div');
+hitText.className = 'hit-marker';
+hitText.textContent = `-${damage}`;
+if (isCorrect) {
+    // 答对时，显示在对方气血条附近
+    const opponentHealthContainer = document.getElementById('enemyHealthContainer');
+    hitText.style.position = 'absolute';
+    hitText.style.left = `${Math.random() * opponentHealthContainer.offsetWidth + opponentHealthContainer.offsetLeft}px`;
+    hitText.style.top = `${opponentHealthContainer.offsetTop + opponentHealthContainer.offsetHeight / 2 - hitText.offsetHeight / 2}px`;
+    opponentHealthContainer.appendChild(hitText);
+} else {
+    // 答错时，显示在自己气血条附近
+    const myHealthContainer = document.getElementById('myHealthContainer');
+    hitText.style.position = 'absolute';
+    hitText.style.left = `${Math.random() * myHealthContainer.offsetWidth + myHealthContainer.offsetLeft}px`;
+    hitText.style.top = `${myHealthContainer.offsetTop + myHealthContainer.offsetHeight / 2 - hitText.offsetHeight / 2}px`;
+    myHealthContainer.appendChild(hitText);
+}
+setTimeout(() => hitText.remove(), 300);
     
     
 }
