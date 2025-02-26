@@ -950,16 +950,15 @@ if (isCorrect) {
     
     // 強制立即檢查遊戲狀態
     checkGameOver();
-    
+        
+    setTimeout(() => {
     if (!gameOver) {
-            setTimeout(() => {
                 // 重置按鈕樣式和互動狀態
                 buttons.forEach(btn => {
                     btn.style.cssText = '';
                     btn.style.pointerEvents = 'auto'; // 重新啟用點擊
                 });
                 answered = false; // 新增：重置回答狀態
-                 if (!gameOver) {
     loadNewQuestion();
             }, 700);
         }
