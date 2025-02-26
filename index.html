@@ -5,7 +5,7 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     
-    <title>基元文史爭霸</title>
+    <title>基元中史爭霸</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
@@ -959,7 +959,7 @@ if (isCorrect) {
                     btn.style.pointerEvents = 'auto'; // 重新啟用點擊
                 });
                 answered = false; // 新增：重置回答狀態
-                loadNewQuestion();
+                    if (!gameOver) loadNewQuestion();
             }, 700);
         }
     });
@@ -1107,14 +1107,17 @@ function createRoom() {
     document.getElementById('waitingArea').style.display = 'block';
     document.getElementById('displayRoomId').textContent = currentRoomId;
 
-    database.ref('rooms/' + currentRoomId).set({
-        player1: { health: 100, class: null }, // 添加class字段
-        player2: null,
-        currentQuestion: null,
-        gameStarted: false,
-        gameEnded: false,
-        winner: null
-    });
+database.ref('rooms/' + currentRoomId).set({
+    player1: { 
+        health: 100, 
+        class: null,
+        currentQuestion: null  // 新增此行
+    },
+    player2: null,
+    gameStarted: false,
+    gameEnded: false,
+    winner: null
+});
     listenToRoomChanges();
 }
 
@@ -1133,6 +1136,13 @@ function listenToRoomChanges() {
     roomRef.on('value', (snapshot) => {
         const room = snapshot.val();
         if (!room) return;
+
+         // 新增这段代码 ▼▼▼
+        const playerPath = isHost ? 'player1' : 'player2';
+        const myQuestion = room[playerPath]?.currentQuestion;
+        if (myQuestion) {
+            displayQuestion(myQuestion);
+        }
 
     // 新增这行代码 ▼▼▼
     // 实时更新对手防御力数值
@@ -1210,14 +1220,6 @@ function startGame(room) {
   // 強制顯示遊戲區域
   document.getElementById('gameArea').style.display = 'block';
   
-  // 延遲載入新題目避免競態
-  setTimeout(() => {
-    if (!room.currentQuestion) {
-      loadNewQuestion();
-    } else {
-      displayQuestion(room.currentQuestion);
-    }
-  }, 500);
 }
 
 function shuffleArray(array) {
@@ -1246,7 +1248,8 @@ function loadNewQuestion() {
             correctIndex: newCorrectIndex
         };
 
-        database.ref('rooms/' + currentRoomId).update({ currentQuestion: processedQuestion });
+             const playerPath = isHost ? 'player1' : 'player2';
+        database.ref(`rooms/${currentRoomId}/${playerPath}/currentQuestion`).set(processedQuestion);
     });
 }
 
@@ -1318,6 +1321,10 @@ function checkGameOver() {
 }
 
 function handleGameEnd(winnerType) {
+    // 在函数开头添加：
+database.ref(`rooms/${currentRoomId}/player1/currentQuestion`).remove();
+database.ref(`rooms/${currentRoomId}/player2/currentQuestion`).remove();
+    
     if (gameOver) return;
     gameOver = true;
     
