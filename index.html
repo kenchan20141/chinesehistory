@@ -7,7 +7,7 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     
-    <title>基元文史爭霸</title>
+    <title>基元中史爭霸</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
@@ -908,12 +908,12 @@
     
 <script>
     let isRematching = false;
-let answered = false; 
-let opponentDefense = 1.0; 
-// 新增变量
-let waitingForOpponent = false; 
+let answered = false; // 用於追蹤當前問題是否已回答
 
-    
+    // 新增这行 ▼▼▼
+let opponentDefense = 1.0; // 存储对手的防御力
+
+
 function selectClass(className) {
     const classData = {
         warrior: { attack: 1.2, defense: 0.9, dodge: 0, skill: 'doubleDamage' },
@@ -1338,41 +1338,9 @@ function listenToRoomChanges() {
         }
 
         updateHealthDisplay(room);
-
-        if (room.hostRematch && room.clientRematch && !room.gameStarted) {
-            // 双方都同意重开，移除等待界面
-            const waitingForRematch = document.getElementById('waitingForRematch');
-            if (waitingForRematch) {
-                waitingForRematch.remove();
-            }
-
-            // 开始新游戏
-            const updates = {
-                gameStarted: true
-            };
-            database.ref('rooms/' + currentRoomId).update(updates, () => {
-                startNewGameSession();
-            });
-        }
     });
 }
 
-function startNewGameSession() {
-    // 重置游戏状态
-    gameOver = false;
-    answered = false;
-
-    // 清除旧问题显示
-    document.getElementById('question').textContent = '';
-    document.getElementById('options').innerHTML = '';
-
-    // 重新加载问题
-    loadNewQuestion();
-
-    // 开始新的计时
-    startTimer();
-}
-    
 function updateHealthDisplay(room) {
      // 在原有代码前添加职业头像显示
     const myClass = isHost ? room.player1.class : (room.player2?.class || '');
@@ -1585,7 +1553,7 @@ const buttonContainer = document.createElement('div');
     victoryOverlay.appendChild(buttonContainer);
 }
 
-
+// 修正后的 handleRematchRequest 函数
 function handleRematchRequest() {
     if (isRematching) return;
     isRematching = true;
@@ -1596,100 +1564,77 @@ function handleRematchRequest() {
     const buttons = victoryOverlay.querySelector('.rematch-buttons');
     if (buttons) buttons.remove();
 
-    // 获取当前玩家对应的重开字段
-    const rematchField = isHost ? 'hostRematch' : 'clientRematch';
-
     // 原子性重置数据库状态
     const updates = {
         'player1/health': 100,
         'player2/health': 100,
         gameEnded: false,
+        currentQuestion: null,
         winner: null,
-        gameStarted: false,
-        [rematchField]: true // 标记当前玩家同意重赛
+        gameStarted: true,
+        hostRematch: false,
+        clientRematch: false
     };
 
     database.ref('rooms/' + currentRoomId).update(updates, (error) => {
         isRematching = false;
-        waitingForOpponent = true;
+        if (error) return;
 
-        // 显示等待界面
-        const waitingForRematch = document.createElement('div');
-        waitingForRematch.id = 'waitingForRematch';
-        waitingForRematch.style.textAlign = 'center';
-        waitingForRematch.style.fontSize = '2rem';
-        waitingForRematch.style.color = 'var(--gold)';
-        waitingForRematch.style.padding = '2rem';
-        waitingForRematch.style.background = 'rgba(45, 41, 38, 0.95)';
-        waitingForRematch.style.border = '3px solid var(--gold)';
-        waitingForRematch.style.borderRadius = '15px';
-        waitingForRematch.style.maxWidth = '600px';
-        waitingForRematch.style.margin = '2rem auto';
-        waitingForRematch.style.boxShadow = '0 0 20px rgba(212, 175, 55, 0.5)';
-        waitingForRematch.style.textShadow = '2px 2px 4px rgba(0, 0, 0, 0.7)';
-        waitingForRematch.textContent = '等待對手同意重開遊戲...';
-        document.body.appendChild(waitingForRematch);
+        // 本地强制重置
+        gameOver = false;
+        answered = false;
+        
+        // 清除旧问题显示
+        document.getElementById('question').textContent = '';
+        document.getElementById('options').innerHTML = '';
+
+        // 强制刷新游戏区域
+        document.getElementById('gameArea').style.display = 'none';
+        setTimeout(() => {
+            document.getElementById('gameArea').style.display = 'block';
+        }, 100);
 
         // 重新绑定监听器
         listenToRoomChanges();
     });
 }
 
+// 修正后的 startNewGameSession 函数
+function startNewGameSession() {
+    // 确保移除所有旧监听器
+    database.ref('rooms/' + currentRoomId).off();
 
-function listenToRoomChanges() {
-    const roomRef = database.ref('rooms/' + currentRoomId);
-    roomRef.off('value');
+    // 重置游戏数据
+    const updates = {
+        player1: { health: 100 },
+        player2: { health: 100 },
+        currentQuestion: null,
+        gameEnded: false,
+        hostRematch: false,
+        clientRematch: false,
+        gameStarted: true
+    };
 
-    roomRef.on('value', (snapshot) => {
-        const room = snapshot.val();
-        if (!room) return;
-
-        // 检查双方重赛状态
-        const bothAgreed = room.hostRematch && room.clientRematch;
+    database.ref('rooms/' + currentRoomId).update(updates, () => {
+        // 本地状态重置
+        gameOver = false;
+        answered = false;
         
-        if (bothAgreed) {
-            // 双方同意后重置所有状态
-            const updates = {
-                gameStarted: true,
-                gameEnded: false,
-                hostRematch: null,
-                clientRematch: null,
-                'player1/health': 100,
-                'player2/health': 100
-            };
+        // 强制界面刷新
+        document.getElementById('gameArea').style.display = 'block';
+        document.querySelector('.victory-overlay').style.display = 'none';
+        document.getElementById('question').textContent = '準備新回合...';
+        document.getElementById('options').innerHTML = '';
 
-            // 移除等待界面
-            const waitingForRematch = document.getElementById('waitingForRematch');
-            if (waitingForRematch) waitingForRematch.remove();
-
-            // 更新数据库并开始新游戏
-            database.ref('rooms/' + currentRoomId).update(updates, () => {
-                // 重置本地状态
-                gameOver = false;
-                answered = false;
-                timeLeft = 15;
-                document.getElementById('timer').textContent = '🕒15秒';
-
-                // 重置界面
-                document.querySelector('.victory-overlay').style.display = 'none';
-                document.getElementById('gameArea').style.display = 'block';
-                updateHealthDisplay(room);
-
-                // 开始新游戏
-                startNewGameSession();
-            });
-        }
-        else if (waitingForOpponent) {
-            // 显示动态等待效果
-            const waitingForRematch = document.getElementById('waitingForRematch');
-            if (waitingForRematch) {
-                const dots = new Array((Date.now() % 1500) / 500 + 1).join('.');
-                waitingForRematch.textContent = `等待對手回應${dots}`;
-            }
-        }
+        // 重新绑定监听器
+        listenToRoomChanges();
+        
+        // 延迟加载新题目
+        setTimeout(() => {
+            loadNewQuestion();
+        }, 500);
     });
 }
-    
 </script>
 
 <!-- 新增治疗提示 -->
@@ -1704,3 +1649,5 @@ function listenToRoomChanges() {
 
     
 </html>
+
+
