@@ -7,7 +7,7 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     
-    <title>基元文史爭霸</title>
+    <title>基元中史爭霸</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
@@ -990,6 +990,17 @@ function displayQuestion(question) {
 }
 
 function checkAnswer(isCorrect) {
+    // 处理当前玩家的答题结果
+    if (isCorrect) {
+        // 答题正确的逻辑
+        // 例如更新当前玩家的分数等
+    } else {
+        // 答题错误的逻辑
+        // 例如扣除当前玩家的生命值等
+    }
+
+    // 加载下一题
+    loadNewQuestion();
 
 // 在伤害计算后添加：
 let effectElement = document.createElement('div');
@@ -1335,11 +1346,6 @@ function listenToRoomChanges() {
             document.getElementById('waitingArea').style.display = 'none';
         }
         
-        // 新增遊戲結束監聽
-        if (room.gameEnded) {
-            handleGameEnd(room.winner);
-            return;
-        }
 
   // 检查是否双方都选择了职业
         if (room.player1?.class && room.player2?.class) {
@@ -1417,6 +1423,22 @@ function shuffleArray(array) {
 }
 
 function loadNewQuestion() {
+
+ // 获取当前玩家的答题状态
+    // 例如从本地变量中获取当前玩家的答题次数等
+
+    // 加载新题目
+    const questionsRef = database.ref('questions');
+    questionsRef.once('value').then(snapshot => {
+        const questions = snapshot.val();
+        if (questions) {
+            // 随机选择一道题目
+            const randomIndex = Math.floor(Math.random() * questions.length);
+            const question = questions[randomIndex];
+
+            // 显示新题目
+            displayQuestion(question);
+    
     const questionsRef = database.ref('questions');
     questionsRef.once('value').then(snapshot => {
         const questions = snapshot.val();
