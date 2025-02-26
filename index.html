@@ -7,7 +7,7 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     
-    <title>基元文史爭霸</title>
+    <title>基元中史爭霸</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
@@ -77,10 +77,13 @@
 
 
     /* 血條衝擊波特效 */
-    @keyframes healthWave {
-        0% { transform: scaleX(1); opacity: 1; }
-        100% { transform: scaleX(1.2); opacity: 0; }
-    }
+@keyframes healthWave {
+    0% { transform: scaleX(1); opacity: 1; }
+    100% { transform: scaleX(1.2); opacity: 0; }
+    0% { background-color: rgba(255, 0, 0, 0.3); }
+    50% { background-color: rgba(255, 0, 0, 0.5); }
+    100% { background-color: rgba(255, 0, 0, 0.3); }
+}
 
     .health-wave {
         position: absolute;
@@ -103,6 +106,26 @@
 }
     }
 
+.damage-notify {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 20px;
+    border-radius: 10px;
+    z-index: 9999;
+    font-size: 2rem;
+    text-align: center;
+    animation: fadeInOut 1s ease-in-out; /* 定义一个淡入淡出动画 */
+}
+@keyframes fadeInOut {
+    0% { opacity: 0; }
+    50% { opacity: 1; }
+    100% { opacity: 0; }
+}
+        
     /* 答題命中特效 */
     @keyframes hitMarker {
         0% { transform: scale(0); opacity: 0; }
@@ -118,12 +141,14 @@
         text-shadow: 0 0 10px rgba(255,0,0,0.5);
     }
 
-        
         /* 新增動畫效果 */
 @keyframes damageFlash {
     0% { filter: brightness(1); }
     50% { filter: brightness(1.5); }
     100% { filter: brightness(1); }
+    0% { background-color: transparent; }
+    50% { background-color: rgba(255, 0, 0, 0.2); } /* 半透明红色背景 */
+    100% { background-color: transparent; }
 }
 
 .damage-flash {
@@ -196,6 +221,11 @@
     #gameArea {
         animation: fadeInUp 0.5s ease-out; /* 游戏区浮现效果 */
     }
+
+        #gameArea.damage-shake {
+    animation: screenShake 0.5s ease-in-out;
+    border: 3px solid rgba(255, 0, 0, 0.5); /* 抖动时添加红色边框 */
+}
 
     #question {
         animation: fadeInUp 0.1s ease-out; /* 题目浮现 */
@@ -1100,6 +1130,25 @@ else if(playerClass.type === 'tank' && !isCorrect) {
         setTimeout(() => healDisplay.style.display = 'none', 1000);
     }
 
+
+
+    if (isCorrect) {
+    const notifyElement = document.createElement('div');
+    notifyElement.className = 'damage-notify';
+    notifyElement.textContent = '对方答对，你的气血已减少！';
+    document.body.appendChild(notifyElement);
+    setTimeout(() => {
+        notifyElement.remove();
+    }, 1000);
+}
+
+    if (isCorrect) {
+    const healthBar = document.getElementById('myHealthBar');
+    const wave = document.createElement('div');
+    wave.className = 'health-wave';
+    healthBar.appendChild(wave);
+    setTimeout(() => wave.remove(), 500);
+}
     
 if(effectElement.className) {
     document.body.appendChild(effectElement);
@@ -1170,6 +1219,19 @@ if (isCorrect) {
         setTimeout(() => reduceDisplay.style.display = 'none', 1200);
     }
 }
+
+if (isCorrect) {
+    const targetElement = document.getElementById('myHealthBar');
+    targetElement.classList.add('damage-flash');
+    document.getElementById('gameArea').classList.add('damage-shake');
+    // 震動效果
+    navigator.vibrate = navigator.vibrate || navigator.webkitVibrate || navigator.mozVibrate || navigator.msVibrate;
+    if (navigator.vibrate) navigator.vibrate(200);
+    // 音效播放
+    soundEffects.attack.currentTime = 0;
+    soundEffects.attack.play();
+}
+    
     const targetElement = isCorrect 
         ? document.getElementById('opponentHealthBar')
         : document.getElementById('myHealthBar');
@@ -1207,10 +1269,23 @@ if (isCorrect) {
 
     database.ref('rooms/' + currentRoomId).update(updates, (error) => {
     if (error) return;
-    
+
+setTimeout(() => {
+    if (isCorrect) {
+        const targetElement = document.getElementById('myHealthBar');
+        targetElement.classList.remove('damage-flash');
+        document.getElementById('gameArea').classList.remove('damage-shake');
+    }
+    targetElement.classList.remove('damage-flash');
+    document.getElementById('gameArea').classList.remove('screen-shake');
+    document.querySelectorAll('.health-fill').forEach(bar => bar.classList.remove('damage-effect'));
+}, 500);
+
+
+        
     // 強制立即檢查遊戲狀態
     checkGameOver();
-    
+
     if (!gameOver) {
             setTimeout(() => {
                 // 重置按鈕樣式和互動狀態
