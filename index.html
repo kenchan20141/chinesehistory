@@ -7,7 +7,7 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     
-    <title>基元文史爭霸</title>
+    <title>基元中史爭霸</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
@@ -51,24 +51,6 @@
     transition: width 0.5s ease, background-color 0.3s ease;
 }
 
-@keyframes optionPop {
-    0% { transform: scale(0); opacity: 0; }
-    80% { transform: scale(1.1); }
-    100% { transform: scale(1); opacity: 1; }
-}
-
-        .class-card img.selected-image {
-    display: none; /* 初始隐藏 */
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    max-width: 80%;
-    max-height: 80%;
-    z-index: 9999;
-    animation: optionPop 0.5s ease-out; /* 添加动画 */
-}
-        
     /* 血條衝擊波特效 */
     @keyframes healthWave {
         0% { transform: scaleX(1); opacity: 1; }
@@ -781,19 +763,6 @@
 </head>
 <body>
     <button class="music-control" onclick="toggleMusic()">🎵</button>
-
-
-    <div class="class-card" onclick="selectClass('warrior')">
-    <img src="https://vovo2000.com/images/53904.jpg" class="class-icon">
-    <img src="https://vovo2000.com/images/53904.jpg" class="selected-image"> <!-- 新增图片元素 -->
-    <div class="selected-tick">✓</div>
-    <h3>霸刀門</h3>
-    <p>攻擊+20% 防禦-10%</p>
-    <ul class="class-stats">
-        <li>⚔️ 狂刀斬：命中後有機率造成雙倍傷害</li>
-    </ul>
-</div>
-
     
  <div id="roomControl">
         <!-- 新增裝飾性邊框 -->
@@ -990,17 +959,16 @@ function selectClass(className) {
         <p>等待對手選擇流派...</p>
     `;
 
-    // 移除所有卡片的选中状态
-    document.querySelectorAll('.class-card').forEach(card => {
-        card.classList.remove('selected');
-        card.querySelector('.selected-tick').style.display = 'none';
-        card.querySelector('.selected-image').style.display = 'none'; // 隐藏所有图片
-    });
+// 移除所有卡片的选中状态
+document.querySelectorAll('.class-card').forEach(card => {
+    card.classList.remove('selected');
+    card.querySelector('.selected-tick').style.display = 'none';
+});
 
-    // 设置当前选中卡片
-    const selectedCard = document.querySelector(`.class-card[onclick="selectClass('${className}')"]`);
-    selectedCard.classList.add('selected');
-    selectedCard.querySelector('.selected-tick').style.display = 'flex';
+// 设置当前选中卡片
+const selectedCard = document.querySelector(`.class-card[onclick="selectClass('${className}')"]`);
+selectedCard.classList.add('selected');
+selectedCard.querySelector('.selected-tick').style.display = 'flex';
 
     // 显示确认信息
     document.getElementById('selectedClassInfo').innerHTML = `
@@ -1008,18 +976,8 @@ function selectClass(className) {
         <p>等待對手選擇流派...</p>
     `;
     
-    // 显示角色图片并添加动画
-    const selectedImage = selectedCard.querySelector('.selected-image');
-    selectedImage.style.display = 'block';
-    selectedImage.classList.add('optionPop');
-
-    // 动画结束后移除动画类名
-    selectedImage.addEventListener('animationend', function() {
-        this.classList.remove('optionPop');
-    });
-    
     // 更新数据库
-    const playerPath = isHost? 'player1' : 'player2';
+    const playerPath = isHost ? 'player1' : 'player2';
     database.ref(`rooms/${currentRoomId}/${playerPath}`).update({
         class: className,
         health: 100,
@@ -1028,6 +986,7 @@ function selectClass(className) {
         dodge: playerClass.dodge
     });
 }
+
 
 function displayQuestion(question) {
     
@@ -1819,7 +1778,7 @@ function listenToRoomChanges() {
                 max-width: 300px;
                 box-shadow: 0 0 20px rgba(212, 175, 55, 0.5);
             `;
-            opponentJoinedMessage.textContent = '🎮玩家已進場';
+            opponentJoinedMessage.textContent = '玩家已進場';
             document.body.appendChild(opponentJoinedMessage);
 
             // 一段时间后移除提示信息
