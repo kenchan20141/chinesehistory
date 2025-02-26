@@ -7,7 +7,7 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     
-    <title>基元文史爭霸</title>
+    <title>基元中史爭霸</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
@@ -1766,24 +1766,23 @@ function listenToRoomChanges() {
         updateHealthDisplay(room);
 
         // 检查双方是否都同意重开
-        const bothAgreed = room.hostRematch && room.clientRematch;
-        if (bothAgreed &&!room.gameStarted) {
-            // 双方都同意重开，移除等待界面
-            const waitingForRematch = document.getElementById('waitingForRematch');
-            if (waitingForRematch) {
-                waitingForRematch.remove();
-            }
-
-            // 开始新游戏
-            const updates = {
-                gameStarted: true
-            };
-            database.ref('rooms/' + currentRoomId).update(updates, () => {
-                startNewGameSession();
-            });
-
-            // 重置等待对方同意的标志位
-            waitingForOpponent = false;
+       // 双方都同意重开，移除等待界面
+const waitingForRematch = document.getElementById('waitingForRematch');
+if (waitingForRematch) {
+    waitingForRematch.remove();
+}
+// 开始新游戏
+const updates = {
+    gameStarted: true
+};
+database.ref('rooms/' + currentRoomId).update(updates, () => {
+    startNewGameSession();
+});
+// 重置等待对方同意的标志位
+waitingForOpponent = false;
+// 新增：重置提示信息元素
+opponentJoinedMessage = null;
+        
         } else if (!bothAgreed && waitingForOpponent) {
             // 如果只有一方同意且正在等待对方同意，保持等待界面显示
             const waitingForRematch = document.getElementById('waitingForRematch');
