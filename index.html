@@ -7,7 +7,7 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     
-    <title>基元文史爭霸</title>
+    <title>基元中史爭霸</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
@@ -1631,17 +1631,17 @@ function handleRematchRequest() {
     const rematchField = isHost ? 'hostRematch' : 'clientRematch';
 
     // 原子性重置数据库状态
-    const updates = {
-        'player1/health': 100,
-        'player2/health': 100,
-        gameEnded: false,
-        currentQuestion: null,
-        winner: null,
-        gameStarted: false, // 确保游戏在双方都同意重开前不开始
-        [rematchField]: true, // 记录当前玩家同意重开
-        // 新增一个字段用于表示玩家B是否已经点击了“再戰江湖”
-        clientEntered: isHost ? false : true 
-    };
+   const updates = {
+    'player1/health': 100,
+    'player2/health': 100,
+    gameEnded: false,
+    currentQuestion: null,
+    winner: null,
+    gameStarted: false,
+    [rematchField]: true,
+    // 新增以下兩行 ▼▼▼
+    [isHost ? 'hostEntered' : 'clientEntered']: true
+};
 
     database.ref('rooms/' + currentRoomId).update(updates, (error) => {
         isRematching = false;
@@ -1685,6 +1685,13 @@ function handleRematchRequest() {
 
 
 function listenToRoomChanges() {
+    // 修改 listenToRoomChanges 函數中的玩家進入檢查
+const isHostCheck = isHost && room.clientEntered;
+const isClientCheck = !isHost && room.hostEntered;
+
+if ((isHostCheck || isClientCheck) && !room.gameStarted && !opponentJoinedMessage) {
+    opponentJoinedMessage = document.createElement('div');
+    
     const roomRef = database.ref('rooms/' + currentRoomId);
     roomRef.off('value');
 
@@ -1756,6 +1763,11 @@ function listenToRoomChanges() {
             }
         }
 
+
+            // 玩家進入通知檢查 (修改後版本) ▼▼▼
+    const isHostCheck = isHost && room.clientEntered;
+    const isClientCheck = !isHost && room.hostEntered;
+        
         // 新增：检查玩家B是否已经点击了“再戰江湖”
      if (isHost && room.clientEntered && !room.gameStarted &&!opponentJoinedMessage) {
             opponentJoinedMessage = document.createElement('div');
@@ -1778,6 +1790,10 @@ opponentJoinedMessage.style.cssText = `
 `;
             opponentJoinedMessage.textContent = '玩家已進場';
             document.body.appendChild(opponentJoinedMessage);
+
+             // 新增重置對應字段 ▼▼▼
+    const fieldToReset = isHost ? 'clientEntered' : 'hostEntered';
+    database.ref('rooms/' + currentRoomId).update({ [fieldToReset]: false });
 
             // 一段时间后移除提示信息
             setTimeout(() => {
