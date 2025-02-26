@@ -1611,12 +1611,15 @@ function handleRematchRequest() {
 
     database.ref('rooms/' + currentRoomId).update(updates, (error) => {
         isRematching = false;
-        if (error) return;
+        if (error) {
+            console.error('更新数据库时出错:', error);
+            return;
+        }
 
         // 本地强制重置
         gameOver = false;
         answered = false;
-        
+
         // 清除旧问题显示
         document.getElementById('question').textContent = '';
         document.getElementById('options').innerHTML = '';
@@ -1638,11 +1641,13 @@ function handleRematchRequest() {
         waitingForRematch.textContent = '等待对手同意重开游戏...';
         document.body.appendChild(waitingForRematch);
 
+        // 添加等待对方同意的标志位
+        waitingForOpponent = true;
+
         // 重新绑定监听器
         listenToRoomChanges();
     });
 }
-
 function handleRematchRequest() {
     if (isRematching) return;
     isRematching = true;
@@ -1737,7 +1742,7 @@ function listenToRoomChanges() {
 
         // 检查双方是否都同意重开
         const bothAgreed = room.hostRematch && room.clientRematch;
-        if (bothAgreed && !room.gameStarted) {
+        if (bothAgreed &&!room.gameStarted) {
             // 双方都同意重开，移除等待界面
             const waitingForRematch = document.getElementById('waitingForRematch');
             if (waitingForRematch) {
@@ -1751,8 +1756,11 @@ function listenToRoomChanges() {
             database.ref('rooms/' + currentRoomId).update(updates, () => {
                 startNewGameSession();
             });
-        } else if (!bothAgreed) {
-            // 如果只有一方同意，确保等待界面显示
+
+            // 重置等待对方同意的标志位
+            waitingForOpponent = false;
+        } else if (!bothAgreed && waitingForOpponent) {
+            // 如果只有一方同意且正在等待对方同意，保持等待界面显示
             const waitingForRematch = document.getElementById('waitingForRematch');
             if (!waitingForRematch) {
                 const newWaitingForRematch = document.createElement('div');
