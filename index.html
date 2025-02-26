@@ -8,7 +8,7 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     
-    <title>基元中史爭霸</title>
+    <title>基元文史爭霸</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
@@ -908,7 +908,8 @@
 
     
 <script>
-
+// 在代码开头部分，添加一个新的变量用于存储提示信息的元素
+let opponentJoinedMessage = null;
     let isRematching = false;
 let answered = false; 
 let opponentDefense = 1.0; 
@@ -1634,7 +1635,9 @@ function handleRematchRequest() {
         currentQuestion: null,
         winner: null,
         gameStarted: false, // 确保游戏在双方都同意重开前不开始
-        [rematchField]: true // 记录当前玩家同意重开
+        [rematchField]: true, // 记录当前玩家同意重开
+        // 新增一个字段用于表示玩家B是否已经点击了“再戰江湖”
+        clientEntered: isHost ? false : true 
     };
 
     database.ref('rooms/' + currentRoomId).update(updates, (error) => {
@@ -1669,13 +1672,14 @@ function handleRematchRequest() {
         waitingForRematch.textContent = '等待对手同意重开游戏...';
         document.body.appendChild(waitingForRematch);
 
-// 添加等待对方同意的标志位
+        // 添加等待对方同意的标志位
         waitingForOpponent = true;
-        
+
         // 重新绑定监听器
         listenToRoomChanges();
     });
 }
+
 
 function listenToRoomChanges() {
     const roomRef = database.ref('rooms/' + currentRoomId);
@@ -1747,6 +1751,28 @@ function listenToRoomChanges() {
                 newWaitingForRematch.textContent = '等待对手同意重开游戏...';
                 document.body.appendChild(newWaitingForRematch);
             }
+        }
+
+        // 新增：检查玩家B是否已经点击了“再戰江湖”
+        if (isHost && room.clientEntered &&!opponentJoinedMessage) {
+            opponentJoinedMessage = document.createElement('div');
+            opponentJoinedMessage.style.position = 'fixed';
+            opponentJoinedMessage.style.top = '50%';
+            opponentJoinedMessage.style.left = '50%';
+            opponentJoinedMessage.style.transform = 'translate(-50%, -50%)';
+            opponentJoinedMessage.style.backgroundColor = 'rgba(0, 0, 0, 0.8)';
+            opponentJoinedMessage.style.color = 'white';
+            opponentJoinedMessage.style.padding = '20px';
+            opponentJoinedMessage.style.borderRadius = '10px';
+            opponentJoinedMessage.style.zIndex = 9999;
+            opponentJoinedMessage.textContent = '玩家已進場';
+            document.body.appendChild(opponentJoinedMessage);
+
+            // 一段时间后移除提示信息
+            setTimeout(() => {
+                opponentJoinedMessage.remove();
+                opponentJoinedMessage = null;
+            }, 3000);
         }
     });
 }
