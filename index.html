@@ -5,7 +5,7 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     
-    <title>基元中史爭霸</title>
+    <title>基元文史爭霸</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
@@ -803,6 +803,9 @@ function displayQuestion(question) {
 
 function checkAnswer(isCorrect) {
 
+    if (answered || gameOver) return;
+answered = true; // 立即锁定答题状态
+
 // 在伤害计算后添加：
 let effectElement = document.createElement('div');
 if(playerClass.type === 'warrior' && isCorrect) {
@@ -959,7 +962,7 @@ if (isCorrect) {
                     btn.style.pointerEvents = 'auto'; // 重新啟用點擊
                 });
                 answered = false; // 新增：重置回答狀態
-                loadNewQuestion();
+                loadNewQuestion(); // 仅当前玩家加载新题
             }, 700);
         }
     });
@@ -1127,8 +1130,13 @@ function joinRoom() {
 }
 
 function listenToRoomChanges() {
-    const roomRef = database.ref('rooms/' + currentRoomId);
-    roomRef.off('value'); // 先移除舊監聽
+   const playerQuestionPath = isHost ? 'player1/currentQuestion' : 'player2/currentQuestion';
+database.ref(`rooms/${currentRoomId}/${playerQuestionPath}`).on('value', (snapshot) => {
+    const question = snapshot.val();
+    if (question && !answered) { // 添加answered判断
+        displayQuestion(question);
+    }
+});
 
     roomRef.on('value', (snapshot) => {
         const room = snapshot.val();
@@ -1209,6 +1217,14 @@ function startGame(room) {
   
   // 強制顯示遊戲區域
   document.getElementById('gameArea').style.display = 'block';
+
+        // 独立初始化题目 ▼
+    const myQuestion = isHost ? room.player1.currentQuestion : room.player2.currentQuestion;
+    if (!myQuestion) {
+        loadNewQuestion();
+    } else {
+        displayQuestion(myQuestion);
+    }
   
   // 延遲載入新題目避免競態
   setTimeout(() => {
@@ -1246,7 +1262,8 @@ function loadNewQuestion() {
             correctIndex: newCorrectIndex
         };
 
-        database.ref('rooms/' + currentRoomId).update({ currentQuestion: processedQuestion });
+        const playerPath = isHost ? 'player1/currentQuestion' : 'player2/currentQuestion';
+        database.ref(`rooms/${currentRoomId}/${playerPath}`).set(processedQuestion);
     });
 }
 
