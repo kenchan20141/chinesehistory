@@ -1,4 +1,5 @@
 
+
 <!DOCTYPE html>
 <html>
 <head>
@@ -7,7 +8,7 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     
-    <title>基元文史爭霸</title>
+    <title>基元中史爭霸</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
@@ -1624,7 +1625,6 @@ function handleRematchRequest() {
 
     // 获取当前玩家对应的重开字段
     const rematchField = isHost ? 'hostRematch' : 'clientRematch';
-    const rematchConfirmedField = isHost ? 'hostRematchConfirmed' : 'clientRematchConfirmed';
 
     // 原子性重置数据库状态
     const updates = {
@@ -1634,8 +1634,7 @@ function handleRematchRequest() {
         currentQuestion: null,
         winner: null,
         gameStarted: false, // 确保游戏在双方都同意重开前不开始
-        [rematchField]: true, // 记录当前玩家同意重开
-        [rematchConfirmedField]: true // 记录当前玩家已确认重开
+        [rematchField]: true // 记录当前玩家同意重开
     };
 
     database.ref('rooms/' + currentRoomId).update(updates, (error) => {
@@ -1670,14 +1669,13 @@ function handleRematchRequest() {
         waitingForRematch.textContent = '等待对手同意重开游戏...';
         document.body.appendChild(waitingForRematch);
 
-        // 添加等待对方同意的标志位
+// 添加等待对方同意的标志位
         waitingForOpponent = true;
-
+        
         // 重新绑定监听器
         listenToRoomChanges();
     });
 }
-
 
 function listenToRoomChanges() {
     const roomRef = database.ref('rooms/' + currentRoomId);
@@ -1712,28 +1710,11 @@ function listenToRoomChanges() {
 
         // 检查双方是否都同意重开
         const bothAgreed = room.hostRematch && room.clientRematch;
-        const bothConfirmed = room.hostRematchConfirmed && room.clientRematchConfirmed;
-        if (bothAgreed && bothConfirmed &&!room.gameStarted) {
+        if (bothAgreed &&!room.gameStarted) {
             // 双方都同意重开，移除等待界面
             const waitingForRematch = document.getElementById('waitingForRematch');
             if (waitingForRematch) {
                 waitingForRematch.remove();
-            }
-
-            // 在玩家A页面显示「玩家已进场」
-            if (isHost) {
-                const playerJoinedMessage = document.createElement('div');
-                playerJoinedMessage.style.position = 'fixed';
-                playerJoinedMessage.style.top = '50%';
-                playerJoinedMessage.style.left = '50%';
-                playerJoinedMessage.style.transform = 'translate(-50%, -50%)';
-                playerJoinedMessage.style.backgroundColor = 'rgba(0, 0, 0, 0.8)';
-                playerJoinedMessage.style.color = 'white';
-                playerJoinedMessage.style.padding = '20px';
-                playerJoinedMessage.style.borderRadius = '10px';
-                playerJoinedMessage.textContent = '玩家已进场';
-                document.body.appendChild(playerJoinedMessage);
-                setTimeout(() => playerJoinedMessage.remove(), 3000); // 3秒后移除提示
             }
 
             // 开始新游戏
