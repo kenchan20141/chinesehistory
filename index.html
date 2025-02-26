@@ -4,9 +4,11 @@
 <html>
 <head>
 
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     
-    <title>基元中史爭霸</title>
+    <title>基元文史爭霸</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
@@ -237,16 +239,165 @@
             font-size: 16px;
         }
 
-        #roomControl {
-            text-align: center;
-            background: rgba(45, 41, 38, 0.9);
-            padding:1rem;
-            border-radius: 10px;
-            box-shadow: 0 0 20px var(--gold);
-            max-width: 87%;
-            min-height: calc(100vh - 40px);
-            margin: 1rem auto;
-        }
+#roomControl {
+    position: relative;
+    background: linear-gradient(45deg, rgba(45, 41, 38, 0.95), rgba(25, 22, 20, 0.95)),
+                url('https://t.pimg.jp/076/481/852/1/76481852.jpg');
+    background-size: cover;
+    background-blend-mode: multiply;
+    padding: 3rem 2rem;
+    border-radius: 20px;
+    box-shadow: 0 0 50px rgba(212, 175, 55, 0.5);
+    border: 3px solid #695434;
+    max-width: 800px;
+    margin: 2rem auto;
+    overflow: hidden;
+}
+
+.title-container {
+    position: relative;
+    margin-bottom: 3rem;
+    text-align: center;
+}
+
+.dragon-icon {
+    width: 120px;
+    position: absolute;
+    top: -50px;
+    left: 50%;
+    transform: translateX(-50%);
+    filter: drop-shadow(0 0 10px #d4af37);
+}
+
+.title-text {
+    display: block;
+    font-size: 3rem;
+    color: #d4af37;
+    text-shadow: 3px 3px 0 #8b6914;
+    letter-spacing: 4px;
+    animation: titleFloat 3s ease-in-out infinite;
+}
+
+.subtitle {
+    display: block;
+    font-size: 1.2rem;
+    color: #c0b090;
+    margin-top: 0.5rem;
+    letter-spacing: 2px;
+}
+
+.input-group {
+    margin: 2rem 0;
+}
+
+.input-decor {
+    position: relative;
+    max-width: 400px;
+    margin: 0 auto;
+}
+
+#roomId {
+    width: 100%;
+    padding: 1.2rem 2.5rem;
+    font-size: 1.5rem;
+    background: rgba(0,0,0,0.7);
+    border: 2px solid #695434;
+    border-radius: 15px;
+    color: #d4af37;
+    text-align: center;
+    transition: all 0.3s;
+}
+
+#roomId:focus {
+    outline: none;
+    border-color: #d4af37;
+    box-shadow: 0 0 20px rgba(212, 175, 55, 0.5);
+}
+
+.icon {
+    position: absolute;
+    left: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #d4af37;
+    opacity: 0.7;
+}
+
+.button-group {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+    max-width: 500px;
+    margin: 2rem auto;
+}
+
+.action-btn {
+    position: relative;
+    padding: 1.5rem 2rem;
+    border: none;
+    border-radius: 12px;
+    font-size: 1.4rem;
+    cursor: pointer;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    overflow: hidden;
+}
+
+.create-btn {
+    background: linear-gradient(45deg, #c0392b, #e74c3c);
+    box-shadow: 0 5px 15px rgba(199, 46, 46, 0.4);
+}
+
+.join-btn {
+    background: linear-gradient(45deg, #2c3e50, #3498db);
+    box-shadow: 0 5px 15px rgba(52, 152, 219, 0.4);
+}
+
+.action-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+}
+
+.action-btn:active {
+    transform: translateY(1px);
+}
+
+.btn-glow {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, 
+        transparent 0%, 
+        rgba(255,255,255,0.2) 50%, 
+        transparent 100%
+    );
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.action-btn:hover .btn-glow {
+    opacity: 1;
+}
+
+.footer {
+    margin-top: 3rem;
+    text-align: center;
+    color: #7a6a52;
+}
+
+.decor-line {
+    height: 2px;
+    background: linear-gradient(90deg, transparent 0%, #695434 50%, transparent 100%);
+    margin: 1rem 0;
+}
+
+@keyframes titleFloat {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-5px); }
+}
         
 #roomId {
     background: rgba(0,0,0,0.8);
@@ -623,6 +774,51 @@
         </div>
     </div>
 
+ <div id="roomControl">
+        <!-- 新增裝飾性邊框 -->
+        <div class="main-border"></div>
+        
+        <!-- 強化標題 -->
+        <div class="title-container">
+            <img src="https://static.vecteezy.com/system/resources/previews/023/999/232/non_2_x/chinese-dragon-logo-design-template-free-vector.jpg" 
+                 alt="龍紋圖騰" 
+                 class="dragon-icon">
+         <!-- 原本的標題改成新結構，刪除這行 -->
+<h1 style="font-size:2.5rem; color:var(--gold); margin-bottom:1.5rem;">基元中史爭霸</h1>
+                <span class="subtitle">群雄逐鹿·問鼎中原</span>
+            </h1>
+        </div>
+
+        <!-- 美化輸入框區域 -->
+        <div class="input-group">
+            <div class="input-decor">
+                <i class="fas fa-flag icon"></i>
+                <input type="text" id="roomId" placeholder="輸入四位戰場編號">
+                <div class="glow"></div>
+            </div>
+        </div>
+
+        <!-- 按鈕容器 -->
+        <div class="button-group">
+            <button onclick="createRoom()" class="action-btn create-btn">
+                <i class="fas fa-fist-raised"></i>
+                <span>開闢戰場</span>
+                <div class="btn-glow"></div>
+            </button>
+            <button onclick="joinRoom()" class="action-btn join-btn">
+                <i class="fas fa-shield-alt"></i>
+                <span>加入征伐</span>
+                <div class="btn-glow"></div>
+            </button>
+        </div>
+
+        <!-- 新增頁腳 -->
+        <div class="footer">
+            <div class="decor-line"></div>
+            <p>⚔️ 選擇你的征戰之路 ⚔️</p>
+        </div>
+    </div>
+    
 
 <!-- 新增职业选择界面 -->
 <div id="classSelection" style="display: none;">
