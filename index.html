@@ -7,7 +7,7 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     
-    <title>基元文史爭霸</title>
+    <title>基元中史爭霸</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
@@ -1198,6 +1198,12 @@ setTimeout(() => {
     document.getElementById('gameArea').classList.remove('screen-shake');
     document.querySelectorAll('.health-fill').forEach(bar => bar.classList.remove('damage-effect'));
 }, 500);
+
+  targetElement.classList.add('my-new-damage-effect');
+setTimeout(() => {
+    targetElement.classList.remove('my-new-damage-effect');
+}, 300);
+        
     }
 }
     const targetElement = isCorrect 
@@ -1289,10 +1295,6 @@ if(!isCorrect) {
         rgba(255,100,100,0.7) 50%,
         rgba(255,255,255,0) 100%
     )`;
-    targetElement.classList.add('my-new-damage-effect');
-setTimeout(() => {
-    targetElement.classList.remove('my-new-damage-effect');
-}, 300);
 }
 
     // 根据回答正确性添加不同颜色边框脉冲
