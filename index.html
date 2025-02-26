@@ -1,12 +1,10 @@
-
-
 <!DOCTYPE html>
 <html>
 <head>
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     
-    <title>基元中史爭霸</title>
+    <title>基元文史爭霸</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
@@ -960,6 +958,7 @@ if (isCorrect) {
                     btn.style.pointerEvents = 'auto'; // 重新啟用點擊
                 });
                 answered = false; // 新增：重置回答狀態
+                if (!gameOver) {
                 loadNewQuestion();
             }, 700);
         }
@@ -1141,14 +1140,13 @@ function listenToRoomChanges() {
     roomRef.off('value'); // 先移除舊監聽
 
     roomRef.on('value', (snapshot) => {
-
+        
 const myQuestionPath = isHost ? 'player1/currentQuestion' : 'player2/currentQuestion';
 const myQuestion = room[isHost ? 'player1' : 'player2']?.currentQuestion;
 
 if (myQuestion && !answered) {
     displayQuestion(myQuestion);
 }
-    }
         
         const room = snapshot.val();
         if (!room) return;
@@ -1182,6 +1180,7 @@ if (myQuestion && !answered) {
         // 更新血条显示时加入职业信息
         updateHealthDisplay(room);
     });
+}
 
 function updateHealthDisplay(room) {
      // 在原有代码前添加职业头像显示
@@ -1228,8 +1227,6 @@ function startGame(room) {
   // 強制顯示遊戲區域
   document.getElementById('gameArea').style.display = 'block';
   
-  }, 500);
-}
 
 function shuffleArray(array) {
     for (let i = array.length - 1; i > 0; i--) {
@@ -1280,13 +1277,14 @@ function displayQuestion(question) {
 
 
 function startTimer() {
-    
+
 // 添加在 startTimer 函数开头
 if (isHost) {
     database.ref(`rooms/${currentRoomId}/player1/timeLeft`).set(timeLeft);
 } else {
     database.ref(`rooms/${currentRoomId}/player2/timeLeft`).set(timeLeft);
 }
+    
     clearInterval(timer);
     // 新增以下兩行重置動畫狀態
     document.getElementById('gameArea').classList.remove('screen-shake');
@@ -1475,11 +1473,10 @@ function startNewGameSession() {
         listenToRoomChanges();
         
         // 延迟加载新题目
-setTimeout(() => {
-    if (!gameOver) {
-        loadNewQuestion();
-    }
-}, 700);
+        setTimeout(() => {
+            loadNewQuestion();
+        }, 500);
+    });
 }
 </script>
 
