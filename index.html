@@ -7,7 +7,7 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     
-    <title>基元中史爭霸</title>
+    <title>基元文史爭霸</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
@@ -1917,10 +1917,15 @@ function listenToRoomChanges() {
             document.body.appendChild(opponentJoinedMessage);
 
             // 一段时间后移除提示信息
-            setTimeout(() => {
-                opponentJoinedMessage.remove();
-                opponentJoinedMessage = null;
-            }, 3000);
+           setTimeout(() => {
+    console.log('尝试移除玩家已進場提示信息');
+    if (opponentJoinedMessage) {
+        opponentJoinedMessage.remove();
+        opponentJoinedMessage = null;
+    } else {
+        console.log('opponentJoinedMessage 为 null，无法移除');
+    }
+}, 3000);
         }
     });
 }
