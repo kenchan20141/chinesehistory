@@ -5,7 +5,7 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     
-    <title>基元中史爭霸</title>
+    <title>基元文史爭霸</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
@@ -950,16 +950,16 @@ if (isCorrect) {
     
     // 強制立即檢查遊戲狀態
     checkGameOver();
-        
-    setTimeout(() => {
+    
     if (!gameOver) {
+            setTimeout(() => {
                 // 重置按鈕樣式和互動狀態
                 buttons.forEach(btn => {
                     btn.style.cssText = '';
                     btn.style.pointerEvents = 'auto'; // 重新啟用點擊
                 });
                 answered = false; // 新增：重置回答狀態
-    loadNewQuestion();
+                loadNewQuestion();
             }, 700);
         }
     });
@@ -1127,16 +1127,6 @@ function joinRoom() {
 }
 
 function listenToRoomChanges() {
-    
-if (!room.gameStarted) {
-  database.ref('rooms/' + currentRoomId).update({ 
-    gameStarted: true,
-    player1: { ...room.player1, currentQuestion: null },
-    player2: { ...room.player2, currentQuestion: null }
-  });
-  loadNewQuestion();
-}
-    
     const roomRef = database.ref('rooms/' + currentRoomId);
     roomRef.off('value'); // 先移除舊監聽
 
@@ -1165,9 +1155,6 @@ if (!room.gameStarted) {
 
   // 检查是否双方都选择了职业
         if (room.player1?.class && room.player2?.class) {
-            // 初始化独立题目
-if (isHost && !room.player1.currentQuestion) loadNewQuestion();
-if (!isHost && !room.player2.currentQuestion) loadNewQuestion();
             document.getElementById('classSelection').style.display = 'none';
             document.getElementById('gameArea').style.display = 'block';
             startGame(room);
@@ -1223,9 +1210,14 @@ function startGame(room) {
   // 強制顯示遊戲區域
   document.getElementById('gameArea').style.display = 'block';
   
-const myQuestion = isHost ? room.player1?.currentQuestion : room.player2?.currentQuestion;
-if (myQuestion) {
-  displayQuestion(myQuestion);
+  // 延遲載入新題目避免競態
+  setTimeout(() => {
+    if (!room.currentQuestion) {
+      loadNewQuestion();
+    } else {
+      displayQuestion(room.currentQuestion);
+    }
+  }, 500);
 }
 
 function shuffleArray(array) {
@@ -1254,12 +1246,13 @@ function loadNewQuestion() {
             correctIndex: newCorrectIndex
         };
 
-   const playerPath = isHost ? 'player1' : 'player2';
-database.ref(`rooms/${currentRoomId}/${playerPath}/currentQuestion`).set(processedQuestion);
+        database.ref('rooms/' + currentRoomId).update({ currentQuestion: processedQuestion });
+    });
 }
 
 function displayQuestion(question) {
     this.answered = false; // 重置答題狀態
+    window.currentQuestion = question; // 必須用window保存
     document.getElementById('question').textContent = question.question;
     const optionsDiv = document.getElementById('options');
     optionsDiv.innerHTML = '';
@@ -1275,12 +1268,6 @@ function displayQuestion(question) {
 
 
 function startTimer() {
-
-// 停止对方计时器
-if (typeof opponentTimer !== 'undefined') {
-  clearInterval(opponentTimer);
-}
-    
     clearInterval(timer);
     // 新增以下兩行重置動畫狀態
     document.getElementById('gameArea').classList.remove('screen-shake');
@@ -1305,13 +1292,7 @@ function checkGameOver() {
         const player2Health = Math.max(room.player2?.health || 0, 0);
 
         let winner = null;
-        if (player1Health <= 0 && player2Health <= 0) {
-  winner = 'draw';
-} else if (player1Health <= 0) {
-  winner = 'player2';
-} else if (player2Health <= 0) {
-  winner = 'player1';
-}
+        if (player1Health <= 0 || player2Health <= 0) {
             if (player1Health > player2Health) {
                 winner = 'player1';
             } else if (player2Health > player1Health) {
