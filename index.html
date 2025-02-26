@@ -8,7 +8,7 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     
-    <title>基元文史爭霸</title>
+    <title>基元中史爭霸</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
@@ -1758,8 +1758,29 @@ function listenToRoomChanges() {
         }
 
         // 新增：检查玩家B是否已经点击了“再戰江湖”
-     if (isHost && room.clientEntered && !room.gameStarted &&!opponentJoinedMessage) {
-            opponentJoinedMessage = document.createElement('div');
+     // 修改后的监听逻辑
+if (isHost && room.clientEntered && !room.gameStarted) {
+    const mobilePrompt = document.getElementById('mobilePlayerJoined');
+    
+    // 添加震动反馈
+    if ('vibrate' in navigator) navigator.vibrate([200, 100, 200]);
+    
+    // 显示提示
+    mobilePrompt.style.display = 'block';
+    
+    // 自动隐藏
+    setTimeout(() => {
+        mobilePrompt.style.display = 'none';
+    }, 3000);
+    
+    // 添加动画效果
+    mobilePrompt.animate([
+        { opacity: 0, transform: 'translate(-50%, -60%)' },
+        { opacity: 1, transform: 'translate(-50%, -50%)' }
+    ], {
+        duration: 500,
+        easing: 'ease-out'
+    });
          // 修改提示元素的样式，增加移动端适配
 opponentJoinedMessage.style.cssText = `
     position: fixed;
@@ -1795,6 +1816,27 @@ opponentJoinedMessage.style.cssText = `
 
 <!-- 新增减伤提示 -->
 <div id="reduceDamageText" style="display:none; position:fixed; top:40%; left:50%; transform:translate(-50%,-50%); font-size:2rem; color:#00ffff; text-shadow:0 0 10px rgba(0,255,255,0.5);">🔥 離火護體 傷害減少30%</div>
+
+<div id="mobilePlayerJoined" style="display:none; position:fixed; 
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(0, 0, 0, 0.9);
+    color: #fff;
+    padding: 2rem;
+    border-radius: 15px;
+    z-index: 99999;
+    font-size: 2.5rem;
+    text-align: center;
+    width: 80%;
+    max-width: 350px;
+    box-shadow: 0 0 30px rgba(212, 175, 55, 0.7);
+    border: 2px solid #d4af37;
+    font-family: 'ZCOOL XiaoWei', cursive;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(5px);">
+    🎮 玩家已進場
+</div>
     
 </body>
 
