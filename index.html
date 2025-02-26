@@ -1,3 +1,8 @@
+我架設的系統出現了一個問題：當玩家A選擇重開遊戲之後，而玩家B未選擇重開遊戲時，玩家A沒有進入「等待」的畫面，可以先進入遊戲界面，我希望他們可以同步進入重開的遊戲。 我希望當玩家點選「再戰江湖」後，必須進入一個等待的界面，容讓另一位玩家同樣點選「再戰江湖」時，才讓兩位玩家同時進入重新開始的遊戲界面。
+
+我想你幫忙編寫代碼，請用最簡單及最少步驟的方法實現以上效果，但我是零基礎的新手，需要你一步步去指引我應該刪除甚麼代碼、應該添加甚麼代碼、代碼具體的位置在哪裡、要用甚麼代碼替代甚麼代碼等，HTML CSS JAVA的代碼不要放在一起顯示，否則會讓我覺得很混亂。
+
+我的程式碼如下：：
 
 <!DOCTYPE html>
 <html>
@@ -7,7 +12,7 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     
-    <title>基元文史爭霸</title>
+    <title>基元中史爭霸</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
@@ -907,11 +912,8 @@
 
     
 <script>
-let isRematching = false;
-let answered = false; 
-let opponentDefense = 1.0; 
-// 新增变量
-let waitingForOpponent = false; 
+    let isRematching = false;
+let answered = false; // 用於追蹤當前問題是否已回答
 
     // 新增这行 ▼▼▼
 let opponentDefense = 1.0; // 存储对手的防御力
@@ -1588,6 +1590,7 @@ const buttonContainer = document.createElement('div');
     victoryOverlay.appendChild(buttonContainer);
 }
 
+
 function handleRematchRequest() {
     if (isRematching) return;
     isRematching = true;
@@ -1643,9 +1646,6 @@ function handleRematchRequest() {
         waitingForRematch.style.textShadow = '2px 2px 4px rgba(0, 0, 0, 0.7)';
         waitingForRematch.textContent = '等待对手同意重开游戏...';
         document.body.appendChild(waitingForRematch);
-
-        // 添加等待对方同意的标志位
-        waitingForOpponent = true;
 
         // 重新绑定监听器
         listenToRoomChanges();
@@ -1739,5 +1739,3 @@ function listenToRoomChanges() {
 
     
 </html>
-
-
