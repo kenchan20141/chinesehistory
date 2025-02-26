@@ -5,7 +5,7 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     
-    <title>基元文史爭霸</title>
+    <title>基元中史爭霸</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
@@ -803,24 +803,15 @@ function displayQuestion(question) {
 
 function checkAnswer(isCorrect) {
 
-// 在伤害计算后添加：
-let effectElement = document.createElement('div');
-if(playerClass.type === 'warrior' && isCorrect) {
-    effectElement.className = 'sword-animation';
-    effectElement.style.background = 'linear-gradient(90deg, transparent 0%, rgba(255,215,0,0.7) 50%, transparent 100%)';
-    effectElement.style.width = '150px';
-    effectElement.style.height = '30px';
-    effectElement.style.position = 'fixed';
-    effectElement.style.top = '50%';
-} 
-else if(playerClass.type === 'tank' && !isCorrect) {
-    effectElement.className = 'shield-animation';
-    effectElement.innerHTML = '🛡️';
-    effectElement.style.fontSize = '4rem';
-    effectElement.style.position = 'fixed';
-    effectElement.style.left = '50%';
-    effectElement.style.transform = 'translateX(-50%)';
-}
+
+        const playerPath = isHost ? 'player1' : 'player2';
+    
+    // 在数据库标记已回答
+    database.ref(`rooms/${currentRoomId}/${playerPath}`).update({
+        answered: true
+    });
+
+
 
     // 新增铁甲宗治疗代码 ▼▼▼
     if (playerClass && playerClass.type === 'tank') {
@@ -872,6 +863,25 @@ if(effectElement.className) {
 // 修改为：
 // 修改后的伤害计算 ▼▼▼
 let baseDamage = Math.floor((timeLeft / 15) * 13);
+
+    // 在伤害计算后添加：
+let effectElement = document.createElement('div');
+if(playerClass.type === 'warrior' && isCorrect) {
+    effectElement.className = 'sword-animation';
+    effectElement.style.background = 'linear-gradient(90deg, transparent 0%, rgba(255,215,0,0.7) 50%, transparent 100%)';
+    effectElement.style.width = '150px';
+    effectElement.style.height = '30px';
+    effectElement.style.position = 'fixed';
+    effectElement.style.top = '50%';
+} 
+else if(playerClass.type === 'tank' && !isCorrect) {
+    effectElement.className = 'shield-animation';
+    effectElement.innerHTML = '🛡️';
+    effectElement.style.fontSize = '4rem';
+    effectElement.style.position = 'fixed';
+    effectElement.style.left = '50%';
+    effectElement.style.transform = 'translateX(-50%)';
+}
 
 // 霸刀门双倍攻击判定（30%概率）
 if(playerClass.type === 'warrior' && isCorrect && Math.random() < 0.3) {
@@ -959,7 +969,7 @@ if (isCorrect) {
                     btn.style.pointerEvents = 'auto'; // 重新啟用點擊
                 });
                 answered = false; // 新增：重置回答狀態
-                loadNewQuestion();
+                 loadNewQuestion();
             }, 700);
         }
     });
@@ -1134,6 +1144,14 @@ function listenToRoomChanges() {
         const room = snapshot.val();
         if (!room) return;
 
+        // 修改游戏开始检测条件
+        if ((room.player1 && room.player1.class !== null) && 
+           (room.player2 && room.player2.class !== null)) {
+            document.getElementById('classSelection').style.display = 'none';
+            document.getElementById('gameArea').style.display = 'block';
+            startGame(room);
+        }
+
     // 新增这行代码 ▼▼▼
     // 实时更新对手防御力数值
     if (isHost) {
@@ -1163,6 +1181,16 @@ function listenToRoomChanges() {
         // 更新血条显示时加入职业信息
         updateHealthDisplay(room);
     });
+
+    // 添加题目更新监听
+    const playerPath = isHost ? 'player1' : 'player2';
+    database.ref(`rooms/${currentRoomId}/${playerPath}/currentQuestion`).on('value', (snapshot) => {
+        const question = snapshot.val();
+        if (question) {
+            displayQuestion(question);
+        }
+    });
+    
 }
 
 function updateHealthDisplay(room) {
@@ -1197,6 +1225,16 @@ document.getElementById('opponentHealth').textContent = Math.max(opponentHealth,
 }
 
 function startGame(room) {
+
+    const playerPath = isHost ? 'player1' : 'player2';
+    const myQuestion = room[playerPath]?.currentQuestion;
+    
+    if (myQuestion) {
+        displayQuestion(myQuestion);
+    } else {
+        loadNewQuestion();
+    }
+    
   // 檢查雙方玩家存在
   if (!room.player1 || !room.player2) {
     console.log('等待對手加入...');
@@ -1246,7 +1284,9 @@ function loadNewQuestion() {
             correctIndex: newCorrectIndex
         };
 
-        database.ref('rooms/' + currentRoomId).update({ currentQuestion: processedQuestion });
+        database.ref(`rooms/${currentRoomId}/${playerPath}`).update({
+        currentQuestion: processedQuestion,
+        answered: false
     });
 }
 
