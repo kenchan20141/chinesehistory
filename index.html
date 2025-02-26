@@ -7,7 +7,7 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     
-    <title>基元中史爭霸</title>
+    <title>基元文史爭霸</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
@@ -238,7 +238,7 @@
             font-size: 16px;
         }
 
-       #roomControl {
+      #roomControl {
     position: relative;
     background: linear-gradient(45deg, rgba(45, 41, 38, 0.95), rgba(25, 22, 20, 0.95)),
                 url('https://t.pimg.jp/076/481/852/1/76481852.jpg');
@@ -764,10 +764,13 @@
 <body>
     <button class="music-control" onclick="toggleMusic()">🎵</button>
     
-     <div id="roomControl">
+ <div id="roomControl">
         <!-- 新增裝飾性邊框 -->
         <div class="main-border"></div>
         
+        <!-- 強化標題 -->
+        <div class="title-container">
+         
             <h1>
                 <span class="title-text">基元文史爭霸</span>
                 <span class="subtitle">群雄逐鹿·問鼎中原</span>
@@ -803,7 +806,6 @@
             <p>⚔️ 選擇你的征戰之路 ⚔️</p>
         </div>
     </div>
-
 
 
 <!-- 新增职业选择界面 -->
@@ -985,7 +987,7 @@ function displayQuestion(question) {
 }
 
 function checkAnswer(isCorrect) {
-ZZ
+
 // 在伤害计算后添加：
 let effectElement = document.createElement('div');
 if(playerClass.type === 'warrior' && isCorrect) {
