@@ -803,9 +803,6 @@ function displayQuestion(question) {
 
 function checkAnswer(isCorrect) {
 
-    if (answered || gameOver) return;
-answered = true; // 立即锁定答题状态
-
 // 在伤害计算后添加：
 let effectElement = document.createElement('div');
 if(playerClass.type === 'warrior' && isCorrect) {
@@ -962,7 +959,7 @@ if (isCorrect) {
                     btn.style.pointerEvents = 'auto'; // 重新啟用點擊
                 });
                 answered = false; // 新增：重置回答狀態
-                loadNewQuestion(); // 仅当前玩家加载新题
+                loadNewQuestion();
             }, 700);
         }
     });
@@ -1130,13 +1127,8 @@ function joinRoom() {
 }
 
 function listenToRoomChanges() {
-   const playerQuestionPath = isHost ? 'player1/currentQuestion' : 'player2/currentQuestion';
-database.ref(`rooms/${currentRoomId}/${playerQuestionPath}`).on('value', (snapshot) => {
-    const question = snapshot.val();
-    if (question && !answered) { // 添加answered判断
-        displayQuestion(question);
-    }
-});
+    const roomRef = database.ref('rooms/' + currentRoomId);
+    roomRef.off('value'); // 先移除舊監聽
 
     roomRef.on('value', (snapshot) => {
         const room = snapshot.val();
@@ -1217,14 +1209,6 @@ function startGame(room) {
   
   // 強制顯示遊戲區域
   document.getElementById('gameArea').style.display = 'block';
-
-        // 独立初始化题目 ▼
-    const myQuestion = isHost ? room.player1.currentQuestion : room.player2.currentQuestion;
-    if (!myQuestion) {
-        loadNewQuestion();
-    } else {
-        displayQuestion(myQuestion);
-    }
   
   // 延遲載入新題目避免競態
   setTimeout(() => {
@@ -1262,8 +1246,7 @@ function loadNewQuestion() {
             correctIndex: newCorrectIndex
         };
 
-        const playerPath = isHost ? 'player1/currentQuestion' : 'player2/currentQuestion';
-        database.ref(`rooms/${currentRoomId}/${playerPath}`).set(processedQuestion);
+        database.ref('rooms/' + currentRoomId).update({ currentQuestion: processedQuestion });
     });
 }
 
@@ -1492,3 +1475,6 @@ function startNewGameSession() {
 
     
 </html>
+
+
+
