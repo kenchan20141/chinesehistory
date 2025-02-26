@@ -1,4 +1,5 @@
 
+
 <!DOCTYPE html>
 <html>
 <head>
@@ -772,14 +773,6 @@ selectedCard.querySelector('.selected-tick').style.display = 'flex';
         defense: playerClass.defense,
         dodge: playerClass.dodge
     });
-
-    database.ref(`rooms/${currentRoomId}`).once('value').then(snapshot => {
-    const room = snapshot.val();
-    if (room.player1?.class && room.player2?.class) {
-        // 更新游戏开始状态
-        database.ref(`rooms/${currentRoomId}`).update({ gameStarted: true });
-    }
-});
 }
 
 
@@ -967,9 +960,7 @@ if (isCorrect) {
                     btn.style.pointerEvents = 'auto'; // 重新啟用點擊
                 });
                 answered = false; // 新增：重置回答狀態
-                if (!gameOver) {
-    loadNewQuestion();
-}
+                loadNewQuestion();
             }, 700);
         }
     });
@@ -1109,16 +1100,6 @@ function toggleMusic() {
 }
 
 function createRoom() {
-
-    database.ref('rooms/' + currentRoomId).set({
-    player1: { health: 100, class: null },
-    player2: null,
-    currentQuestion: null,
-    gameStarted: false,  // 添加游戏开始状态
-    gameEnded: false,
-    winner: null
-});
-    
     currentRoomId = document.getElementById('roomId').value || Math.floor(1000 + Math.random() * 9000);
     isHost = true;
     document.getElementById('roomControl').style.display = 'none';
@@ -1154,54 +1135,6 @@ function listenToRoomChanges() {
         const room = snapshot.val();
         if (!room) return;
 
- // 当双方选择职业且游戏未开始时触发
-        if (room.player1?.class && room.player2?.class && room.gameStarted) {
-            document.getElementById('classSelection').style.display = 'none';
-            document.getElementById('gameArea').style.display = 'block';
-            document.getElementById('waitingArea').style.display = 'none';
-            
-            // 強制初始化遊戲狀態
-            database.ref(`rooms/${currentRoomId}`).update({
-                'player1/health': 100,
-                'player2/health': 100,
-                currentQuestion: null,
-                gameEnded: false
-            });
-            
-            // 添加延迟确保状态同步
-            setTimeout(() => startGame(room), 500);
-        }
-
-        updateHealthDisplay(room);
-        checkGameOver();
-    });
-}
-
-// 加强 startGame 函数的初始化逻辑 ▼▼▼
-function startGame(room) {
-    // 重置本地状态
-    gameOver = false;
-    answered = false;
-    clearInterval(timer);
-    
-    // 强制显示游戏元素
-    document.getElementById('gameArea').style.display = 'block';
-    document.getElementById('timer').textContent = '🕒15秒';
-    
-    // 同步加载题目
-    if (!room.currentQuestion) {
-        loadNewQuestion();
-    } else {
-        displayQuestion(room.currentQuestion);
-    }
-    
-    // 添加玩家状态双重检查
-    database.ref(`rooms/${currentRoomId}`).update({
-        'player1/currentQuestion': 0,
-        'player2/currentQuestion': 0
-    });
-        
-
     // 新增这行代码 ▼▼▼
     // 实时更新对手防御力数值
     if (isHost) {
@@ -1221,21 +1154,12 @@ function startGame(room) {
             return;
         }
 
-javascript
-复制
-// 检查是否双方都选择了职业
-if (room.player1?.class && room.player2?.class) {
-    document.getElementById('classSelection').style.display = 'none';
-    document.getElementById('gameArea').style.display = 'block';
-    // 新增初始化玩家进度
-    if(!room.player1.currentQuestion) {
-        database.ref(`rooms/${currentRoomId}/player1`).update({ currentQuestion: 0 });
-    }
-    if(!room.player2?.currentQuestion) {
-        database.ref(`rooms/${currentRoomId}/player2`).update({ currentQuestion: 0 });
-    }
-    startGame(room);
-}
+  // 检查是否双方都选择了职业
+        if (room.player1?.class && room.player2?.class) {
+            document.getElementById('classSelection').style.display = 'none';
+            document.getElementById('gameArea').style.display = 'block';
+            startGame(room);
+        }
         
         // 更新血条显示时加入职业信息
         updateHealthDisplay(room);
@@ -1274,18 +1198,6 @@ document.getElementById('opponentHealth').textContent = Math.max(opponentHealth,
 }
 
 function startGame(room) {
-
-    // 新增：获取当前玩家的题目
-    const playerPath = isHost ? 'player1' : 'player2';
-    const currentQuestion = room[playerPath]?.activeQuestion;
-
-        // 修改原有代码
-    if (currentQuestion) {
-        displayQuestion(currentQuestion);
-    } else {
-        loadNewQuestion();
-    }
-    
   // 檢查雙方玩家存在
   if (!room.player1 || !room.player2) {
     console.log('等待對手加入...');
@@ -1318,46 +1230,28 @@ function shuffleArray(array) {
 }
 
 function loadNewQuestion() {
-    const playerPath = isHost ? 'player1' : 'player2';
     const questionsRef = database.ref('questions');
-    
     questionsRef.once('value').then(snapshot => {
         const questions = snapshot.val();
-        const roomRef = database.ref(`rooms/${currentRoomId}/${playerPath}`);
+        const randomIndex = Math.floor(Math.random() * questions.length);
+        const originalQuestion = questions[randomIndex];
         
-        roomRef.once('value').then(playerSnap => {
-            const currentQIndex = (playerSnap.val().currentQuestion || 0) + 1;
-            const randomIndex = currentQIndex % questions.length; // 循环题库
-            
-            const originalQuestion = questions[randomIndex];
-            const optionsCopy = [...originalQuestion.options];
-            const correctAnswer = optionsCopy[originalQuestion.correctIndex];
-            const shuffledOptions = shuffleArray(optionsCopy);
-            const newCorrectIndex = shuffledOptions.indexOf(correctAnswer);
+        const optionsCopy = [...originalQuestion.options];
+        const correctAnswer = optionsCopy[originalQuestion.correctIndex];
+        const shuffledOptions = shuffleArray(optionsCopy);
+        const newCorrectIndex = shuffledOptions.indexOf(correctAnswer);
 
-            const processedQuestion = {
-                question: originalQuestion.question,
-                options: shuffledOptions,
-                correctIndex: newCorrectIndex
-            };
+        const processedQuestion = {
+            question: originalQuestion.question,
+            options: shuffledOptions,
+            correctIndex: newCorrectIndex
+        };
 
-            // 只更新当前玩家的题目进度
-            database.ref(`rooms/${currentRoomId}/${playerPath}`).update({
-                currentQuestion: currentQIndex,
-                activeQuestion: processedQuestion
-            });
-        });
+        database.ref('rooms/' + currentRoomId).update({ currentQuestion: processedQuestion });
     });
 }
 
 function displayQuestion(question) {
-        // 新增：重置对手的题目显示
-    if(window.currentQuestion && question.question !== window.currentQuestion.question) {
-        document.getElementById('options').innerHTML = '';
-        document.getElementById('question').textContent = '等待对手答题中...';
-        startTimer();
-        return;
-    }
     this.answered = false; // 重置答題狀態
     window.currentQuestion = question; // 必須用window保存
     document.getElementById('question').textContent = question.question;
