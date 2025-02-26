@@ -7,7 +7,7 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     
-    <title>基元文史爭霸</title>
+    <title>基元中史爭霸</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
@@ -988,6 +988,33 @@ function displayQuestion(question) {
 
 function checkAnswer(isCorrect) {
 
+if (answered || gameOver) return;
+    answered = true;
+
+    clearInterval(timer);
+    
+    // 禁用所有答案选项的点击事件
+    const buttons = document.querySelectorAll('#options button');
+    buttons.forEach((btn) => {
+        btn.disabled = true;
+    });
+
+    // 样式处理
+    const correctIndex = window.currentQuestion.correctIndex;
+    
+    // 显示正确答案样式
+    buttons.forEach((btn, index) => {
+        if (index === correctIndex) {
+            btn.style.cssText = `
+                background: #2ecc71 !important;
+                border: 2px solid #27ae60 !important;
+                transform: scale(1.05);
+            `;
+        } else {
+            btn.style.background = '#e74c3c';
+        }
+    });
+    
 // 在伤害计算后添加：
 let effectElement = document.createElement('div');
 if(playerClass.type === 'warrior' && isCorrect) {
@@ -1119,7 +1146,9 @@ if (isCorrect) {
         document.querySelectorAll('.health-fill').forEach(bar => bar.classList.remove('damage-effect'));
     }, 500);
 
-    // 更新數據庫
+
+    
+    // 更新数据库
     const updates = {};
     const playerPath = isHost ? 'player1' : 'player2';
     const opponentPath = isHost ? 'player2' : 'player1';
@@ -1131,19 +1160,19 @@ if (isCorrect) {
     }
 
     database.ref('rooms/' + currentRoomId).update(updates, (error) => {
-    if (error) return;
-    
-    // 強制立即檢查遊戲狀態
-    checkGameOver();
-    
-    if (!gameOver) {
+        if (error) return;
+        
+        // 强制立即检查游戏状态
+        checkGameOver();
+        
+        if (!gameOver) {
             setTimeout(() => {
-                // 重置按鈕樣式和互動狀態
+                // 重置按钮样式和互动状态
                 buttons.forEach(btn => {
                     btn.style.cssText = '';
-                    btn.style.pointerEvents = 'auto'; // 重新啟用點擊
+                    btn.disabled = false; // 重新启用点击
                 });
-                answered = false; // 新增：重置回答狀態
+                answered = false; // 新增：重置回答状态
                 loadNewQuestion();
             }, 700);
         }
@@ -1421,6 +1450,12 @@ function loadNewQuestion() {
 
         const playerPath = isHost ? 'player1' : 'player2';
         database.ref('rooms/' + currentRoomId + '/' + playerPath).update({ currentQuestion: processedQuestion });
+        // 启用答案选项的点击事件
+        const optionsDiv = document.getElementById('options');
+        const newButtons = optionsDiv.querySelectorAll('button');
+        newButtons.forEach((btn) => {
+            btn.disabled = false;
+        });
     });
 }
 
