@@ -7,7 +7,7 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     
-    <title>基元中史爭霸</title>
+    <title>基元文史爭霸</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
@@ -1322,7 +1322,8 @@ function createRoom() {
         player2: { health: 100, class: null, currentQuestion: null }, // 添加 currentQuestion 字段
         gameStarted: false,
         gameEnded: false,
-        winner: null
+        winner: null,
+        playerEntered: false // 新增字段，标记是否有玩家进入
     });
     listenToRoomChanges();
 }
@@ -1332,6 +1333,10 @@ function joinRoom() {
     document.getElementById('roomControl').style.display = 'none';
     document.getElementById('classSelection').style.display = 'block';
     listenToRoomChanges();
+
+    // 当玩家加入房间时，将 playerEntered 设置为 true
+    const roomRef = database.ref('rooms/' + currentRoomId);
+    roomRef.update({ playerEntered: true });
 }
 
 function listenToRoomChanges() {
@@ -1348,7 +1353,7 @@ function listenToRoomChanges() {
             opponentDefense = room.player1?.defense || 1.0;
         }
 
-        if(room.player1?.class && room.player2?.class) {
+        if (room.player1?.class && room.player2?.class) {
             document.getElementById('waitingArea').style.display = 'none';
         }
 
@@ -1365,7 +1370,26 @@ function listenToRoomChanges() {
 
         updateHealthDisplay(room);
 
-        if (room.hostRematch && room.clientRematch && !room.gameStarted) {
+        // 监听 playerEntered 字段的变化
+        if (room.playerEntered &&!document.getElementById('playerEnteredMessage')) {
+            const message = document.createElement('div');
+            message.id = 'playerEnteredMessage';
+            message.style.textAlign = 'center';
+            message.style.fontSize = '2rem';
+            message.style.color = 'var(--gold)';
+            message.style.padding = '2rem';
+            message.style.background = 'rgba(45, 41, 38, 0.95)';
+            message.style.border = '3px solid var(--gold)';
+            message.style.borderRadius = '15px';
+            message.style.maxWidth = '600px';
+            message.style.margin = '2rem auto';
+            message.style.boxShadow = '0 0 20px rgba(212, 175, 55, 0.5)';
+            message.style.textShadow = '2px 2px 4px rgba(0, 0, 0, 0.7)';
+            message.textContent = '玩家已進場';
+            document.body.appendChild(message);
+        }
+
+        if (room.hostRematch && room.clientRematch &&!room.gameStarted) {
             // 双方都同意重开，移除等待界面
             const waitingForRematch = document.getElementById('waitingForRematch');
             if (waitingForRematch) {
