@@ -1,3 +1,5 @@
+代碼有兩個問題：第一，電腦能顯示「玩家已進場」，但手機沒有顯示；第二，「玩家已進場」僅在剛進場時才需要顯示，但現在每答一題，這個信息都會出現。請告訴我怎樣修訂。請你指引我如何用最簡單的方式修訂程式碼。我的程式碼如下：
+
 
 
 <!DOCTYPE html>
@@ -8,7 +10,7 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     
-    <title>基元中國史爭霸</title>
+    <title>基元文史爭霸</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
@@ -908,10 +910,8 @@
 
     
 <script>
-    
 // 在代码开头部分，添加一个新的变量用于存储提示信息的元素
 let opponentJoinedMessage = null;
-    let opponentJoinedMessageShown = false;
     let isRematching = false;
 let answered = false; 
 let opponentDefense = 1.0; 
@@ -1388,9 +1388,13 @@ function listenToRoomChanges() {
 }
 
 function startNewGameSession() {
+
+
     // 重置游戏状态
     gameOver = false;
     answered = false;
+
+    database.ref(`rooms/${currentRoomId}/clientEntered`).set(false);
 
     // 清除旧问题显示
     document.getElementById('question').textContent = '';
@@ -1756,28 +1760,33 @@ function listenToRoomChanges() {
         }
 
         // 新增：检查玩家B是否已经点击了“再戰江湖”
-       if (isHost && room.clientEntered &&!opponentJoinedMessage &&!opponentJoinedMessageShown) {
-    opponentJoinedMessage = document.createElement('div');
-    opponentJoinedMessage.style.position = 'fixed';
-    opponentJoinedMessage.style.top = '50%';
-    opponentJoinedMessage.style.left = '50%';
-    opponentJoinedMessage.style.transform = 'translate(-50%, -50%)';
-    opponentJoinedMessage.style.backgroundColor = 'rgba(0, 0, 0, 0.8)';
-    opponentJoinedMessage.style.color = 'white';
-    opponentJoinedMessage.style.padding = '20px';
-    opponentJoinedMessage.style.borderRadius = '10px';
-    opponentJoinedMessage.style.zIndex = 9999;
-    opponentJoinedMessage.style.max-width: '80%';
-    opponentJoinedMessage.style.word-wrap: 'break-word';
-    opponentJoinedMessage.textContent = '玩家已進場';
-    document.body.appendChild(opponentJoinedMessage);
+     if (isHost && room.clientEntered && !room.gameStarted &&!opponentJoinedMessage) {
+            opponentJoinedMessage = document.createElement('div');
+         // 修改提示元素的样式，增加移动端适配
+opponentJoinedMessage.style.cssText = `
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(0, 0, 0, 0.9);
+    color: #fff;
+    padding: 20px;
+    border-radius: 10px;
+    z-index: 9999;
+    font-size: 2rem;
+    text-align: center;
+    width: 80%;
+    max-width: 300px;
+    box-shadow: 0 0 20px rgba(212, 175, 55, 0.5);
+`;
+            opponentJoinedMessage.textContent = '玩家已進場';
+            document.body.appendChild(opponentJoinedMessage);
 
-             // 一段时间后移除提示信息
-    setTimeout(() => {
-        opponentJoinedMessage.remove();
-        opponentJoinedMessage = null;
-        opponentJoinedMessageShown = true; // 设置为已显示
-    }, 3000);
+            // 一段时间后移除提示信息
+            setTimeout(() => {
+                opponentJoinedMessage.remove();
+                opponentJoinedMessage = null;
+            }, 3000);
         }
     });
 }
