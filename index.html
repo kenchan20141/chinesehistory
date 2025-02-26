@@ -4,7 +4,7 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     
-    <title>基元文史爭霸</title>
+    <title>基元中史爭霸</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
@@ -958,7 +958,6 @@ if (isCorrect) {
                     btn.style.pointerEvents = 'auto'; // 重新啟用點擊
                 });
                 answered = false; // 新增：重置回答狀態
-                if (!gameOver) {
                 loadNewQuestion();
             }, 700);
         }
@@ -1045,15 +1044,6 @@ function updateHealthDisplay(room) {
         myHealthBar.style.background = 'linear-gradient(90deg, var(--main-red) 0%, #ff6b6b 100%)';
         document.getElementById('myHealth').textContent = `${myHealth}%`;
     }
-
-// 在 updateHealthDisplay 函数末尾添加
-if (isHost) {
-    timeLeft = room.player1?.timeLeft || 15;
-} else {
-    timeLeft = room.player2?.timeLeft || 15;
-}
-document.getElementById('timer').textContent = `🕒${timeLeft}秒`;
-    
 }
     
 
@@ -1140,14 +1130,6 @@ function listenToRoomChanges() {
     roomRef.off('value'); // 先移除舊監聽
 
     roomRef.on('value', (snapshot) => {
-        
-const myQuestionPath = isHost ? 'player1/currentQuestion' : 'player2/currentQuestion';
-const myQuestion = room[isHost ? 'player1' : 'player2']?.currentQuestion;
-
-if (myQuestion && !answered) {
-    displayQuestion(myQuestion);
-}
-        
         const room = snapshot.val();
         if (!room) return;
 
@@ -1227,6 +1209,15 @@ function startGame(room) {
   // 強制顯示遊戲區域
   document.getElementById('gameArea').style.display = 'block';
   
+  // 延遲載入新題目避免競態
+  setTimeout(() => {
+    if (!room.currentQuestion) {
+      loadNewQuestion();
+    } else {
+      displayQuestion(room.currentQuestion);
+    }
+  }, 500);
+}
 
 function shuffleArray(array) {
     for (let i = array.length - 1; i > 0; i--) {
@@ -1254,8 +1245,7 @@ function loadNewQuestion() {
             correctIndex: newCorrectIndex
         };
 
-        const updatePath = isHost ? 'player1/currentQuestion' : 'player2/currentQuestion';
-database.ref(`rooms/${currentRoomId}/${updatePath}`).set(processedQuestion);
+        database.ref('rooms/' + currentRoomId).update({ currentQuestion: processedQuestion });
     });
 }
 
@@ -1277,14 +1267,6 @@ function displayQuestion(question) {
 
 
 function startTimer() {
-
-// 添加在 startTimer 函数开头
-if (isHost) {
-    database.ref(`rooms/${currentRoomId}/player1/timeLeft`).set(timeLeft);
-} else {
-    database.ref(`rooms/${currentRoomId}/player2/timeLeft`).set(timeLeft);
-}
-    
     clearInterval(timer);
     // 新增以下兩行重置動畫狀態
     document.getElementById('gameArea').classList.remove('screen-shake');
