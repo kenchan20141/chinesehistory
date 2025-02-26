@@ -1497,7 +1497,7 @@ document.getElementById('opponentHealth').textContent = Math.max(opponentHealth,
 
 function startGame(room) {
     if (!room.player1 || !room.player2) {
-        console.log('等待对手加入...');
+        console.log('等待對手加入...');
         return;
     }
 
@@ -1736,7 +1736,7 @@ function handleRematchRequest() {
         waitingForRematch.style.margin = '2rem auto';
         waitingForRematch.style.boxShadow = '0 0 20px rgba(212, 175, 55, 0.5)';
         waitingForRematch.style.textShadow = '2px 2px 4px rgba(0, 0, 0, 0.7)';
-        waitingForRematch.textContent = '等待对手同意重开游戏...';
+        waitingForRematch.textContent = '等待對手同意重開遊戲...';
         document.body.appendChild(waitingForRematch);
 
         // 添加等待对方同意的标志位
