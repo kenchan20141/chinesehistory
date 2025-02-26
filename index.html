@@ -7,7 +7,7 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     
-    <title>基元文史爭霸</title>
+    <title>基元中史爭霸</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
@@ -1612,6 +1612,7 @@ function handleRematchRequest() {
 
     database.ref('rooms/' + currentRoomId).update(updates, (error) => {
         isRematching = false;
+          waitingForOpponent = false; // 添加这一行
         if (error) {
             console.error('更新数据库时出错:', error);
             return;
@@ -1690,16 +1691,21 @@ function listenToRoomChanges() {
                 waitingForRematch.remove();
             }
 
-            // 开始新游戏
-            const updates = {
-                gameStarted: true
-            };
-            database.ref('rooms/' + currentRoomId).update(updates, () => {
-                startNewGameSession();
-            });
+               // 开始新游戏
+    const updates = {
+        gameStarted: true
+    };
+    database.ref('rooms/' + currentRoomId).update(updates, () => {
+        startNewGameSession();
+        // 额外的状态重置
+        gameOver = false;
+        answered = false;
+        // 其他可能需要重置的状态变量...
+    });
 
             // 重置等待对方同意的标志位
             waitingForOpponent = false;
+            
         } else if (!bothAgreed && waitingForOpponent) {
             // 如果只有一方同意且正在等待对方同意，保持等待界面显示
             const waitingForRematch = document.getElementById('waitingForRematch');
