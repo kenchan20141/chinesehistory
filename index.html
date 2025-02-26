@@ -7,7 +7,7 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     
-    <title>基元文史爭霸</title>
+    <title>基元中史爭霸</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
@@ -1893,41 +1893,43 @@ function listenToRoomChanges() {
             }
         }
 
-        // 新增：检查玩家是否已经重新进入游戏
-        const opponentReentered = isHost? room.player2?.reentered : room.player1?.reentered;
-        if (opponentReentered &&!opponentJoinedMessage) {
-            opponentJoinedMessage = document.createElement('div');
-            opponentJoinedMessage.style.cssText = `
-                position: fixed;
-                top: 50%;
-                left: 50%;
-                transform: translate(-50%, -50%);
-                background: rgba(0, 0, 0, 0.9);
-                color: #fff;
-                padding: 20px;
-                border-radius: 10px;
-                z-index: 9999;
-                font-size: 2rem;
-                text-align: center;
-                width: 80%;
-                max-width: 300px;
-                box-shadow: 0 0 20px rgba(212, 175, 55, 0.5);
-            `;
-            opponentJoinedMessage.textContent = '🎮玩家已進場';
-            document.body.appendChild(opponentJoinedMessage);
+       // 在函数外部声明 opponentJoinedMessage 变量
+let opponentJoinedMessage = null;
 
-            // 一段时间后移除提示信息
-           setTimeout(() => {
-    console.log('尝试移除玩家已進場提示信息');
-    if (opponentJoinedMessage) {
-        opponentJoinedMessage.remove();
-        opponentJoinedMessage = null;
-    } else {
-        console.log('opponentJoinedMessage 为 null，无法移除');
+// 假设当前代码在一个函数中，例如：
+function handleReenterGame() {
+    // 新增：检查玩家是否已经重新进入游戏
+    const opponentReentered = isHost? room.player2?.reentered : room.player1?.reentered;
+    if (opponentReentered &&!opponentJoinedMessage) {
+        opponentJoinedMessage = document.createElement('div');
+        opponentJoinedMessage.style.cssText = `
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.9);
+            color: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            z-index: 9999;
+            font-size: 2rem;
+            text-align: center;
+            width: 80%;
+            max-width: 300px;
+            box-shadow: 0 0 20px rgba(212, 175, 55, 0.5);
+        `;
+        opponentJoinedMessage.textContent = '🎮玩家已進場';
+        document.body.appendChild(opponentJoinedMessage);
+
+        // 一段时间后移除提示信息
+        setTimeout(() => {
+            if (opponentJoinedMessage) {
+                opponentJoinedMessage.remove();
+                opponentJoinedMessage = null;
+            }
+        }, 3000);
     }
-}, 3000);
-        }
-    });
+}
 }
 </script>
 
