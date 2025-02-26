@@ -1,5 +1,4 @@
 
-
 <!DOCTYPE html>
 <html>
 <head>
@@ -1324,8 +1323,7 @@ function createRoom() {
         player2: { health: 100, class: null, currentQuestion: null }, // 添加 currentQuestion 字段
         gameStarted: false,
         gameEnded: false,
-        winner: null,
-        hostEntered: true // 新增字段，表示房主已进入房间
+        winner: null
     });
     listenToRoomChanges();
 }
@@ -1759,25 +1757,25 @@ function listenToRoomChanges() {
         }
 
         // 新增：检查玩家B是否已经点击了“再戰江湖”
-        if (isHost && room.clientEntered &&!room.gameStarted &&!opponentJoinedMessage) {
+     if (isHost && room.clientEntered && !room.gameStarted &&!opponentJoinedMessage) {
             opponentJoinedMessage = document.createElement('div');
-            // 修改提示元素的样式，增加移动端适配
-            opponentJoinedMessage.style.cssText = `
-                position: fixed;
-                top: 50%;
-                left: 50%;
-                transform: translate(-50%, -50%);
-                background: rgba(0, 0, 0, 0.9);
-                color: #fff;
-                padding: 20px;
-                border-radius: 10px;
-                z-index: 9999;
-                font-size: 2rem;
-                text-align: center;
-                width: 80%;
-                max-width: 300px;
-                box-shadow: 0 0 20px rgba(212, 175, 55, 0.5);
-            `;
+         // 修改提示元素的样式，增加移动端适配
+opponentJoinedMessage.style.cssText = `
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(0, 0, 0, 0.9);
+    color: #fff;
+    padding: 20px;
+    border-radius: 10px;
+    z-index: 9999;
+    font-size: 2rem;
+    text-align: center;
+    width: 80%;
+    max-width: 300px;
+    box-shadow: 0 0 20px rgba(212, 175, 55, 0.5);
+`;
             opponentJoinedMessage.textContent = '玩家已進場';
             document.body.appendChild(opponentJoinedMessage);
 
@@ -1785,34 +1783,6 @@ function listenToRoomChanges() {
             setTimeout(() => {
                 opponentJoinedMessage.remove();
                 opponentJoinedMessage = null;
-            }, 3000);
-        }
-
-        // 新增：非房主玩家收到房主进房通知
-        if (!isHost && room.hostEntered &&!room.gameStarted) {
-            const hostEnteredMessage = document.createElement('div');
-            hostEnteredMessage.style.cssText = `
-                position: fixed;
-                top: 50%;
-                left: 50%;
-                transform: translate(-50%, -50%);
-                background: rgba(0, 0, 0, 0.9);
-                color: #fff;
-                padding: 20px;
-                border-radius: 10px;
-                z-index: 9999;
-                font-size: 2rem;
-                text-align: center;
-                width: 80%;
-                max-width: 300px;
-                box-shadow: 0 0 20px rgba(212, 175, 55, 0.5);
-            `;
-            hostEnteredMessage.textContent = '玩家已進場';
-            document.body.appendChild(hostEnteredMessage);
-
-            // 一段时间后移除提示信息
-            setTimeout(() => {
-                hostEnteredMessage.remove();
             }, 3000);
         }
     });
@@ -1824,27 +1794,6 @@ function listenToRoomChanges() {
 
 <!-- 新增减伤提示 -->
 <div id="reduceDamageText" style="display:none; position:fixed; top:40%; left:50%; transform:translate(-50%,-50%); font-size:2rem; color:#00ffff; text-shadow:0 0 10px rgba(0,255,255,0.5);">🔥 離火護體 傷害減少30%</div>
-
-<div id="mobilePlayerJoined" style="display:none; position:fixed; 
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background: rgba(0, 0, 0, 0.9);
-    color: #fff;
-    padding: 2rem;
-    border-radius: 15px;
-    z-index: 99999;
-    font-size: 2.5rem;
-    text-align: center;
-    width: 80%;
-    max-width: 350px;
-    box-shadow: 0 0 30px rgba(212, 175, 55, 0.7);
-    border: 2px solid #d4af37;
-    font-family: 'ZCOOL XiaoWei', cursive;
-    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
-    backdrop-filter: blur(5px);">
-    🎮 玩家已進場
-</div>
     
 </body>
 
