@@ -7,27 +7,11 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     
-    <title>基元文史爭霸</title>
+    <title>基元中史爭霸</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
-    <style> 
-
-        .rematch-waiting {
-    text-align: center;
-    padding: 2rem;
-    background: rgba(0,0,0,0.9);
-    border: 3px solid #d4af37;
-    border-radius: 15px;
-    max-width: 400px;
-    margin: 2rem auto;
-}
-
-.rematch-waiting p {
-    font-size: 1.5rem;
-    color: white;
-    text-shadow: 0 0 10px rgba(212,175,55,0.5);
-}
+    <style>        
 
 .rematch-buttons {
     margin-top: 30px;
@@ -1313,8 +1297,6 @@ function createRoom() {
         gameStarted: false,
         gameEnded: false,
         winner: null
-          hostRematch: false,  // 新增
-        clientRematch: false // 新增
     });
     listenToRoomChanges();
 }
@@ -1333,28 +1315,6 @@ function listenToRoomChanges() {
     roomRef.on('value', (snapshot) => {
         const room = snapshot.val();
         if (!room) return;
-
-        // 新增重赛检测逻辑 ▼▼▼
-    if (room.hostRematch && room.clientRematch) {
-        // 双方都同意重赛
-        database.ref(`rooms/${currentRoomId}`).update({
-            hostRematch: false,
-            clientRematch: false,
-            gameEnded: false,
-            'player1/health': 100,
-            'player2/health': 100
-        });
-
-        // 隐藏等待界面
-        document.getElementById('waitingArea').style.display = 'none';
-        
-        // 开始新游戏
-        gameOver = false;
-        answered = false;
-        document.getElementById('gameArea').style.display = 'block';
-        document.querySelector('.victory-overlay').style.display = 'none';
-        loadNewQuestion();
-    }
 
         if (isHost) {
             opponentDefense = room.player2?.defense || 1.0;
@@ -1578,10 +1538,6 @@ const buttonContainer = document.createElement('div');
     
     const rematchBtn = document.createElement('button');
     rematchBtn.textContent = '再戰江湖';
-    rematchBtn.onclick = () => {
-    handleRematchRequest();
-    buttonContainer.remove(); // 点击后移除按钮
-};
     const mainMenuBtn = document.createElement('button');
     mainMenuBtn.textContent = '歸隱山林';
 
@@ -1599,22 +1555,6 @@ const buttonContainer = document.createElement('div');
 
 // 修正后的 handleRematchRequest 函数
 function handleRematchRequest() {
-      const rematchField = isHost ? 'hostRematch' : 'clientRematch';
-    database.ref(`rooms/${currentRoomId}`).update({
-        [rematchField]: true
-    });
-
-  // 显示等待界面
-    document.querySelector('.victory-overlay').style.display = 'none';
-    document.getElementById('waitingArea').style.display = 'block';
-    document.getElementById('waitingArea').innerHTML = `
-        <div class="rematch-waiting">
-            <i class="fas fa-spinner fa-spin"></i>
-            <p>等待對方確認重新開始...</p>
-        </div>
-    `;
-
-    
     if (isRematching) return;
     isRematching = true;
 
