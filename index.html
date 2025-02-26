@@ -7,7 +7,7 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     
-    <title>基元文史爭霸</title>
+    <title>基元中史爭霸</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
@@ -73,7 +73,14 @@
     height: auto;
 }
         
-        
+        .close-popup {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    font-size: 20px;
+    cursor: pointer;
+    color: white;
+}
 
 
     /* 血條衝擊波特效 */
@@ -980,6 +987,14 @@ function closePopup(element) {
     popup.style.display = 'none';
 }
 
+    const classCards = document.querySelectorAll('.class-card');
+classCards.forEach(card => {
+    card.addEventListener('click', function() {
+        openPopup(this);
+        selectClass(this.getAttribute('onclick').split("'")[1]); // 调用原有的selectClass函数
+    });
+});
+
 // 修改class-card的点击事件，添加打开弹出图片的逻辑
 const classCards = document.querySelectorAll('.class-card');
 classCards.forEach(card => {
@@ -1848,6 +1863,7 @@ function listenToRoomChanges() {
 </body>
 
 <div id="dodgeText" style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); font-size:3rem; color:#00ff00; text-shadow:0 0 10px rgba(0,255,0,0.5);">閃避成功！</div>
+
 
     
 </html>
