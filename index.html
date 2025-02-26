@@ -7,7 +7,7 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     
-    <title>基元中史爭霸</title>
+    <title>基元文史爭霸</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
@@ -1604,27 +1604,14 @@ function handleRematchRequest() {
         'player1/health': 100,
         'player2/health': 100,
         gameEnded: false,
-        currentQuestion: null,
         winner: null,
-        gameStarted: false, // 确保游戏在双方都同意重开前不开始
-        [rematchField]: true // 记录当前玩家同意重开
+        gameStarted: false,
+        [rematchField]: true // 标记当前玩家同意重赛
     };
 
     database.ref('rooms/' + currentRoomId).update(updates, (error) => {
         isRematching = false;
-          waitingForOpponent = false; // 添加这一行
-        if (error) {
-            console.error('更新数据库时出错:', error);
-            return;
-        }
-
-        // 本地强制重置
-        gameOver = false;
-        answered = false;
-
-        // 清除旧问题显示
-        document.getElementById('question').textContent = '';
-        document.getElementById('options').innerHTML = '';
+        waitingForOpponent = true;
 
         // 显示等待界面
         const waitingForRematch = document.createElement('div');
@@ -1640,16 +1627,14 @@ function handleRematchRequest() {
         waitingForRematch.style.margin = '2rem auto';
         waitingForRematch.style.boxShadow = '0 0 20px rgba(212, 175, 55, 0.5)';
         waitingForRematch.style.textShadow = '2px 2px 4px rgba(0, 0, 0, 0.7)';
-        waitingForRematch.textContent = '等待对手同意重开游戏...';
+        waitingForRematch.textContent = '等待對手同意重開遊戲...';
         document.body.appendChild(waitingForRematch);
 
-// 添加等待对方同意的标志位
-        waitingForOpponent = true;
-        
         // 重新绑定监听器
         listenToRoomChanges();
     });
 }
+
 
 function listenToRoomChanges() {
     const roomRef = database.ref('rooms/' + currentRoomId);
@@ -1659,76 +1644,52 @@ function listenToRoomChanges() {
         const room = snapshot.val();
         if (!room) return;
 
-        if (isHost) {
-            opponentDefense = room.player2?.defense || 1.0;
-        } else {
-            opponentDefense = room.player1?.defense || 1.0;
-        }
-
-        if (room.player1?.class && room.player2?.class) {
-            document.getElementById('waitingArea').style.display = 'none';
-        }
-
-        if (room.gameEnded) {
-            handleGameEnd(room.winner);
-            return;
-        }
-
-        if (room.player1?.class && room.player2?.class) {
-            document.getElementById('classSelection').style.display = 'none';
-            document.getElementById('gameArea').style.display = 'block';
-            startGame(room);
-        }
-
-        updateHealthDisplay(room);
-
-        // 检查双方是否都同意重开
+        // 检查双方重赛状态
         const bothAgreed = room.hostRematch && room.clientRematch;
-        if (bothAgreed &&!room.gameStarted) {
-            // 双方都同意重开，移除等待界面
+        
+        if (bothAgreed) {
+            // 双方同意后重置所有状态
+            const updates = {
+                gameStarted: true,
+                gameEnded: false,
+                hostRematch: null,
+                clientRematch: null,
+                'player1/health': 100,
+                'player2/health': 100
+            };
+
+            // 移除等待界面
+            const waitingForRematch = document.getElementById('waitingForRematch');
+            if (waitingForRematch) waitingForRematch.remove();
+
+            // 更新数据库并开始新游戏
+            database.ref('rooms/' + currentRoomId).update(updates, () => {
+                // 重置本地状态
+                gameOver = false;
+                answered = false;
+                timeLeft = 15;
+                document.getElementById('timer').textContent = '🕒15秒';
+
+                // 重置界面
+                document.querySelector('.victory-overlay').style.display = 'none';
+                document.getElementById('gameArea').style.display = 'block';
+                updateHealthDisplay(room);
+
+                // 开始新游戏
+                startNewGameSession();
+            });
+        }
+        else if (waitingForOpponent) {
+            // 显示动态等待效果
             const waitingForRematch = document.getElementById('waitingForRematch');
             if (waitingForRematch) {
-                waitingForRematch.remove();
-            }
-
-               // 开始新游戏
-    const updates = {
-        gameStarted: true
-    };
-    database.ref('rooms/' + currentRoomId).update(updates, () => {
-        startNewGameSession();
-        // 额外的状态重置
-        gameOver = false;
-        answered = false;
-        // 其他可能需要重置的状态变量...
-    });
-
-            // 重置等待对方同意的标志位
-            waitingForOpponent = false;
-            
-        } else if (!bothAgreed && waitingForOpponent) {
-            // 如果只有一方同意且正在等待对方同意，保持等待界面显示
-            const waitingForRematch = document.getElementById('waitingForRematch');
-            if (!waitingForRematch) {
-                const newWaitingForRematch = document.createElement('div');
-                newWaitingForRematch.id = 'waitingForRematch';
-                newWaitingForRematch.style.textAlign = 'center';
-                newWaitingForRematch.style.fontSize = '2rem';
-                newWaitingForRematch.style.color = 'var(--gold)';
-                newWaitingForRematch.style.padding = '2rem';
-                newWaitingForRematch.style.background = 'rgba(45, 41, 38, 0.95)';
-                newWaitingForRematch.style.border = '3px solid var(--gold)';
-                newWaitingForRematch.style.borderRadius = '15px';
-                newWaitingForRematch.style.maxWidth = '600px';
-                newWaitingForRematch.style.margin = '2rem auto';
-                newWaitingForRematch.style.boxShadow = '0 0 20px rgba(212, 175, 55, 0.5)';
-                newWaitingForRematch.style.textShadow = '2px 2px 4px rgba(0, 0, 0, 0.7)';
-                newWaitingForRematch.textContent = '等待对手同意重开游戏...';
-                document.body.appendChild(newWaitingForRematch);
+                const dots = new Array((Date.now() % 1500) / 500 + 1).join('.');
+                waitingForRematch.textContent = `等待對手回應${dots}`;
             }
         }
     });
 }
+    
 </script>
 
 <!-- 新增治疗提示 -->
