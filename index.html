@@ -1,3 +1,4 @@
+現在雙方點選「再戰江湖」之後，每當先點選「再戰江湖」的玩家在新一場遊戲中點選答案選項，就會觸發「玩家已進場」，請修復。你不需要生成整套代碼，請告訴我一步步具體的修訂方法，我要知道具體我要加甚麼、替代甚麼、加在哪些位置上，請你詳細描述，否則我會找不到或貼錯：
 
 <!DOCTYPE html>
 <html>
@@ -604,7 +605,7 @@
     width: 100%;
     height: 100%;
     background: rgba(0,0,0,0.9);
-    padding: 0rem;
+    padding: 2rem;
     z-index: 9999;
     overflow-y: auto;
 }
@@ -612,8 +613,8 @@
 .class-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 1rem;
-    max-width: 100%;
+    gap: 1.5rem;
+    max-width: 1000px;
     margin: 0 auto;
 }
 
@@ -621,7 +622,7 @@
     background: rgba(45, 41, 38, 0.95);
     border: 2px solid var(--gold);
     border-radius: 10px;
-    padding: 1rem;
+    padding: 1.5rem;
     cursor: pointer;
     transition: transform 0.3s;
     text-align: center;
@@ -657,8 +658,8 @@
 }
 
 .class-icon {
-    width: 100px;
-    height: 100px;
+    width: 80px;
+    height: 80px;
     object-fit: cover;
     border-radius: 50%;
     border: 2px solid var(--gold);
@@ -1276,26 +1277,14 @@ if(!isCorrect) {
     healthBar.appendChild(wave);
     setTimeout(() => wave.remove(), 500);
 
-   // 新增命中數字顯示
-const hitText = document.createElement('div');
-hitText.className = 'hit-marker';
-hitText.textContent = `-${damage}`;
-if (isCorrect) {
-    // 答对时，显示在对方气血条附近
-    const opponentHealthContainer = document.getElementById('enemyHealthContainer');
-    hitText.style.position = 'absolute';
-    hitText.style.left = `${Math.random() * opponentHealthContainer.offsetWidth + opponentHealthContainer.offsetLeft}px`;
-    hitText.style.top = `${opponentHealthContainer.offsetTop + opponentHealthContainer.offsetHeight / 2 - hitText.offsetHeight / 2}px`;
-    opponentHealthContainer.appendChild(hitText);
-} else {
-    // 答错时，显示在自己气血条附近
-    const myHealthContainer = document.getElementById('myHealthContainer');
-    hitText.style.position = 'absolute';
-    hitText.style.left = `${Math.random() * myHealthContainer.offsetWidth + myHealthContainer.offsetLeft}px`;
-    hitText.style.top = `${myHealthContainer.offsetTop + myHealthContainer.offsetHeight / 2 - hitText.offsetHeight / 2}px`;
-    myHealthContainer.appendChild(hitText);
-}
-setTimeout(() => hitText.remove(), 300);
+    // 新增命中數字顯示
+    const hitText = document.createElement('div');
+    hitText.className = 'hit-marker';
+    hitText.textContent = `-${damage}`;
+    hitText.style.left = `${Math.random() * 80 + 10}%`;
+    hitText.style.top = `${Math.random() * 50 + 25}%`;
+    document.getElementById('gameArea').appendChild(hitText);
+    setTimeout(() => hitText.remove(), 300);
     
     
 }
@@ -1818,7 +1807,7 @@ function listenToRoomChanges() {
             }
         }
 
-      // 新增：检查玩家是否已经重新进入游戏
+     // 新增：检查玩家是否已经重新进入游戏
 const opponentReentered = isHost? room.player2?.reentered : room.player1?.reentered;
 if (opponentReentered &&!opponentJoinedMessage && (!room.gameStarted || room.gameEnded)) {
     opponentJoinedMessage = document.createElement('div');
@@ -1863,4 +1852,3 @@ if (opponentReentered &&!opponentJoinedMessage && (!room.gameStarted || room.gam
 
     
 </html>
-
