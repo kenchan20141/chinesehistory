@@ -1807,34 +1807,34 @@ function listenToRoomChanges() {
         }
 
         // 新增：检查玩家是否已经重新进入游戏
-        const opponentReentered = isHost? room.player2?.reentered : room.player1?.reentered;
-        if (opponentReentered &&!opponentJoinedMessage) {
-            opponentJoinedMessage = document.createElement('div');
-            opponentJoinedMessage.style.cssText = `
-                position: fixed;
-                top: 50%;
-                left: 50%;
-                transform: translate(-50%, -50%);
-                background: rgba(0, 0, 0, 0.9);
-                color: #fff;
-                padding: 20px;
-                border-radius: 10px;
-                z-index: 9999;
-                font-size: 2rem;
-                text-align: center;
-                width: 80%;
-                max-width: 300px;
-                box-shadow: 0 0 20px rgba(212, 175, 55, 0.5);
-            `;
-            opponentJoinedMessage.textContent = '🎮玩家已進場';
-            document.body.appendChild(opponentJoinedMessage);
+const opponentReentered = isHost? room.player2?.reentered : room.player1?.reentered;
+if (opponentReentered &&!opponentJoinedMessage) {
+    opponentJoinedMessage = document.createElement('div');
+    opponentJoinedMessage.style.cssText = `
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: rgba(0, 0, 0, 0.9);
+        color: #fff;
+        padding: 20px;
+        border-radius: 10px;
+        z-index: 9999;
+        font-size: 2rem;
+        text-align: center;
+        width: 80%;
+        max-width: 300px;
+        box-shadow: 0 0 20px rgba(212, 175, 55, 0.5);
+    `;
+    opponentJoinedMessage.textContent = '🎮玩家已進場';
+    document.body.appendChild(opponentJoinedMessage);
 
-            // 一段时间后移除提示信息
-            setTimeout(() => {
-                opponentJoinedMessage.remove();
-                opponentJoinedMessage = null;
-            }, 3000);
-        }
+    // 一段时间后移除提示信息
+    setTimeout(() => {
+        opponentJoinedMessage.remove();
+        opponentJoinedMessage = null;
+    }, 3000);
+}
     });
 }
 </script>
