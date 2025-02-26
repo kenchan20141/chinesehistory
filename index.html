@@ -772,6 +772,14 @@ selectedCard.querySelector('.selected-tick').style.display = 'flex';
         defense: playerClass.defense,
         dodge: playerClass.dodge
     });
+
+    database.ref(`rooms/${currentRoomId}`).once('value').then(snapshot => {
+    const room = snapshot.val();
+    if (room.player1?.class && room.player2?.class) {
+        // 更新游戏开始状态
+        database.ref(`rooms/${currentRoomId}`).update({ gameStarted: true });
+    }
+});
 }
 
 
@@ -1101,6 +1109,16 @@ function toggleMusic() {
 }
 
 function createRoom() {
+
+    database.ref('rooms/' + currentRoomId).set({
+    player1: { health: 100, class: null },
+    player2: null,
+    currentQuestion: null,
+    gameStarted: false,  // 添加游戏开始状态
+    gameEnded: false,
+    winner: null
+});
+    
     currentRoomId = document.getElementById('roomId').value || Math.floor(1000 + Math.random() * 9000);
     isHost = true;
     document.getElementById('roomControl').style.display = 'none';
@@ -1135,6 +1153,54 @@ function listenToRoomChanges() {
     roomRef.on('value', (snapshot) => {
         const room = snapshot.val();
         if (!room) return;
+
+ // 当双方选择职业且游戏未开始时触发
+        if (room.player1?.class && room.player2?.class && room.gameStarted) {
+            document.getElementById('classSelection').style.display = 'none';
+            document.getElementById('gameArea').style.display = 'block';
+            document.getElementById('waitingArea').style.display = 'none';
+            
+            // 強制初始化遊戲狀態
+            database.ref(`rooms/${currentRoomId}`).update({
+                'player1/health': 100,
+                'player2/health': 100,
+                currentQuestion: null,
+                gameEnded: false
+            });
+            
+            // 添加延迟确保状态同步
+            setTimeout(() => startGame(room), 500);
+        }
+
+        updateHealthDisplay(room);
+        checkGameOver();
+    });
+}
+
+// 加强 startGame 函数的初始化逻辑 ▼▼▼
+function startGame(room) {
+    // 重置本地状态
+    gameOver = false;
+    answered = false;
+    clearInterval(timer);
+    
+    // 强制显示游戏元素
+    document.getElementById('gameArea').style.display = 'block';
+    document.getElementById('timer').textContent = '🕒15秒';
+    
+    // 同步加载题目
+    if (!room.currentQuestion) {
+        loadNewQuestion();
+    } else {
+        displayQuestion(room.currentQuestion);
+    }
+    
+    // 添加玩家状态双重检查
+    database.ref(`rooms/${currentRoomId}`).update({
+        'player1/currentQuestion': 0,
+        'player2/currentQuestion': 0
+    });
+        
 
     // 新增这行代码 ▼▼▼
     // 实时更新对手防御力数值
