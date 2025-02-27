@@ -221,6 +221,17 @@
     z-index: 2;
 }
 
+
+#healText {
+    display: none;
+    position: relative; /* 改为相对定位 */
+    top: 0; /* 顶部偏移量设为0 */
+    left: 0; /* 左侧偏移量设为0 */
+    font-size: 1.2rem; /* 减小字体大小 */
+    color: #00ff00;
+    text-shadow: 0 0 10px rgba(0,255,0,0.5);
+}
+        
 /* 問題區增加底部間距 */
 #question {
     margin: 5rem 0 2rem; /* 頂部留出敵方血條空間 */
@@ -481,7 +492,7 @@
     height: 100%;
     transition: width 0.5s ease;
 }
-
+        
 /* 新增區分敵我的顏色 */
 #myHealthBar {
     background: linear-gradient(90deg, #27ae60 0%, #2ecc71 100%); /* 我方綠色系 */
@@ -925,18 +936,9 @@
         </div>
           <div id="healText">🛡️ 氣血恢復2%</div>
 
-#healText {
-    display: none;
-    position: relative; /* 改为相对定位 */
-    top: 0; /* 顶部偏移量设为0 */
-    left: 0; /* 左侧偏移量设为0 */
-    font-size: 1.2rem; /* 减小字体大小 */
-    color: #00ff00;
-    text-shadow: 0 0 10px rgba(0,255,0,0.5);
-}
         
     </div>
-    
+        
     <div id="timer">🕒15</div>
 </div>
 
@@ -944,6 +946,7 @@
         <div class="victory-text"></div>
     </div>
 
+    
     
 <script>
 // 在代码开头部分，添加一个新的变量用于存储提示信息的元素
