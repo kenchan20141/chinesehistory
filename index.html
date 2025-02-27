@@ -221,6 +221,19 @@
     z-index: 2;
 }
 
+        .health-recovery {
+    position: absolute;
+    left: 0;
+    right: 0;
+    /* 根据需要调整以下位置参数 */
+    top: 100%; 
+    margin-top: 5px; 
+    text-align: center;
+    color: #00ff00;
+    text-shadow: 0 0 10px rgba(0,255,0,0.5);
+    font-size: 2rem;
+}
+
 
 #healText {
     display: none;
@@ -934,9 +947,8 @@
         <div>🏹 你的氣血: <span id="myHealth">100</span>
             <div class="health-bar"><div class="health-fill" id="myHealthBar"></div></div>
         </div>
-          <div id="healText">🛡️ 氣血恢復2%</div>
+         <div id="healText" class="health-recovery" style="display:none;">🛡️ 氣血恢復2%</div>
 
-        
     </div>
         
     <div id="timer">🕒15</div>
