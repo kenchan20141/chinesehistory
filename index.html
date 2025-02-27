@@ -774,8 +774,13 @@
 }
 
 #healText {
-  animation: healFade 1s ease-out;
-  pointer-events: none;
+    display: none;
+    position: relative; /* 改为相对定位 */
+    top: 0; /* 顶部偏移量设为0 */
+    left: 0; /* 左侧偏移量设为0 */
+    font-size: 1.2rem; /* 减小字体大小 */
+    color: #00ff00;
+    text-shadow: 0 0 10px rgba(0,255,0,0.5);
 }
 
     /* 新增减伤提示动画 */
@@ -927,6 +932,7 @@
         <div>🏹 你的氣血: <span id="myHealth">100</span>
             <div class="health-bar"><div class="health-fill" id="myHealthBar"></div></div>
         </div>
+          <div id="healText">🛡️ 氣血恢復2%</div>
     </div>
     
     <div id="timer">🕒15</div>
