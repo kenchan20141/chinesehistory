@@ -222,18 +222,16 @@
 }
 
         .health-recovery {
-    position: absolute;
+     position: fixed; /* 修改为 fixed 定位，相对于浏览器窗口定位 */
     left: 0;
     right: 0;
-    /* 根据需要调整以下位置参数 */
-    top: 100%; 
-    margin-top: 5px; 
+    bottom: 0; /* 设置底部距离为 0，使其位于页面最下方 */
     text-align: center;
     color: #00ff00;
     text-shadow: 0 0 10px rgba(0,255,0,0.5);
     font-size: 2rem;
+    z-index: 999; /* 可根据需要调整 z-index，确保元素显示在其他元素之上 */
 }
-
 
 #healText {
     display: none;
