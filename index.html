@@ -1,3 +1,4 @@
+震動 積分 註冊
 
 <!DOCTYPE html>
 <html>
@@ -8,9 +9,10 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     
-    <title>春秋論劍錄</title>
+    <title>文瀾劍影錄</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
     <style>        
 
@@ -48,8 +50,8 @@
 
 /* 弹出图片的动画关键帧 */
 @keyframes popImage {
-    0% { transform: scale(0); opacity: 0; }
-    100% { transform: scale(1); opacity: 1; }
+    0% { transform: translate(-50%, -50%) scale(0); opacity: 0; }
+    100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
 }
 
 /* 弹出图片的样式类 */
@@ -58,20 +60,14 @@
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    max-width: 80%;
-    max-height: 80%;
     z-index: 99999;
-    background-color: white;
-    padding: 20px;
-    border-radius: 10px;
-    box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
     animation: popImage 0.3s ease-out;
-    display: none; /* 初始状态隐藏 */
+    display: none; /* 初始狀態隱藏 */
 }
 
 .popup-image img {
-    width: 100%;
-    height: auto;
+    max-width: 80vw; /* 限制寬度為螢幕寬度的80% */
+    max-height: 80vh; /* 限制高度為螢幕高度的80% */
 }
         
         
@@ -191,7 +187,10 @@
 
     /* 修改现有元素样式 */
     #roomControl {
-        animation: fadeInUp 0.8s ease-out; /* 初始进场动画 */
+    display: none; /* 添加這行 */
+    position: relative;
+    background: linear-gradient(45deg, rgba(45, 41, 38, 0.95), rgba(25, 22, 20, 0.95)),
+                url('https://i.ibb.co/tM82mXtr/3.png');
     }
 
     #gameArea {
@@ -221,28 +220,6 @@
     z-index: 2;
 }
 
-        .health-recovery {
-     position: fixed; /* 修改为 fixed 定位，相对于浏览器窗口定位 */
-    left: 0;
-    right: 0;
-    bottom: 0; /* 设置底部距离为 0，使其位于页面最下方 */
-    text-align: center;
-    color: #00ff00;
-    text-shadow: 0 0 10px rgba(0,255,0,0.5);
-    font-size: 2rem;
-    z-index: 999; /* 可根据需要调整 z-index，确保元素显示在其他元素之上 */
-}
-
-#healText {
-    display: none;
-    position: relative; /* 改为相对定位 */
-    top: 0; /* 顶部偏移量设为0 */
-    left: 0; /* 左侧偏移量设为0 */
-    font-size: 1.2rem; /* 减小字体大小 */
-    color: #00ff00;
-    text-shadow: 0 0 10px rgba(0,255,0,0.5);
-}
-        
 /* 問題區增加底部間距 */
 #question {
     margin: 5rem 0 2rem; /* 頂部留出敵方血條空間 */
@@ -281,7 +258,7 @@
 
         body {
             font-family: 'WangHanZhongWeiBei', cursive;
-            background: url('https://i.ibb.co/0p49hBpZ/2.png') center/cover fixed;
+            background: url('https://i.ibb.co/kgdHCJX8/image.png') center/cover fixed;
             color: white;
             min-height: 100vh;
             padding: 20px;
@@ -291,19 +268,61 @@
             font-size: 16px;
         }
 
-      #roomControl {
+     #roomControl {
     position: relative;
     background: linear-gradient(45deg, rgba(45, 41, 38, 0.95), rgba(25, 22, 20, 0.95)),
                 url('https://t.pimg.jp/076/481/852/1/76481852.jpg');
     background-size: cover;
     background-blend-mode: multiply;
-    padding: 3rem 2rem;
+    padding: 2rem 1rem; /* 減少內邊距以留出更多空間 */
     border-radius: 20px;
     box-shadow: 0 0 50px rgba(212, 175, 55, 0.5);
     border: 3px solid #695434;
-    max-width: 800px;
-    margin: 2rem auto;
+    max-width: 90%; /* 使用百分比寬度，適應不同螢幕 */
+    width: 1000px; /* 桌面端最大寬度增加 */
+    margin: 1rem auto; /* 減少外邊距 */
     overflow: hidden;
+}
+
+@media (max-width: 480px) {
+    #roomControl {
+        max-width: 95%; /* 手機端進一步擴展寬度 */
+        padding: 1.5rem 0.5rem; /* 手機端減小內邊距 */
+    }
+}
+
+        /* 確保 #roomControl 的子元素有一致的背景和佈局 */
+#roomControl .info-box,
+#roomControl .input-group,
+#roomControl .button-group,
+#roomControl .footer {
+    background: rgba(45, 41, 38, 0.95);
+    padding: 1rem;
+    border-radius: 10px;
+    margin: 1rem auto;
+    max-width: 600px;
+    box-shadow: 0 0 20px rgba(212, 175, 55, 0.2);
+}
+
+.button-group {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); /* 自適應按鈕寬度 */
+    gap: 1rem;
+}
+
+/* 另一處定義（需要合併） */
+.button-group {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+    max-width: 500px;
+    margin: 2rem auto;
+}
+
+/* 確保標題不被背景影響 */
+.title-container {
+    background: none;
+    padding: 0;
 }
 
 .title-container {
@@ -503,7 +522,7 @@
     height: 100%;
     transition: width 0.5s ease;
 }
-        
+
 /* 新增區分敵我的顏色 */
 #myHealthBar {
     background: linear-gradient(90deg, #27ae60 0%, #2ecc71 100%); /* 我方綠色系 */
@@ -790,11 +809,26 @@
 
         /* 新增治疗提示动画 */
 @keyframes healFade {
-  0% { opacity: 0; transform: translateY(20px); }
-  50% { opacity: 1; transform: translateY(0); }
-  100% { opacity: 0; transform: translateY(-20px); }
+  0% { opacity: 0; transform: translate(-50%,-50%) scale(0.8); }
+  50% { opacity: 1; transform: translate(-50%,-50%) scale(1.1); }
+  100% { opacity: 0; transform: translate(-50%,-50%) scale(1); }
 }
 
+#healText {
+    display: none;
+    position: absolute;
+    bottom: 80px; /* 根据己方血条位置调整 */
+    right: 1rem; /* 调整到气血后面的位置 */
+    font-size: 1.5rem; /* 缩小字体大小 */
+    color: #00ff00;
+    text-shadow: 0 0 10px rgba(0,255,0,0.5);
+}
+
+    .shield-icon
+    .shield-icon {
+    font-size: 1.5rem; /* 调整图标大小 */
+    margin-left: 5px; /* 调整图标与气血文字的间距 */
+}
 
     /* 新增减伤提示动画 */
 @keyframes reduceDamageFade {
@@ -811,57 +845,92 @@
     </style>
 </head>
 <body>
+    <canvas id="animationCanvas" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 9999;"></canvas>
     <button class="music-control" onclick="toggleMusic()">🎵</button>
     
- <div id="roomControl">
-        <!-- 新增裝飾性邊框 -->
-        <div class="main-border"></div>
-        
-        <!-- 強化標題 -->
-        <div class="title-container">
-         
-            <h1>
-                <span class="title-text">春秋論劍錄</span>
-                <span class="subtitle">群雄逐鹿·問鼎中原</span>
-            </h1>
-        </div>
 
-        <!-- 美化輸入框區域 -->
-        <div class="input-group">
-            <div class="input-decor">
-                <i class="fas fa-flag icon"></i>
-                <input type="text" id="roomId" placeholder="輸入四位戰場編號">
-                <div class="glow"></div>
-            </div>
-        </div>
-
-        <!-- 按鈕容器 -->
-        <div class="button-group">
-            <button onclick="createRoom()" class="action-btn create-btn">
-                <i class="fas fa-fist-raised"></i>
-                <span>開闢戰場</span>
-                <div class="btn-glow"></div>
-            </button>
-            <button onclick="joinRoom()" class="action-btn join-btn">
-                <i class="fas fa-shield-alt"></i>
-                <span>加入征伐</span>
-                <div class="btn-glow"></div>
-            </button>
-        </div>
-
-        <!-- 新增頁腳 -->
-        <div class="footer">
-            <div class="decor-line"></div>
-            <p>⚔️ 選擇你的征戰之路 ⚔️</p>
+<div id="roomControl">
+    <!-- 新增裝飾性邊框 -->
+    <div class="main-border"></div>
+    
+    <!-- 用戶信息區域 -->
+    <div id="userInfo" class="info-box" style="display: none;">
+        <span id="userName"></span> | 積分: <span id="userScore">0</span>
+    </div>
+    
+    <!-- 強化標題 -->
+    <div class="title-container">
+        <h1>
+            <span class="title-text">文瀾劍影錄</span>
+            <span class="subtitle">俠骨柔腸·劍膽琴心</span>
+        </h1>
+    </div>
+    
+    <!-- 美化輸入框區域 -->
+    <div class="input-group">
+        <div class="input-decor">
+            <i class="fas fa-flag icon"></i>
+            <input type="text" id="roomId" placeholder="輸入四位戰場編號">
+            <div class="glow"></div>
         </div>
     </div>
+    
+    <!-- 按鈕容器 -->
+    <div class="button-group">
+        <button onclick="createRoom()" class="action-btn create-btn">
+            <i class="fas fa-fist-raised"></i>
+            <span>開闢戰場</span>
+            <div class="btn-glow"></div>
+        </button>
+        <button onclick="joinRoom()" class="action-btn join-btn">
+            <i class="fas fa-shield-alt"></i>
+            <span>加入征伐</span>
+            <div class="btn-glow"></div>
+        </button>
+        <button onclick="randomMatch()" class="action-btn random-match-btn">
+            <i class="fas fa-random"></i>
+            <span>隨機分配</span>
+            <div class="btn-glow"></div>
+        </button>
+    </div>
+
+   
+     
+    <div class="input-group">
+         <button id="registerBtn" class="action-btn" style="background: linear-gradient(45deg, #2ecc71, #27ae60);">
+        <i class="fas fa-user-plus"></i>
+        <span>註冊</span>
+    </button>
+        <button id="loginBtn" class="action-btn" style="background: linear-gradient(45deg, #8e44ad, #9b59b6);">
+            <i class="fas fa-user"></i>
+            <span>登入</span>
+        </button>
+    </div>
+
+    <div id="logoutContainer" style="display: none; margin-top: 1rem;">
+        <button id="logoutBtn" class="action-btn" style="background: linear-gradient(45deg, #e74c3c, #c0392b);">
+            <i class="fas fa-sign-out-alt"></i>
+            <span>登出</span>
+        </button>
+    </div>
+
+    <!-- 新增頁腳 -->
+    <div class="footer">
+        <div class="decor-line"></div>
+        <p>⚔️ 選擇你的征戰之路 ⚔️</p>
+        <button id="showLeaderboardBtn" class="action-btn" style="background: linear-gradient(45deg, #f1c40f, #f39c12); margin-top: 1rem;">
+            <i class="fas fa-trophy"></i>
+            <span>查看排行榜</span>
+        </button>
+    </div>
+</div>
 
 
-<!-- 新增职业选择界面 -->
+<!-- 新增職業選擇界面 -->
 <div id="classSelection" style="display: none;">
     <h2 style="color: var(--gold); margin-bottom: 2rem;">選擇你的武道流派</h2>
     <div class="class-grid">
-        <!-- 战士 -->
+        <!-- 戰士 -->
         <div class="class-card" onclick="selectClass('warrior')">
             <img src="https://i.ibb.co/p6g4PFH4/1.png" class="class-icon">
             <div class="selected-tick">✓</div>
@@ -870,6 +939,9 @@
             <ul class="class-stats">
                 <li>⚔️ 裂空擊：命中後有30%機率造成雙倍傷害</li>
             </ul>
+            <div class="popup-image" style="display: none;">
+                <img src="https://i.ibb.co/p6g4PFH4/1.png" alt="霸刀流全圖">
+            </div>
         </div>
         <!-- 坦克 -->
         <div class="class-card" onclick="selectClass('tank')">
@@ -878,8 +950,11 @@
             <h3>鐵甲宗</h3>
             <p>防禦+20% 攻擊-10%</p>
             <ul class="class-stats">
-                <li>🛡️ 金鐘罩：每回合自動恢復2%氣血</li>
+                <li>🛡️ 金鐘罩：每回合自動恢復2點氣血</li>
             </ul>
+            <div class="popup-image" style="display: none;">
+                <img src="https://i.ibb.co/4wksKZsF/image.png" alt="鐵甲宗全圖">
+            </div>
         </div>
         <!-- 刺客 -->
         <div class="class-card" onclick="selectClass('assassin')">
@@ -890,8 +965,11 @@
             <ul class="class-stats">
                 <li>🎯 鬼影步：30%機率完全閃避傷害</li>
             </ul>
+            <div class="popup-image" style="display: none;">
+                <img src="https://i.ibb.co/W4V5bX8X/image.png" alt="影流教全圖">
+            </div>
         </div>
-        <!-- 法师 -->
+        <!-- 法師 -->
         <div class="class-card" onclick="selectClass('mage')">
             <img src="https://i.ibb.co/tM82mXtr/3.png" class="class-icon">
             <div class="selected-tick">✓</div>
@@ -900,6 +978,9 @@
             <ul class="class-stats">
                 <li>🔥 離火訣：錯答傷害扣減30%</li>
             </ul>
+            <div class="popup-image" style="display: none;">
+                <img src="https://i.ibb.co/tM82mXtr/3.png" alt="玄天閣全圖">
+            </div>
         </div>
     </div>
     <div id="selectedClassInfo" style="margin-top: 2rem;"></div>
@@ -945,10 +1026,8 @@
         <div>🏹 你的氣血: <span id="myHealth">100</span>
             <div class="health-bar"><div class="health-fill" id="myHealthBar"></div></div>
         </div>
-         <div id="healText" class="health-recovery" style="display:none;">🛡️ 氣血恢復2%</div>
-
     </div>
-        
+    
     <div id="timer">🕒15</div>
 </div>
 
@@ -957,8 +1036,135 @@
     </div>
 
     
-    
 <script>
+
+// Canvas 動畫代碼
+window.onload = function() {
+    const canvas = document.getElementById('animationCanvas');
+    const ctx = canvas.getContext('2d');
+
+    // 設置 Canvas 大小為全屏
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    const img = new Image();
+    img.src = 'https://i.ibb.co/ymgTTDV5/4444.png';
+    img.crossOrigin = 'Anonymous';
+
+    // 定義粒子類
+    class Particle {
+        constructor(x, y, color) {
+            this.x = x;
+            this.y = y;
+            this.startX = x;
+            this.startY = y;
+            this.color = color;
+            this.vx = (Math.random() - 0.5) * 6; // 增加速度範圍
+            this.vy = (Math.random() - 0.5) * 6;
+            this.size = Math.random() * 4 + 1; // 隨機大小
+            this.alpha = 1;
+            this.life = 0; // 粒子生命週期
+        }
+        update(progress) {
+            this.life = progress;
+            this.x = this.startX + this.vx * progress * 30; // 調整分散距離
+            this.y = this.startY + this.vy * progress * 30;
+            this.alpha = 1 - progress; // 透明度隨進度減少
+        }
+        draw() {
+            ctx.fillStyle = `rgba(${this.color}, ${this.alpha})`;
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    }
+
+    img.onload = function() {
+        // 全屏調整圖片大小（保持比例，覆蓋螢幕）
+        let imgWidth, imgHeight, imgX, imgY;
+        const aspectRatio = img.width / img.height;
+        const canvasRatio = canvas.width / canvas.height;
+
+        if (aspectRatio > canvasRatio) {
+            // 圖片寬度超出畫布，按高度縮放
+            imgHeight = canvas.height;
+            imgWidth = imgHeight * aspectRatio;
+            imgX = (canvas.width - imgWidth) / 2;
+            imgY = 0;
+        } else {
+            // 圖片高度超出畫布，按寬度縮放
+            imgWidth = canvas.width;
+            imgHeight = imgWidth / aspectRatio;
+            imgX = 0;
+            imgY = (canvas.height - imgHeight) / 2;
+        }
+
+        // 初始繪製全屏圖片
+        ctx.drawImage(img, imgX, imgY, imgWidth, imgHeight);
+
+        // 創建粒子，覆蓋圖片區域
+        const particles = [];
+        const particleCount = 3000; // 增加粒子數量以模擬破碎效果
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+
+        for (let i = 0; i < particleCount; i++) {
+            const x = imgX + Math.random() * imgWidth;
+            const y = imgY + Math.random() * imgHeight;
+            const pixelX = Math.floor(x);
+            const pixelY = Math.floor(y);
+            const pixelIndex = (pixelY * canvas.width + pixelX) * 4;
+            const color = `${imageData[pixelIndex]}, ${imageData[pixelIndex + 1]}, ${imageData[pixelIndex + 2]}`;
+            particles.push(new Particle(x, y, color));
+        }
+
+        // 動畫邏輯
+        let startTime = Date.now();
+        const duration = 2; // 2秒動畫
+
+        function animate() {
+            const elapsedTime = (Date.now() - startTime) / 1000;
+            const progress = Math.min(elapsedTime / duration, 1);
+
+            // 清除畫布
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // 分階段控制圖片消失和粒子出現
+            if (progress < 0.3) {
+                // 前0.6秒顯示完整圖片
+                ctx.globalAlpha = 1;
+                ctx.drawImage(img, imgX, imgY, imgWidth, imgHeight);
+            } else if (progress < 0.7) {
+                // 0.6-1.4秒模擬破碎（圖片部分顯示）
+                ctx.globalAlpha = 1 - (progress - 0.3) / 0.4; // 透明度從1到0
+                ctx.drawImage(img, imgX, imgY, imgWidth, imgHeight);
+            }
+            // 後1.4秒只顯示粒子，圖片完全消失
+
+            // 更新並繪製粒子
+            ctx.globalAlpha = 1; // 恢復全局透明度
+            particles.forEach(particle => {
+                particle.update(progress);
+                particle.draw();
+            });
+
+            if (progress < 1) {
+                requestAnimationFrame(animate);
+            } else {
+                canvas.style.display = 'none';
+                document.getElementById('roomControl').style.display = 'block';
+            }
+        }
+
+        requestAnimationFrame(animate);
+    };
+
+    img.onerror = function() {
+        console.error('圖片載入失敗，跳過動畫');
+        canvas.style.display = 'none';
+        document.getElementById('roomControl').style.display = 'block';
+    };
+};
+    
 // 在代码开头部分，添加一个新的变量用于存储提示信息的元素
 let opponentJoinedMessage = null;
     let isRematching = false;
@@ -966,50 +1172,35 @@ let answered = false;
 let opponentDefense = 1.0; 
 // 新增变量
 let waitingForOpponent = false; 
+    let isAnswered = false; 
+    let answeredQuestions = new Set();
+    let hasHealedThisTurn = false;
 
 // 在代码开头部分，获取按钮和输入框元素
 const createRoomBtn = document.querySelector('button[onclick="createRoom()"]');
 const joinRoomBtn = document.querySelector('button[onclick="joinRoom()"]');
 const roomIdInput = document.getElementById('roomId');
 
+    
 // 修改 createRoom 函数的调用方式
 createRoomBtn.onclick = function() {
-    const roomId = roomIdInput.value;
-    if (roomId.trim() === "") {
-        alert("請輸入房間編號！");
-        return;
+    const roomId = roomIdInput.value.trim();
+    if (roomId !== "") {
+        createRoomWithId(roomId);
+    } else {
+        joinWaitingQueue();
     }
-    createRoom();
 };
 
-// 修改 joinRoom 函数的调用方式
 joinRoomBtn.onclick = function() {
-    const roomId = roomIdInput.value;
-    if (roomId.trim() === "") {
-        alert("請輸入房間編號！");
-        return;
+    const roomId = roomIdInput.value.trim();
+    if (roomId !== "") {
+        joinRoomWithId(roomId);
+    } else {
+        joinWaitingQueue();
     }
-    joinRoom();
 };
 
-function openPopup(element) {
-    const popup = element.querySelector('.popup-image');
-    popup.style.display = 'block';
-}
-
-function closePopup(element) {
-    const popup = element.closest('.popup-image');
-    popup.style.display = 'none';
-}
-
-// 修改class-card的点击事件，添加打开弹出图片的逻辑
-const classCards = document.querySelectorAll('.class-card');
-classCards.forEach(card => {
-    card.addEventListener('click', function() {
-        openPopup(this);
-        selectClass(this.getAttribute('onclick').split("'")[1]); // 调用原有的selectClass函数
-    });
-});
     
     
 function selectClass(className) {
@@ -1055,12 +1246,21 @@ selectedCard.querySelector('.selected-tick').style.display = 'flex';
         defense: playerClass.defense,
         dodge: playerClass.dodge
     });
+
+// 顯示彈出圖片並在動畫結束後隱藏
+    const popupImage = selectedCard.querySelector('.popup-image');
+    popupImage.style.display = 'block';
+    setTimeout(() => {
+        popupImage.style.display = 'none';
+    }, 500); // 動畫持續時間為0.5秒
+    
 }
 
 
 function displayQuestion(question) {
     
-    answered = false; // 重置答題狀態
+     // 重置答题状态
+    isAnswered = false; 
     document.getElementById('question').textContent = question.question;
 
     const optionsDiv = document.getElementById('options');
@@ -1070,128 +1270,118 @@ function displayQuestion(question) {
         const button = document.createElement('button');
         button.textContent = option;
 
-        // 點擊處理邏輯
+        // 点击处理逻辑
         button.onclick = () => {
-            if (!answered) {
-                answered = true; // 避免多次點擊
+            if (!isAnswered) {
+                isAnswered = true; // 设置为已选择状态
                 checkAnswer(index === question.correctIndex);
             }
         };
-    
+
         optionsDiv.appendChild(button);
     });
 
     startTimer();
 }
 
-function checkAnswer(isCorrect) {
+function checkAnswer(isCorrect, questionId) {
+    if (answeredQuestions.has(questionId)) return; // 如果已回答，則不執行
+    answeredQuestions.add(questionId); // 記錄已回答的問題ID
 
-// 在伤害计算后添加：
-let effectElement = document.createElement('div');
-if(playerClass.type === 'warrior' && isCorrect) {
-    effectElement.className = 'sword-animation';
-    effectElement.style.background = 'linear-gradient(90deg, transparent 0%, rgba(255,215,0,0.7) 50%, transparent 100%)';
-    effectElement.style.width = '150px';
-    effectElement.style.height = '30px';
-    effectElement.style.position = 'fixed';
-    effectElement.style.top = '50%';
-} 
-else if(playerClass.type === 'tank' && !isCorrect) {
-    effectElement.className = 'shield-animation';
-    effectElement.innerHTML = '🛡️';
-    effectElement.style.fontSize = '4rem';
-    effectElement.style.position = 'fixed';
-    effectElement.style.left = '50%';
-    effectElement.style.transform = 'translateX(-50%)';
-}
+    // 在傷害計算後添加特效元素
+    let effectElement = document.createElement('div');
+    if (playerClass.type === 'warrior' && isCorrect) {
+        effectElement.className = 'sword-animation';
+        effectElement.style.background = 'linear-gradient(90deg, transparent 0%, rgba(255,215,0,0.7) 50%, transparent 100%)';
+        effectElement.style.width = '150px';
+        effectElement.style.height = '30px';
+        effectElement.style.position = 'fixed';
+        effectElement.style.top = '50%';
+    } else if (playerClass.type === 'tank' && !isCorrect) {
+        effectElement.className = 'shield-animation';
+        effectElement.innerHTML = '🛡️';
+        effectElement.style.fontSize = '4rem';
+        effectElement.style.position = 'fixed';
+        effectElement.style.left = '50%';
+        effectElement.style.transform = 'translateX(-50%)';
+    }
 
-    // 新增铁甲宗治疗代码 ▼▼▼
-    if (playerClass && playerClass.type === 'tank') {
-        const currentHealth = parseInt(document.getElementById('myHealth').textContent);
-        const healAmount = Math.max(1, Math.ceil(currentHealth * 0.02)); // 至少恢复1点
-        
-        // 更新数据库
+    // 鐵甲宗治療代碼
+    if (playerClass && playerClass.type === 'tank' && !hasHealedThisTurn) {
+        hasHealedThisTurn = true;
+        const healAmount = 2;
         const playerPath = isHost ? 'player1' : 'player2';
         database.ref(`rooms/${currentRoomId}/${playerPath}/health`).set(
             firebase.database.ServerValue.increment(healAmount)
         );
-        
-        // 显示治疗提示
-        const healDisplay = document.getElementById('healText');
-        healDisplay.style.display = 'block';
-        setTimeout(() => healDisplay.style.display = 'none', 1000);
+        const myHealthElement = document.getElementById('myHealth');
+        const shieldIcon = document.createElement('span');
+        shieldIcon.className = 'shield-icon';
+        shieldIcon.innerHTML = '🛡️';
+        myHealthElement.appendChild(shieldIcon);
+        setTimeout(() => {
+            shieldIcon.remove();
+        }, 1000);
     }
 
-    
-if(effectElement.className) {
-    document.body.appendChild(effectElement);
-    setTimeout(() => effectElement.remove(), 1000);
-}
-    
+    if (effectElement.className) {
+        document.body.appendChild(effectElement);
+        setTimeout(() => effectElement.remove(), 1000);
+    }
+
     if (answered || gameOver) return;
     answered = true;
 
     clearInterval(timer);
-    
+
     // 樣式處理
     const buttons = document.querySelectorAll('#options button');
     const correctIndex = window.currentQuestion.correctIndex;
-    
-    // 顯示正確答案樣式
     buttons.forEach((btn, index) => {
-        btn.style.pointerEvents = 'none'; // 立即禁止點擊
+        btn.style.pointerEvents = 'none';
         if (index === correctIndex) {
             btn.style.cssText = `
                 background: #2ecc71 !important;
                 border: 2px solid #27ae60 !important;
                 transform: scale(1.05);
             `;
-         }
+        }
     }, 50);
 
-
     // 傷害計算與動畫
-// 修改为：
-// 修改后的伤害计算 ▼▼▼
-let baseDamage = Math.floor((timeLeft / 15) * 13);
+    let baseDamage = Math.floor((timeLeft / 15) * 13);
 
-// 霸刀门双倍攻击判定（30%概率）
-if(playerClass.type === 'warrior' && isCorrect && Math.random() < 0.3) {
-    baseDamage *= 2;
-    // 添加刀光特效
-    const swordFlash = document.createElement('div');
-    swordFlash.className = 'sword-flash';
-    swordFlash.style.top = `${Math.random() * 40 + 30}%`;
-    document.body.appendChild(swordFlash);
-    setTimeout(() => swordFlash.remove(), 400);
-}
-
-// 影流教闪避判定（30%概率）
-if(playerClass.type === 'assassin' && !isCorrect && Math.random() < 0.3) {
-    baseDamage = 0; // 完全闪避
-    // 显示闪避提示
-    const dodgeDisplay = document.getElementById('dodgeText');
-    dodgeDisplay.style.display = 'block';
-    setTimeout(() => dodgeDisplay.style.display = 'none', 1000);
-}
-
-let damage;
-if (isCorrect) {
-    // 攻击敌人：攻击力加成 × 敌人防御减免
-    damage = Math.floor(baseDamage * playerClass.attack / opponentDefense);
-} else {
-    // 自己受伤：基础伤害 ÷ 自身防御减免
-    damage = Math.floor(baseDamage / playerClass.defense);
-    
-    // 玄天阁减伤30%（新增代码）
-    if(playerClass.type === 'mage') {
-        damage = Math.floor(damage * 0.7);
-        // 显示减伤提示
-        const reduceDisplay = document.getElementById('reduceDamageText');
-        reduceDisplay.style.display = 'block';
-        setTimeout(() => reduceDisplay.style.display = 'none', 1200);
+    // 霸刀門雙倍攻擊判定（30%概率）
+    if (playerClass.type === 'warrior' && isCorrect && Math.random() < 0.3) {
+        baseDamage *= 2;
+        const swordFlash = document.createElement('div');
+        swordFlash.className = 'sword-flash';
+        swordFlash.style.top = `${Math.random() * 40 + 30}%`;
+        document.body.appendChild(swordFlash);
+        setTimeout(() => swordFlash.remove(), 400);
     }
-}
+
+    // 影流教閃避判定（30%概率）
+    if (playerClass.type === 'assassin' && !isCorrect && Math.random() < 0.3) {
+        baseDamage = 0;
+        const dodgeDisplay = document.getElementById('dodgeText');
+        dodgeDisplay.style.display = 'block';
+        setTimeout(() => dodgeDisplay.style.display = 'none', 1000);
+    }
+
+    let damage;
+    if (isCorrect) {
+        damage = Math.floor(baseDamage * playerClass.attack / opponentDefense);
+    } else {
+        damage = Math.floor(baseDamage / playerClass.defense);
+        if (playerClass.type === 'mage') {
+            damage = Math.floor(damage * 0.7);
+            const reduceDisplay = document.getElementById('reduceDamageText');
+            reduceDisplay.style.display = 'block';
+            setTimeout(() => reduceDisplay.style.display = 'none', 1200);
+        }
+    }
+
     const targetElement = isCorrect 
         ? document.getElementById('opponentHealthBar')
         : document.getElementById('myHealthBar');
@@ -1200,14 +1390,18 @@ if (isCorrect) {
     targetElement.classList.add('damage-flash');
     document.getElementById('gameArea').classList.add('screen-shake');
     document.querySelectorAll('.health-fill').forEach(bar => bar.classList.add('damage-effect'));
-    
-    // 震動效果
-    navigator.vibrate = navigator.vibrate || navigator.webkitVibrate || navigator.mozVibrate || navigator.msVibrate;
-    if (navigator.vibrate) navigator.vibrate(200);
 
-    // 音效播放
-    soundEffects.attack.currentTime = 0;
-    soundEffects.attack.play();
+    // 根據答對或答錯分開處理音效和震動
+    navigator.vibrate = navigator.vibrate || navigator.webkitVibrate || navigator.mozVibrate || navigator.msVibrate;
+    if (isCorrect) {
+        // 答對時：音效 + 震動
+        soundEffects.attack.currentTime = 0;
+        soundEffects.attack.play();
+        if (navigator.vibrate) navigator.vibrate(200);
+    } else {
+        // 答錯時：僅震動
+        if (navigator.vibrate) navigator.vibrate(200);
+    }
 
     // 移除動畫
     setTimeout(() => {
@@ -1228,26 +1422,22 @@ if (isCorrect) {
     }
 
     database.ref('rooms/' + currentRoomId).update(updates, (error) => {
-    if (error) return;
-    
-    // 強制立即檢查遊戲狀態
-    checkGameOver();
-    
-    if (!gameOver) {
+        if (error) return;
+        checkGameOver();
+        if (!gameOver) {
             setTimeout(() => {
-                // 重置按鈕樣式和互動狀態
                 buttons.forEach(btn => {
                     btn.style.cssText = '';
-                    btn.style.pointerEvents = 'auto'; // 重新啟用點擊
+                    btn.style.pointerEvents = 'auto';
                 });
-                answered = false; // 新增：重置回答狀態
+                answered = false;
                 loadNewQuestion();
             }, 700);
         }
     });
 
- // 修正後的代碼 ▼
-    setTimeout(() => { // 延遲確保DOM已更新
+    // 後續代碼保持不變（例如刀光特效、命中數字等）
+    setTimeout(() => {
         const buttons = document.querySelectorAll('#options button');
         const correctIndex = window.currentQuestion.correctIndex;
         if (buttons[correctIndex]) {
@@ -1259,38 +1449,27 @@ if (isCorrect) {
         }
     }, 50);
 
- // 替换原有的刀光特效代码 ▼
- const flash = document.createElement('div');
-flash.className = 'sword-flash';
-// 根據玩家位置設定刀光起始點
-const startX = isHost ? '20%' : '80%'; 
-flash.style.left = startX;
-flash.style.top = `${Math.random() * 40 + 30}%`; // 隨機垂直位置
-document.body.appendChild(flash);
+    const flash = document.createElement('div');
+    flash.className = 'sword-flash';
+    const startX = isHost ? '20%' : '80%';
+    flash.style.left = startX;
+    flash.style.top = `${Math.random() * 40 + 30}%`;
+    document.body.appendChild(flash);
+    setTimeout(() => flash.remove(), 400);
 
-// 自動移除元素
-setTimeout(() => {
-    flash.remove();
-}, 400);
+    if (!isCorrect) {
+        flash.style.background = `linear-gradient(
+            90deg,
+            rgba(255,255,255,0) 0%,
+            rgba(255,100,100,0.7) 50%,
+            rgba(255,255,255,0) 100%
+        )`;
+    }
 
-// 添加顏色變化
-if(!isCorrect) {
-    flash.style.background = `linear-gradient(
-        90deg,
-        rgba(255,255,255,0) 0%,
-        rgba(255,100,100,0.7) 50%,
-        rgba(255,255,255,0) 100%
-    )`;
-}
-
-    // 根据回答正确性添加不同颜色边框脉冲
     const gameArea = document.getElementById('gameArea');
     gameArea.style.boxShadow = `0 0 30px ${isCorrect ? '#2ecc71' : '#e74c3c'}`;
-    setTimeout(() => {
-        gameArea.style.boxShadow = '0 0 20px var(--gold)';
-    }, 300);
+    setTimeout(() => gameArea.style.boxShadow = '0 0 20px var(--gold)', 300);
 
-    // 保留原有的血条冲击波效果，但修改颜色
     const healthBar = isCorrect ? document.getElementById('opponentHealthBar') : document.getElementById('myHealthBar');
     const wave = document.createElement('div');
     wave.className = 'health-wave';
@@ -1298,47 +1477,42 @@ if(!isCorrect) {
     healthBar.appendChild(wave);
     setTimeout(() => wave.remove(), 500);
 
-   // 新增命中數字顯示
-const hitText = document.createElement('div');
-hitText.className = 'hit-marker';
-hitText.textContent = `-${damage}`;
-if (isCorrect) {
-    // 答对时，显示在对方气血条附近
-    const opponentHealthContainer = document.getElementById('enemyHealthContainer');
-    hitText.style.position = 'absolute';
-    hitText.style.left = `${Math.random() * opponentHealthContainer.offsetWidth + opponentHealthContainer.offsetLeft}px`;
-    hitText.style.top = `${opponentHealthContainer.offsetTop + opponentHealthContainer.offsetHeight / 2 - hitText.offsetHeight / 2}px`;
-    opponentHealthContainer.appendChild(hitText);
-} else {
-    // 答错时，显示在自己气血条附近
-    const myHealthContainer = document.getElementById('myHealthContainer');
-    hitText.style.position = 'absolute';
-    hitText.style.left = `${Math.random() * myHealthContainer.offsetWidth + myHealthContainer.offsetLeft}px`;
-    hitText.style.top = `${myHealthContainer.offsetTop + myHealthContainer.offsetHeight / 2 - hitText.offsetHeight / 2}px`;
-    myHealthContainer.appendChild(hitText);
-}
-setTimeout(() => hitText.remove(), 300);
-    
-    
+    const hitText = document.createElement('div');
+    hitText.className = 'hit-marker';
+    hitText.textContent = `-${damage}`;
+    if (isCorrect) {
+        const opponentHealthContainer = document.getElementById('enemyHealthContainer');
+        hitText.style.position = 'absolute';
+        hitText.style.left = `${Math.random() * opponentHealthContainer.offsetWidth + opponentHealthContainer.offsetLeft}px`;
+        hitText.style.top = `${opponentHealthContainer.offsetTop + opponentHealthContainer.offsetHeight / 2 - hitText.offsetHeight / 2}px`;
+        opponentHealthContainer.appendChild(hitText);
+    } else {
+        const myHealthContainer = document.getElementById('myHealthContainer');
+        hitText.style.position = 'absolute';
+        hitText.style.left = `${Math.random() * myHealthContainer.offsetWidth + myHealthContainer.offsetLeft}px`;
+        hitText.style.top = `${myHealthContainer.offsetTop + myHealthContainer.offsetHeight / 2 - hitText.offsetHeight / 2}px`;
+        myHealthContainer.appendChild(hitText);
+    }
+    setTimeout(() => hitText.remove(), 300);
 }
     
     
 // 修改 updateHealthDisplay 函數
 function updateHealthDisplay(room) {
     const myHealth = isHost ? room.player1.health : (room.player2?.health || 100);
-    const myHealthBar = document.getElementById('myHealthBar');
-    
-    // 更新血條寬度
-    myHealthBar.style.width = myHealth + '%';
-    
-    // 簡單低血量提醒
-    if (myHealth <= 30) {
-        myHealthBar.style.background = '#ff0000'; // 直接變紅色
-        document.getElementById('myHealth').textContent = `${myHealth}% (危險！)`;
-    } else {
-        myHealthBar.style.background = 'linear-gradient(90deg, var(--main-red) 0%, #ff6b6b 100%)';
-        document.getElementById('myHealth').textContent = `${myHealth}%`;
-    }
+    const myName = isHost ? (room.player1?.name || '玩家1') : (room.player2?.name || '玩家2');
+    const opponentName = isHost ? (room.player2?.name || '玩家2') : (room.player1?.name || '玩家1');
+
+    document.getElementById('myHealthContainer').innerHTML = `
+        <div>${myName} 氣血: <span id="myHealth">${Math.max(myHealth, 0)}</span></div>
+        <div class="health-bar"><div class="health-fill" id="myHealthBar"></div></div>
+    `;
+    document.getElementById('enemyHealthContainer').innerHTML = `
+        <div>${opponentName} 氣血: <span id="opponentHealth">${Math.max(isHost ? (room.player2?.health || 100) : room.player1.health, 0)}</span></div>
+        <div class="health-bar"><div class="health-fill" id="opponentHealthBar"></div></div>
+    `;
+    document.getElementById('myHealthBar').style.width = Math.max(myHealth, 0) + '%';
+    document.getElementById('opponentHealthBar').style.width = Math.max(isHost ? (room.player2?.health || 100) : room.player1.health, 0) + '%';
 }
     
 
@@ -1349,16 +1523,136 @@ function stopDangerAlert() {
 
     
 const firebaseConfig = {
-  apiKey: "AIzaSyBi9IEquAN1JPQTA2FVylSheVCtuAG8ZoY",
-  authDomain: "game-9e2a9.firebaseapp.com",
-  databaseURL: "https://game-9e2a9-default-rtdb.firebaseio.com",
-  projectId: "game-9e2a9",
-  storageBucket: "game-9e2a9.appspot.com",
-  messagingSenderId: "567367988730",
-  appId: "1:567367988730:web:6ff2ee6e0cddecfaa9e043"
+apiKey: "AIzaSyBLUpaWYdcJTrI9KmiiCJ7ZeTE2IRjkobU",
+authDomain: "for-test-6bc8f.firebaseapp.com",
+databaseURL: "https://for-test-6bc8f-default-rtdb.firebaseio.com",
+projectId: "for-test-6bc8f", 
+storageBucket: "for-test-6bc8f.firebasestorage.app",
+messagingSenderId: "948613965375",
+appId: "1:948613965375:web:ae966d7dd461e328093a8a"
+
+};
+firebase.initializeApp(firebaseConfig);
+  
+
+// 「登入」按鈕事件
+document.getElementById('loginBtn').onclick = function() {
+    const email = prompt("請輸入郵箱");
+    const password = prompt("請輸入密碼");
+    auth.signInWithEmailAndPassword(email, password)
+        .then((userCredential) => {
+            const user = userCredential.user;
+            if (!user.displayName) {
+                const displayName = prompt("請輸入您的顯示名稱");
+                if (displayName) {
+                    user.updateProfile({
+                        displayName: displayName
+                    }).then(() => {
+                        alert("登入成功：" + displayName);
+                    }).catch((error) => {
+                        alert("設置顯示名稱失敗：" + error.message);
+                    });
+                } else {
+                    alert("顯示名稱不能為空");
+                    return;
+                }
+            } else {
+                alert("登入成功：" + user.displayName);
+            }
+            document.getElementById('loginBtn').style.display = 'none';
+        })
+        .catch((error) => {
+            alert("登入失敗：" + error.message);
+        });
 };
 
-firebase.initializeApp(firebaseConfig);
+// 「注冊」按鈕事件（新位置）
+document.getElementById('registerBtn').onclick = function() {
+    const email = prompt("請輸入郵箱");
+    const password = prompt("請輸入密碼");
+    const displayName = prompt("請輸入您的顯示名稱");
+    if (!email || !password || !displayName) {
+        alert("郵箱、密碼和顯示名稱不能為空");
+        return;
+    }
+
+    const displayNamesRef = database.ref('displayNames');
+    displayNamesRef.child(displayName).once('value')
+        .then((snapshot) => {
+            if (snapshot.exists()) {
+                alert("該顯示名稱已被使用，請選擇其他名稱");
+                return Promise.reject("顯示名稱已存在");
+            } else {
+                return auth.createUserWithEmailAndPassword(email, password);
+            }
+        })
+        .then((userCredential) => {
+            const user = userCredential.user;
+            return user.updateProfile({
+                displayName: displayName
+            }).then(() => {
+                return displayNamesRef.child(displayName).set(true);
+            });
+        })
+        .then(() => {
+            alert("註冊成功：" + displayName);
+            document.getElementById('loginBtn').style.display = 'none';
+            document.getElementById('registerBtn').style.display = 'none';
+            document.getElementById('logoutContainer').style.display = 'block';
+        })
+        .catch((error) => {
+            if (error === "顯示名稱已存在") {
+                // 已處理
+            } else if (error.code === 'auth/email-already-in-use') {
+                alert("該郵箱已被註冊");
+            } else {
+                alert("註冊失敗：" + error.message);
+            }
+        });
+};
+
+// 獨立的登出邏輯（新增位置）
+document.getElementById('logoutBtn').onclick = function() {
+    auth.signOut()
+        .then(() => {
+            alert("已登出");
+            document.getElementById('loginBtn').style.display = 'inline-block';
+            document.getElementById('registerBtn').style.display = 'inline-block';
+            document.getElementById('logoutContainer').style.display = 'none';
+        })
+        .catch((error) => {
+            alert("登出失敗：" + error.message);
+        });
+};
+
+    
+    const auth = firebase.auth();
+   auth.onAuthStateChanged((user) => {
+    const userInfo = document.getElementById('userInfo');
+    const userName = document.getElementById('userName');
+    const userScore = document.getElementById('userScore');
+    
+    if (user) {
+        // 用戶已登入
+        document.getElementById('loginBtn').style.display = 'none';
+        document.getElementById('registerBtn').style.display = 'none';
+        document.getElementById('logoutContainer').style.display = 'block';
+        userInfo.style.display = 'block';
+        userName.textContent = user.displayName || '未命名玩家';
+
+        // 從 leaderboard 獲取積分
+        database.ref('leaderboard/' + user.uid).once('value', (snapshot) => {
+            const data = snapshot.val();
+            userScore.textContent = data ? data.score : 0;
+        });
+    } else {
+        // 用戶未登入
+        document.getElementById('loginBtn').style.display = 'inline-block';
+        document.getElementById('registerBtn').style.display = 'inline-block';
+        document.getElementById('logoutContainer').style.display = 'none';
+        userInfo.style.display = 'none';
+    }
+});
 const database = firebase.database();
 
 let currentRoomId = null;
@@ -1417,9 +1711,109 @@ function joinRoom() {
     listenToRoomChanges();
 }
 
+    function createRoomWithId(roomId) {
+    currentRoomId = roomId;
+    isHost = true;
+    document.getElementById('roomControl').style.display = 'none';
+    document.getElementById('classSelection').style.display = 'block';
+    document.getElementById('waitingArea').style.display = 'block';
+    document.getElementById('displayRoomId').textContent = currentRoomId;
+
+    database.ref('rooms/' + currentRoomId).set({
+        player1: { health: 100, class: null, currentQuestion: null },
+        player2: { health: 100, class: null, currentQuestion: null },
+        gameStarted: false,
+        gameEnded: false,
+        winner: null
+    });
+    listenToRoomChanges();
+}
+
+function joinRoomWithId(roomId) {
+    currentRoomId = roomId;
+    isHost = false; // 注意這裡與 createRoomWithId 的區別
+    document.getElementById('roomControl').style.display = 'none';
+    document.getElementById('classSelection').style.display = 'block';
+    listenToRoomChanges();
+}
+
+    function joinWaitingQueue() {
+    const user = firebase.auth().currentUser;
+    if (!user) {
+        alert("請先登入！");
+        return;
+    }
+
+    const waitingRef = database.ref('waitingRooms');
+    const userId = user.uid;
+
+    // 檢查是否已在等待隊列中
+    waitingRef.child(userId).once('value', (snapshot) => {
+        if (!snapshot.exists()) {
+            // 加入等待隊列
+            waitingRef.child(userId).set({
+                timestamp: firebase.database.ServerValue.TIMESTAMP
+            });
+            checkForMatch();
+        } else {
+            alert("您已在等待中，請稍候！");
+        }
+    });
+}
+
+function checkForMatch() {
+    const waitingRef = database.ref('waitingRooms');
+    waitingRef.orderByChild('timestamp').limitToFirst(2).once('value', (snapshot) => {
+        const waitingPlayers = [];
+        snapshot.forEach((childSnapshot) => {
+            waitingPlayers.push(childSnapshot.key);
+        });
+
+        if (waitingPlayers.length >= 2) {
+            const player1 = waitingPlayers[0];
+            const player2 = waitingPlayers[1];
+
+            // 隨機生成房間編號
+            const roomId = Math.floor(1000 + Math.random() * 9000).toString();
+            const roomRef = database.ref('rooms/' + roomId);
+            roomRef.set({
+                player1: { userId: player1, health: 100, class: null, currentQuestion: null },
+                player2: { userId: player2, health: 100, class: null, currentQuestion: null },
+                gameStarted: false,
+                gameEnded: false,
+                winner: null
+            });
+
+            // 移除配對成功的玩家
+            waitingRef.child(player1).remove();
+            waitingRef.child(player2).remove();
+
+            // 根據當前用戶進入遊戲
+            const userId = firebase.auth().currentUser.uid;
+            if (userId === player1) {
+                currentRoomId = roomId;
+                isHost = true;
+                startGameSession();
+            } else if (userId === player2) {
+                currentRoomId = roomId;
+                isHost = false;
+                startGameSession();
+            }
+        }
+    });
+}
+
+function startGameSession() {
+    document.getElementById('roomControl').style.display = 'none';
+    document.getElementById('classSelection').style.display = 'block';
+    document.getElementById('waitingArea').style.display = 'block';
+    document.getElementById('displayRoomId').textContent = currentRoomId;
+    listenToRoomChanges();
+}
+
 function listenToRoomChanges() {
     const roomRef = database.ref('rooms/' + currentRoomId);
-    roomRef.off('value');
+    roomRef.off('value'); // 移除舊的監聽器
 
     roomRef.on('value', (snapshot) => {
         const room = snapshot.val();
@@ -1431,40 +1825,78 @@ function listenToRoomChanges() {
             opponentDefense = room.player1?.defense || 1.0;
         }
 
-        if(room.player1?.class && room.player2?.class) {
+        // 當雙方選擇角色後開始遊戲
+        if (room.player1?.class && room.player2?.class && !room.gameStarted) {
             document.getElementById('waitingArea').style.display = 'none';
-        }
-
-        if (room.gameEnded) {
-            handleGameEnd(room.winner);
-            return;
-        }
-
-        if (room.player1?.class && room.player2?.class) {
             document.getElementById('classSelection').style.display = 'none';
             document.getElementById('gameArea').style.display = 'block';
+            roomRef.update({ gameStarted: true });
             startGame(room);
         }
 
         updateHealthDisplay(room);
 
-        if (room.hostRematch && room.clientRematch && !room.gameStarted) {
-            // 双方都同意重开，移除等待界面
-            const waitingForRematch = document.getElementById('waitingForRematch');
-            if (waitingForRematch) {
-                waitingForRematch.remove();
-            }
-
-            // 开始新游戏
-            const updates = {
-                gameStarted: true
-            };
-            database.ref('rooms/' + currentRoomId).update(updates, () => {
-                startNewGameSession();
-            });
+        if (room.gameEnded) {
+            handleGameEnd(room.winner);
         }
     });
 }
+
+    function randomMatch() {
+        console.log("randomMatch called");
+    const waitingRef = database.ref('waitingRooms'); // 使用單一等待房間
+    const userId = Math.random().toString(36).substr(2, 9); // 臨時用戶 ID
+
+    waitingRef.once('value', (snapshot) => {
+        console.log("Waiting data:", snapshot.val());
+        const waitingData = snapshot.val();
+
+        if (!waitingData || !waitingData.roomId) {
+            // 沒有等待房間，第一個玩家成為房主
+            const roomId = Math.floor(1000 + Math.random() * 9000).toString();
+            currentRoomId = roomId;
+            isHost = true;
+
+            // 創建房間並記錄到 waitingRoom
+            database.ref('rooms/' + roomId).set({
+                player1: { userId: userId, health: 100, class: null, currentQuestion: null, name: '玩家1' },
+                player2: null, // 等待第二個玩家
+                gameStarted: false,
+                gameEnded: false,
+                winner: null
+            });
+            waitingRef.set({ roomId: roomId, hostId: userId });
+
+            // 更新 UI
+            document.getElementById('roomControl').style.display = 'none';
+            document.getElementById('waitingArea').style.display = 'block';
+            document.getElementById('displayRoomId').textContent = '等待對手...';
+            document.getElementById('classSelection').style.display = 'block';
+
+            listenToRoomChanges();
+        } else {
+            // 有等待房間，第二個玩家加入
+            const roomId = waitingData.roomId;
+            currentRoomId = roomId;
+            isHost = false;
+
+            // 加入房間作為 player2
+            database.ref('rooms/' + roomId + '/player2').set({
+                userId: userId, health: 100, class: null, currentQuestion: null, name: '玩家2'
+            });
+            waitingRef.remove(); // 清除等待房間記錄
+
+            // 更新 UI
+            document.getElementById('roomControl').style.display = 'none';
+            document.getElementById('waitingArea').style.display = 'block';
+            document.getElementById('displayRoomId').textContent = '等待角色選擇...';
+            document.getElementById('classSelection').style.display = 'block';
+
+            listenToRoomChanges();
+        }
+    });
+}
+    
 
 function startNewGameSession() {
 
@@ -1487,6 +1919,13 @@ function startNewGameSession() {
 }
     
 function updateHealthDisplay(room) {
+    const user = auth.currentUser;
+    if (user) {
+        document.getElementById('myHealthContainer').innerHTML = `
+            <div>${user.displayName} 氣血: <span id="myHealth">${Math.max(isHost ? room.player1.health : (room.player2?.health || 100), 0)}</span></div>
+            <div class="health-bar"><div class="health-fill" id="myHealthBar"></div></div>
+        `;
+    }
      // 在原有代码前添加职业头像显示
     const myClass = isHost ? room.player1.class : (room.player2?.class || '');
     const opponentClass = isHost ? (room.player2?.class || '') : room.player1.class;
@@ -1547,12 +1986,21 @@ function shuffleArray(array) {
 }
 
 function loadNewQuestion() {
-    const questionsRef = database.ref('questions');
-    questionsRef.once('value').then(snapshot => {
-        const questions = snapshot.val();
-        const randomIndex = Math.floor(Math.random() * questions.length);
-        const originalQuestion = questions[randomIndex];
-        
+    hasHealedThisTurn = false; // 重置恢復狀態
+    // 假設問題總數為 100，可以從 Firebase 或本地配置中動態獲取
+    const totalQuestions = 622; 
+    const randomId = Math.floor(Math.random() * totalQuestions); // 隨機生成問題 ID
+
+    // 只下載特定問題的數據
+    const questionRef = database.ref(`questions/${randomId}`);
+    questionRef.once('value').then(snapshot => {
+        const originalQuestion = snapshot.val();
+        if (!originalQuestion) {
+            console.error('無法找到該問題數據');
+            return;
+        }
+
+        // 在客戶端處理問題數據（打亂選項等）
         const optionsCopy = [...originalQuestion.options];
         const correctAnswer = optionsCopy[originalQuestion.correctIndex];
         const shuffledOptions = shuffleArray(optionsCopy);
@@ -1561,17 +2009,28 @@ function loadNewQuestion() {
         const processedQuestion = {
             question: originalQuestion.question,
             options: shuffledOptions,
-            correctIndex: newCorrectIndex
+            correctIndex: newCorrectIndex,
+            id: Date.now() // 生成唯一 ID 用於客戶端識別
         };
 
+        // 更新當前問題 ID 和房間數據
+        currentQuestionId = processedQuestion.id;
         const playerPath = isHost ? 'player1' : 'player2';
-        database.ref('rooms/' + currentRoomId + '/' + playerPath).update({ currentQuestion: processedQuestion });
+        database.ref('rooms/' + currentRoomId + '/' + playerPath).update({ 
+            currentQuestion: processedQuestion 
+        });
+
+        // 重置答題狀態並顯示問題
+        isAnswered = false;
+        displayQuestion(processedQuestion);
+    }).catch(error => {
+        console.error('下載問題數據時出錯:', error);
     });
 }
 
 function displayQuestion(question) {
     this.answered = false; // 重置答題狀態
-    window.currentQuestion = question; // 必須用window保存
+    window.currentQuestion = question;
     document.getElementById('question').textContent = question.question;
     const optionsDiv = document.getElementById('options');
     optionsDiv.innerHTML = '';
@@ -1579,7 +2038,12 @@ function displayQuestion(question) {
     question.options.forEach((option, index) => {
         const button = document.createElement('button');
         button.textContent = option;
-        button.onclick = () => checkAnswer(index === question.correctIndex);
+        button.setAttribute('data-question-id', question.id); // 設置問題ID
+        button.onclick = () => {
+            if (!answeredQuestions.has(question.id)) { // 檢查是否已回答
+                checkAnswer(index === question.correctIndex, question.id);
+            }
+        };
         optionsDiv.appendChild(button);
     });
     startTimer();
@@ -1695,9 +2159,56 @@ const buttonContainer = document.createElement('div');
 
     buttonContainer.appendChild(rematchBtn);
     buttonContainer.appendChild(mainMenuBtn);
+    const user = auth.currentUser;
+if (user) {
+    const userId = user.uid;
+    const isWinner = (winnerType === 'player1' && isHost) || (winnerType === 'player2' && !isHost);
+    const scoreChange = isWinner ? 10 : -5; // 贏加10分，輸扣5分
+
+    const userRef = database.ref('leaderboard/' + userId);
+    userRef.transaction((currentData) => {
+        if (currentData) {
+            currentData.score = (currentData.score || 0) + scoreChange;
+        } else {
+            currentData = {
+                name: user.displayName, // 直接使用 displayName，不需要後備值
+                score: scoreChange
+            };
+        }
+        return currentData;
+    });
+}
     victoryOverlay.appendChild(buttonContainer);
 }
 
+document.getElementById('showLeaderboardBtn').onclick = function() {
+    const leaderboardRef = database.ref('leaderboard');
+    leaderboardRef.orderByChild('score').limitToLast(10).once('value', (snapshot) => {
+        const leaderboard = [];
+        snapshot.forEach((childSnapshot) => {
+            const data = childSnapshot.val();
+            leaderboard.push(data);
+        });
+        leaderboard.reverse(); // 降序排列
+
+        // 顯示排行榜
+        let leaderboardHTML = '<h2 style="text-align: center; color: var(--gold);">🏆 排行榜 - 前十名</h2><ul>';
+        leaderboard.forEach((entry, index) => {
+            leaderboardHTML += `<li style="font-size: 1.2rem; padding: 0.5rem;">${index + 1}. ${entry.name} - ${entry.score} 分</li>`;
+        });
+        leaderboardHTML += '</ul>';
+        
+        const leaderboardDiv = document.createElement('div');
+        leaderboardDiv.style.cssText = `
+            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            background: rgba(45, 41, 38, 0.95); padding: 2rem; border: 3px solid var(--gold);
+            border-radius: 15px; max-width: 400px; z-index: 10000; color: white;
+        `;
+        leaderboardDiv.innerHTML = leaderboardHTML + '<button onclick="this.parentElement.remove()" style="margin-top: 1rem; padding: 0.5rem 1rem; background: #e74c3c; border: none; border-radius: 5px; color: white;">關閉</button>';
+        document.body.appendChild(leaderboardDiv);
+    });
+};
+    
 
 function handleRematchRequest() {
     if (isRematching) return;
@@ -1847,21 +2358,21 @@ const opponentReentered = isHost? room.player2?.reentered : room.player1?.reente
 if (opponentReentered &&!opponentJoinedMessage && (!room.gameStarted || room.gameEnded)) {
     opponentJoinedMessage = document.createElement('div');
     opponentJoinedMessage.style.cssText = `
-        position: fixed;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        background: rgba(0, 0, 0, 0.9);
-        color: #fff;
-        padding: 20px;
-        border-radius: 10px;
-        z-index: 9999;
-        font-size: 2rem;
-        text-align: center;
-        width: 80%;
-        max-width: 300px;
-        box-shadow: 0 0 20px rgba(212, 175, 55, 0.5);
-    `;
+    position: fixed;
+    top: 10%;
+    left: 50%;
+    transform: translate(-50%, 0);
+    background: rgba(0, 0, 0, 0.9);
+    color: #fff;
+    padding: 20px;
+    border-radius: 10px;
+    z-index: 9999;
+    font-size: 2rem;
+    text-align: center;
+    width: 80%;
+    max-width: 300px;
+    box-shadow: 0 0 20px rgba(212, 175, 55, 0.5);
+`;
     opponentJoinedMessage.textContent = '🎮玩家已進場';
     document.body.appendChild(opponentJoinedMessage);
 
@@ -1876,7 +2387,7 @@ if (opponentReentered &&!opponentJoinedMessage && (!room.gameStarted || room.gam
 </script>
 
 <!-- 新增治疗提示 -->
-<div id="healText" style="display:none; position:fixed; top:30%; left:50%; transform:translate(-50%,-50%); font-size:2rem; color:#00ff00; text-shadow:0 0 10px rgba(0,255,0,0.5);">🛡️ 氣血恢復2%</div>
+<div id="healText" style="display:none; position:fixed; top:30%; left:50%; transform:translate(-50%,-50%); font-size:2rem; color:#00ff00; text-shadow:0 0 10px rgba(0,255,0,0.5);">🛡️ 氣血恢復2點</div>
 
 <!-- 新增减伤提示 -->
 <div id="reduceDamageText" style="display:none; position:fixed; top:40%; left:50%; transform:translate(-50%,-50%); font-size:2rem; color:#00ffff; text-shadow:0 0 10px rgba(0,255,255,0.5);">🔥 離火護體 傷害減少30%</div>
