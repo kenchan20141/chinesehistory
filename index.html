@@ -1408,7 +1408,10 @@ let opponentDefense = 1.0;
 let waitingForOpponent = false; 
     let isAnswered = false; 
     let answeredQuestions = new Set();
-    let hasHealedThisTurn = false;
+    let playerStates = {
+    player1: { hasHealedThisTurn: false },
+    player2: { hasHealedThisTurn: false }
+};
     let selectedGrade = null;
 let selectedTopic = null;
 let isSelectingTopic = false;
@@ -1615,6 +1618,10 @@ function checkAnswer(isCorrect, questionId) {
 
     if (answered || gameOver) return;
     answered = true;
+
+    const currentPlayer = isHost ? 'player1' : 'player2';
+    const playerPath = currentPlayer;
+    const roomRef = database.ref('rooms/' + currentRoomId);
 
     clearInterval(timer);
 
@@ -2670,7 +2677,8 @@ function shuffleArray(array) {
 }
 
 function loadNewQuestion() {
-    hasHealedThisTurn = false; // 重置恢復狀態，確保每回合重新計算
+    const currentPlayer = isHost ? 'player1' : 'player2';
+    playerStates[currentPlayer].hasHealedThisTurn = false;
 
     // 從數據庫獲取選擇的題庫
     database.ref(`rooms/${currentRoomId}`).once('value').then(snapshot => {
@@ -3550,6 +3558,12 @@ document.getElementById('showLeaderboardBtn').onclick = function() {
 function handleRematchRequest() {
     if (isRematching) return;
     isRematching = true;
+
+    // 重置 playerStates
+    playerStates = {
+        player1: { hasHealedThisTurn: false },
+        player2: { hasHealedThisTurn: false }
+    };
 
     // 移除勝利畫面
     const victoryOverlay = document.querySelector('.victory-overlay');
