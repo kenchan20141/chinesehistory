@@ -268,7 +268,7 @@
 
     /* 修改现有元素样式 */
     #roomControl {
-    display: none; /* 添加這行 */
+    display: block; /* 改為初始顯示 */
     position: relative;
     background: linear-gradient(45deg, rgba(45, 41, 38, 0.95), rgba(25, 22, 20, 0.95)),
                 url('https://i.ibb.co/tM82mXtr/3.png');
@@ -950,7 +950,7 @@
     </style>
 </head>
 <body>
-    <div id="animationContainer" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 9999; background: url('https://i.ibb.co/RWW0Xqc/image.png') center/cover fixed; opacity: 1; transition: opacity 1s ease-out;"></div>
+   
     <button class="music-control" onclick="toggleMusic()">🎵</button>
     
 
@@ -1378,19 +1378,7 @@ const expRewards = {
 
     let damageInterval;
 
-// Canvas 動畫代碼
-window.onload = function() {
-    const animationContainer = document.getElementById('animationContainer');
-    setTimeout(() => {
-        animationContainer.style.opacity = '0'; // 開始淡出
-    }, 0); // 立即觸發
 
-    // 2秒後隱藏動畫容器並顯示主頁
-    setTimeout(() => {
-        animationContainer.style.display = 'none';
-        document.getElementById('roomControl').style.display = 'block';
-    }, 2000);
-};
 
 
 async function getIpAddress() {
