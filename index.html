@@ -3180,8 +3180,8 @@ function selectSinglePlayerTopic(topic) {
         const difficultyMultiplier = {
             easy: 0.8,
             normal: 1.0,
-            hard: 2.5,
-            hell: 3.25
+            hard: 3.5,
+            hell: 4.25
         }[selectedDifficulty];
         let defenseMultiplier = singlePlayerClass.defense;
 
@@ -3341,8 +3341,8 @@ function checkAnswerSinglePlayer(isCorrect, questionId) {
     const difficultyMultiplier = {
         easy: 0.8,
         normal: 1.0,
-        hard: 2.5,
-        hell: 3.25
+        hard: 3.5,
+        hell: 4.25
     }[selectedDifficulty];
     const baseDamage = 50 + Math.random() * 30 + (playerLevel - 1) * 5; // 隨等級增加傷害
 
