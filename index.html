@@ -3792,9 +3792,21 @@ function listenToRoomChanges() {
     const roomRef = database.ref('rooms/' + currentRoomId);
     roomRef.off('value');
 
+    let previousHealth = 100; // 初始氣血，假設滿血為 100
+
     roomRef.on('value', (snapshot) => {
         const room = snapshot.val();
         if (!room) return;
+
+        const currentHealth = isHost ? room.player1.health : room.player2.health;
+
+        // 檢測己方氣血是否減少
+        if (currentHealth < previousHealth) {
+            const damage = previousHealth - currentHealth; // 計算扣減的氣血
+            showDamageAnimation(damage, 'player'); // 顯示扣減數字
+            applyScreenShake(); // 氣血減少時觸發抖動
+        }
+        previousHealth = currentHealth; // 更新前一次氣血值
 
         if (isHost) {
             opponentDefense = room.player2?.defense || 1.0;
