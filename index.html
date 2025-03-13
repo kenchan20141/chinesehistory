@@ -15,6 +15,13 @@
     <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
     <style>  
 
+        .topic-btn {
+    white-space: normal; /* 允許文字換行 */
+    word-wrap: break-word; /* 長詞自動換行 */
+    height: auto; /* 按鈕高度自適應 */
+    padding: 1rem; /* 增加內邊距 */
+}
+
 .difficulty-icon {
     width: 140px;
     height: 140px;
@@ -1197,6 +1204,7 @@
         <button onclick="selectGrade('中一')" class="grade-btn">中一</button>
         <button onclick="selectGrade('中四')" class="grade-btn">中四</button>
         <button onclick="selectGrade('中五')" class="grade-btn">中五</button>
+        <button onclick="selectGrade('【中史】')" class="grade-btn">【中史】</button>
     </div>
     <div id="topicDetail" style="display: none; margin-top: 1rem;">
         <h3 id="selectedGrade" style="color: #d4af37; text-align: center;"></h3>
@@ -1350,6 +1358,7 @@
         <button onclick="selectSinglePlayerGrade('中一')" class="grade-btn">中一</button>
         <button onclick="selectSinglePlayerGrade('中四')" class="grade-btn">中四</button>
         <button onclick="selectSinglePlayerGrade('中五')" class="grade-btn">中五</button>
+        <button onclick="selectSinglePlayerGrade('【中史】')" class="grade-btn">【中史】</button>
     </div>
     <div id="singlePlayerTopicDetail" style="display: none; margin-top: 1rem;">
         <h3 id="singlePlayerSelectedGrade" style="color: #d4af37; text-align: center;"></h3>
@@ -1513,6 +1522,11 @@ database.ref(`rooms/${currentRoomId}/${playerPath}`).update({
         topics = ['師說'];
     } else if (grade === '中五') {
         topics = ['廉頗藺相如列傳', '出師表'];
+    } else if (grade === '【中史】') {
+        topics = [
+            '單元二 第二章 【兩漢的政治發展對與中外文化交流】',
+            '單元三 第一章 【魏晉南北朝的分裂與政權更替】'
+        ];
     } else {
         topics = []; // 預設空陣列，防止未定義
     }
@@ -3119,6 +3133,11 @@ function selectSinglePlayerClass(className) {
         topics = ['師說'];
     } else if (grade === '中五') {
         topics = ['廉頗藺相如列傳', '出師表'];
+    } else if (grade === '【中史】') {
+        topics = [
+            '單元二 第二章 【兩漢的政治發展對與中外文化交流】',
+            '單元三 第一章 【魏晉南北朝的分裂與政權更替】'
+        ];
     } else {
         topics = []; // 預設空陣列，防止未定義
     }
