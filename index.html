@@ -1202,6 +1202,7 @@
     <h2 style="color: #d4af37; text-align: center;">選擇題庫</h2>
     <div id="gradeSelection" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; margin-top: 1rem; width: 300px;">
         <button onclick="selectGrade('中一')" class="grade-btn">中一</button>
+        <button onclick="selectGrade('中二')" class="grade-btn">中二</button>
         <button onclick="selectGrade('中四')" class="grade-btn">中四</button>
         <button onclick="selectGrade('中五')" class="grade-btn">中五</button>
         <button onclick="selectGrade('【中史】')" class="grade-btn">【中史】</button>
@@ -1356,6 +1357,7 @@
     <h2 style="color: #d4af37; text-align: center;">選擇題庫</h2>
     <div id="singlePlayerGradeSelection" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; margin-top: 1rem; width: 300px;">
         <button onclick="selectSinglePlayerGrade('中一')" class="grade-btn">中一</button>
+        <button onclick="selectSinglePlayerGrade('中二')" class="grade-btn">中二</button>
         <button onclick="selectSinglePlayerGrade('中四')" class="grade-btn">中四</button>
         <button onclick="selectSinglePlayerGrade('中五')" class="grade-btn">中五</button>
         <button onclick="selectSinglePlayerGrade('【中史】')" class="grade-btn">【中史】</button>
@@ -1517,11 +1519,13 @@ database.ref(`rooms/${currentRoomId}/${playerPath}`).update({
     // 根據年級設置題庫
     let topics;
     if (grade === '中一') {
-        topics = ['御人之妻'];
+        topics = ['楊修之死','背影','燕詩','御人之妻','故宮博物院','風雪中的北平'];
+    } else if (grade === '中二') {
+        topics = ['回家','差不多先生傳','在風中'];
     } else if (grade === '中四') {
-        topics = ['師說'];
+        topics = ['山居秋暝','月下獨酌','登樓','論仁論孝論君子','魚我所欲也','師說'];
     } else if (grade === '中五') {
-        topics = ['廉頗藺相如列傳', '出師表'];
+        topics = ['念奴嬌','聲聲慢','青玉案','岳陽樓記', '始得西山宴遊記', '廉頗藺相如列傳', '出師表', '逍遙遊'];
     } else if (grade === '【中史】') {
         topics = [
             '單元二 第二章 【兩漢的政治發展對與中外文化交流】',
@@ -3128,11 +3132,13 @@ function selectSinglePlayerClass(className) {
     // 根據年級設置題庫
     let topics;
     if (grade === '中一') {
-        topics = ['御人之妻'];
+        topics = ['楊修之死','背影','燕詩','御人之妻','故宮博物院','風雪中的北平'];
+     } else if (grade === '中二') {
+        topics = ['回家','差不多先生傳','在風中'];
     } else if (grade === '中四') {
-        topics = ['師說'];
+        topics = ['山居秋暝','月下獨酌','登樓','論仁論孝論君子','魚我所欲也','師說'];
     } else if (grade === '中五') {
-        topics = ['廉頗藺相如列傳', '出師表'];
+        topics = ['念奴嬌','聲聲慢','青玉案','岳陽樓記','始得西山宴遊記', '廉頗藺相如列傳', '出師表', '逍遙遊'];
     } else if (grade === '【中史】') {
         topics = [
             '單元二 第二章 【兩漢的政治發展對與中外文化交流】',
