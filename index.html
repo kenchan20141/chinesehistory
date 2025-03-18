@@ -961,6 +961,14 @@
     
 
 <div id="roomControl">
+
+
+<div id="doubleTimeAnnouncement" style="display: none; text-align: center; margin: 1rem 0; padding: 1rem; background: rgba(255, 215, 0, 0.2); border: 2px solid gold; border-radius: 10px; color: gold; font-size: 1.2rem;">
+        <i class="fas fa-star" style="color: #FFD700; margin-right: 0.5rem;"></i>
+        <strong>雙倍時段已開啟！</strong> 由現在至20:00，參與多人模式可獲得雙倍積分和經驗值！
+        <i class="fas fa-star" style="color: #FFD700; margin-left: 0.5rem;"></i>
+    </div>
+    
     <!-- 新增裝飾性邊框 -->
     <div class="main-border"></div>
     
@@ -1377,6 +1385,28 @@
     
 <script>
 
+
+// 檢查是否在雙倍時段
+function checkDoubleTime() {
+    const now = new Date();
+    const hours = now.getHours();
+    const minutes = now.getMinutes();
+    const isDoubleTime = (hours === 19 && minutes >= 0 && minutes < 60);
+    
+    const announcement = document.getElementById('doubleTimeAnnouncement');
+    if (isDoubleTime) {
+        announcement.style.display = 'block';
+    } else {
+        announcement.style.display = 'none';
+    }
+}
+
+// 頁面加載時立即檢查
+checkDoubleTime();
+
+// 每分鐘檢查一次
+setInterval(checkDoubleTime, 60000);
+    
 
     function showStoryBackground() {
     document.getElementById('storyModal').style.display = 'block';
@@ -2890,106 +2920,97 @@ function handleGameEnd(winnerType) {
     if (gameOver) return;
     gameOver = true;
 
-    clearInterval(timer);
-    timeLeft = 0;
-    document.getElementById('timer').textContent = '🕒0秒';
+    // 獲取當前時間
+    const now = new Date();
+    const hours = now.getHours();
+    const minutes = now.getMinutes();
 
-    document.querySelectorAll('#options button').forEach(btn => {
-        btn.style.pointerEvents = 'none';
-        btn.style.opacity = '0.5';
-    });
+    // 檢查是否在晚上7時至8時 (19:00 - 20:00)
+    const isDoubleTime = (hours === 19 && minutes >= 0 && minutes < 60);
 
-    const victoryOverlay = document.querySelector('.victory-overlay');
-    const victoryText = document.querySelector('.victory-text');
-    const isWinner = (winnerType === 'player1' && isHost) || (winnerType === 'player2' && !isHost);
+    // 定義基礎積分和經驗值變化
+    const currentPlayerPath = isHost ? 'player1' : 'player2';
+    const opponentPath = isHost ? 'player2' : 'player1';
+    const roomRef = database.ref('rooms/' + currentRoomId);
 
-    victoryOverlay.style.display = 'flex';
-    if (winnerType === 'draw') {
-        victoryText.textContent = "平分秋色！";
-    } else {
-        victoryText.textContent = isWinner ? "武道昌隆！" : "雖敗猶榮！";
-    }
+    roomRef.once('value', (snapshot) => {
+        const room = snapshot.val();
+        if (!room) return;
 
-    const resultSound = isWinner ? soundEffects.victory : soundEffects.defeat;
-    resultSound.play();
+        const currentPlayerLevel = room[currentPlayerPath]?.level || 1;
+        const opponentLevel = room[opponentPath]?.level || 1;
+        const levelDifference = Math.abs(currentPlayerLevel - opponentLevel);
+        const isWinner = (winnerType === currentPlayerPath);
 
-    // 添加經驗值和升級邏輯
-    const user = auth.currentUser;
-    let statsOverlay;
+        // 根據等級差距計算基礎積分變化
+        let baseScoreChange = 0;
+        if (winnerType !== 'draw') {
+            if (levelDifference <= 2) {
+                baseScoreChange = isWinner ? 100 : -50;
+            } else if (levelDifference >= 3 && levelDifference <= 5) {
+                baseScoreChange = isWinner
+                    ? (currentPlayerLevel >= opponentLevel ? 50 : 150)
+                    : (currentPlayerLevel >= opponentLevel ? -150 : -20);
+            } else if (levelDifference >= 6) {
+                baseScoreChange = isWinner
+                    ? (currentPlayerLevel >= opponentLevel ? 10 : 200)
+                    : (currentPlayerLevel >= opponentLevel ? -200 : -10);
+            }
+        }
 
-    if (user) {
-        // 第一步：獲取房間數據以計算等級差距
-        database.ref('rooms/' + currentRoomId).once('value').then(roomSnapshot => {
-            const room = roomSnapshot.val();
-            if (!room) return;
+        // 基礎經驗值變化
+        let baseExpChange = isWinner ? 50 : 20;
 
-            const currentPlayerPath = isHost ? 'player1' : 'player2';
-            const opponentPath = isHost ? 'player2' : 'player1';
-            const currentPlayerLevel = room[currentPlayerPath]?.level || 1;
-            const opponentLevel = room[opponentPath]?.level || 1;
-            const levelDifference = Math.abs(currentPlayerLevel - opponentLevel);
-            const isWinner = (winnerType === currentPlayerPath);
+        // 應用雙倍邏輯（輸的情況不雙倍積分損失）
+        let scoreChange = baseScoreChange;
+        let expChange = baseExpChange;
+        if (isDoubleTime) {
+            if (isWinner || winnerType === 'draw') {
+                scoreChange = baseScoreChange * 2; // 勝利或平局時積分雙倍
+                expChange = baseExpChange * 2;     // 經驗值雙倍
+            } else {
+                expChange = baseExpChange * 2;     // 輸時經驗值雙倍，積分損失不變
+            }
+        }
 
-            // 第二步：根據等級差距計算積分變化
-            let scoreChange = 0;
-            if (winnerType !== 'draw') {
-                if (levelDifference <= 2) {
-                    scoreChange = isWinner ? 100 : -50;
-                } else if (levelDifference >= 3 && levelDifference <= 5) {
-                    if (isWinner) {
-                        scoreChange = (currentPlayerLevel >= opponentLevel) ? 50 : 150;
-                    } else {
-                        scoreChange = (currentPlayerLevel >= opponentLevel) ? -150 : -20;
-                    }
-                } else if (levelDifference >= 6) {
-                    if (isWinner) {
-                        scoreChange = (currentPlayerLevel >= opponentLevel) ? 10 : 200;
-                    } else {
-                        scoreChange = (currentPlayerLevel >= opponentLevel) ? -200 : -10;
-                    }
-                }
+        // 更新用戶數據
+        const user = auth.currentUser;
+        if (!user) return;
+
+        const userRef = database.ref('users/' + user.uid);
+        userRef.transaction((userData) => {
+            if (!userData) userData = { level: 1, exp: 0, score: 0 };
+
+            // 應用積分變化
+            userData.score = Math.max(0, (userData.score || 0) + scoreChange);
+
+            // 應用經驗值變化
+            userData.exp += expChange;
+
+            // 等級提升邏輯
+            const expRequired = 100 * userData.level;
+            while (userData.exp >= expRequired) {
+                userData.level += 1;
+                userData.exp -= expRequired;
             }
 
-            // 第三步：更新用戶數據
-            const userRef = database.ref('users/' + user.uid);
-            userRef.transaction((userData) => {
-                if (!userData) userData = { level: 1, exp: 0, score: 0 };
+            return userData;
+        }).then(() => {
+            userRef.once('value', (snapshot) => {
+                const userData = snapshot.val();
+                playerLevel = userData.level;
+                playerExp = userData.exp;
 
-                // 應用積分變化
-                userData.score = Math.max(0, (userData.score || 0) + scoreChange);
-
-                // 應用經驗值變化（保持不變）
-                if (isWinner) {
-                    userData.exp += 50;
-                } else {
-                    userData.exp += 20;
-                }
-
-                // 等級提升邏輯
-                const expRequired = 100 * userData.level;
-                while (userData.exp >= expRequired) {
-                    userData.level += 1;
-                    userData.exp -= expRequired;
-                }
-
-                return userData;
-            }).then(() => {
-                userRef.once('value', (snapshot) => {
-                    const userData = snapshot.val();
-                    playerLevel = userData.level;
-                    playerExp = userData.exp;
-
-                    // 更新排行榜
-                    const leaderboardRef = database.ref('leaderboard/' + user.uid);
-                    leaderboardRef.set({
-                        name: user.displayName,
-                        score: userData.score,
-                        level: userData.level
-                    });
+                // 更新排行榜
+                const leaderboardRef = database.ref('leaderboard/' + user.uid);
+                leaderboardRef.set({
+                    name: user.displayName,
+                    score: userData.score,
+                    level: userData.level
                 });
 
-                // 創建彈出視窗顯示經驗值和積分
-                statsOverlay = document.createElement('div');
+                // 顯示統計彈窗
+                const statsOverlay = document.createElement('div');
                 statsOverlay.style.cssText = `
                     position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
                     background: rgba(45, 41, 38, 0.95); padding: 2rem; border: 3px solid var(--gold);
@@ -2997,50 +3018,49 @@ function handleGameEnd(winnerType) {
                     width: 80%; max-width: 400px;
                 `;
 
-                userRef.once('value', (snapshot) => {
-                    const userData = snapshot.val();
-                    const expRequired = 100 * userData.level;
-                    const expPercentage = (userData.exp / expRequired) * 100;
+                const expRequired = 100 * userData.level;
+                const expPercentage = (userData.exp / expRequired) * 100;
+                statsOverlay.innerHTML = `
+                    <h2>遊戲結束</h2>
+                    <p>等級: ${userData.level}</p>
+                    <p>經驗值: ${userData.exp} / ${expRequired}</p>
+                    <div style="width: 100%; height: 20px; background: #333; border-radius: 5px; margin: 1rem 0;">
+                        <div style="height: 100%; background: #4CAF50; width: ${expPercentage}%; transition: width 1s ease;"></div>
+                    </div>
+                    <p>積分: ${userData.score || 0}</p>
+                    ${isDoubleTime ? '<p style="color: #FFD700;">雙倍獎勵期間！</p>' : ''}
+                `;
+                if (userData.exp >= expRequired) {
+                    statsOverlay.innerHTML += `<p style="color: #FFD700; font-size: 1.5rem; animation: levelUp 1s infinite;">恭喜升級！</p>`;
+                }
+                document.body.appendChild(statsOverlay);
 
-                    statsOverlay.innerHTML = `
-                        <h2>遊戲結束</h2>
-                        <p>等級: ${userData.level}</p>
-                        <p>經驗值: ${userData.exp} / ${expRequired}</p>
-                        <div style="width: 100%; height: 20px; background: #333; border-radius: 5px; margin: 1rem 0;">
-                            <div style="height: 100%; background: #4CAF50; width: ${expPercentage}%; transition: width 1s ease;"></div>
-                        </div>
-                        <p>積分: ${userData.score || 0}</p>
-                    `;
-
-                    if (userData.exp >= expRequired) {
-                        statsOverlay.innerHTML += `<p style="color: #FFD700; font-size: 1.5rem; animation: levelUp 1s infinite;">恭喜升級！</p>`;
-                    }
-                    document.body.appendChild(statsOverlay);
-                });
+                setTimeout(() => statsOverlay.remove(), 5000);
             });
         });
-    }
 
-    // 重賽按鈕邏輯
-    const buttonContainer = document.createElement('div');
-    buttonContainer.className = 'rematch-buttons';
-    const rematchBtn = document.createElement('button');
-    rematchBtn.textContent = '再戰江湖';
-    const mainMenuBtn = document.createElement('button');
-    mainMenuBtn.textContent = '歸隱山林';
-    rematchBtn.onclick = () => handleRematchRequest();
-    mainMenuBtn.onclick = () => {
-        database.ref('rooms/' + currentRoomId).remove();
-        window.location.reload();
-    };
-    buttonContainer.appendChild(rematchBtn);
-    buttonContainer.appendChild(mainMenuBtn);
-    victoryOverlay.appendChild(buttonContainer);
+        // 顯示勝利畫面
+        const victoryOverlay = document.querySelector('.victory-overlay');
+        const victoryText = document.querySelector('.victory-text');
+        victoryText.textContent = winnerType === 'draw' ? "平局！" : (isWinner ? "勝利！" : "失敗！");
+        victoryOverlay.style.display = 'flex';
 
-    // 5秒後移除彈出視窗
-    setTimeout(() => {
-        if (statsOverlay) statsOverlay.remove();
-    }, 5000);
+        // 添加重賽按鈕
+        const buttonContainer = document.createElement('div');
+        buttonContainer.className = 'rematch-buttons';
+        const rematchBtn = document.createElement('button');
+        rematchBtn.textContent = '再戰江湖';
+        const mainMenuBtn = document.createElement('button');
+        mainMenuBtn.textContent = '歸隱山林';
+        rematchBtn.onclick = () => handleRematchRequest();
+        mainMenuBtn.onclick = () => {
+            database.ref('rooms/' + currentRoomId).remove();
+            window.location.reload();
+        };
+        buttonContainer.appendChild(rematchBtn);
+        buttonContainer.appendChild(mainMenuBtn);
+        victoryOverlay.appendChild(buttonContainer);
+    });
 }
 
 
